@@ -20,7 +20,7 @@ const generateAccessToken = async (payload) => {
         }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY, jwtid: jwtId });
 
         // Set session to redis
-        await setCache(getUserSessionKey(jwtId), accessToken, 60 * 60);
+        await setCache(getUserSessionKey(jwtId), accessToken, 60 * 24 * 30);
 
         return accessToken;
     } 
