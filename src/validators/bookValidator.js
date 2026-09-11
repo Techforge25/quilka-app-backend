@@ -37,12 +37,7 @@ const createBookValidator = joi.object({
     })).custom((value, helpers) => {
         if(value.length !== helpers.state.ancestors[0].spreadsCount) return helpers.error("any.invalid");
         return value;
-    }).label("Spreads configuration"),
-
-    // Payment info
-    payment: joi.number().positive().required().label("Payment"),
-    paymentGateway: joi.string().trim().required().valid("Apple Pay", "Google Pay").label("Payment gateway"),
-    transactionId: joi.string().trim().required().label("Transaction ID")
+    }).label("Spreads configuration")
 });
 
 module.exports = { createBookValidator };
