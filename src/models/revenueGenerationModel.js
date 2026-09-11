@@ -7,11 +7,13 @@ const revenueGenerationSchema = new Schema({
 
     // Revenue info
     revenue: { type: Number, required: true },
-    generateFrom: { type: String, trim: true, enum: ["Book", "Regeneration"], required: true },
+    sourceId: { type: Schema.Types.ObjectId, refPath: "sourceModel", required: true },
+    sourceModel: { type: String, trim: true, enum: ["Book", "Regeneration"], required: true },
 
     // Payment info
     paymentGateway: { type: String, trim: true, enum: ["Apple Pay", "Google Pay"],  required: true },
     transactionId: { type: String, trim: true, required: true },
+    status: { type: String, trim: true, enum: ["pending", "paid", "failed"] }
 }, { timestamps: true });
 
 // Model
