@@ -4,7 +4,7 @@ const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 // Schema
 const bookSchema = new Schema({
     // Reference
-    userId: { type: Schema.Types.ObjectId, ref: "User" },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
 
     // Book creation mode & status
     mode: { type: String, trim: true, required: true, enum: ["CUSTOM", "AI"] },
