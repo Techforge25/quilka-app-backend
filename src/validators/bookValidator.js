@@ -8,7 +8,7 @@ const createBookValidator = joi.object({
     // Basic info
     title: joi.string().trim().min(3).max(60).required().label("Title"),
     authorName: joi.string().trim().min(3).max(20).required().label("Author name"),
-    spreadsCount: joi.number().integer().min(1).required().label("Spreads count"),
+    spreadsCount: joi.number().integer().positive().min(1).required().label("Spreads count"),
 
     // Txt content
     txtContent: joi.string().trim().min(200).required()
@@ -28,13 +28,21 @@ const createBookValidator = joi.object({
     language: joi.string().trim().required().valid("English", "Arabic", "Spanish", "Hindi", "Afrikaans").label("Language"),
 
     // Spreads config
-    spreads: joi.array().min(1).items(joi.object({
-        chararacterLimit: joi.number().integer().min(50).required(),
+    spreads: joi.array().items(joi.object({
+        chararacterLimit: joi.number().integer().positive().min(50).required(),
         layout: joi.object({
             name: joi.string().trim().required().min(3).max(50).label("Main layout name"),
             subLayout: joi.string().trim().required().min(3).max(50).label("Sub layout direction"),
         })
-    })).label("Spreads configuration")
+    })).custom((value, helpers) => {
+        if(value.length !== helpers.state.ancestors[0].spreadsCount) return helpers.error("any.invalid");
+        return value;
+    }).label("Spreads configuration"),
+
+    // Payment info
+    payment: joi.number().positive().required().label("Payment"),
+    paymentGateway: joi.string().trim().required().valid("Apple Pay", "Google Pay").label("Payment gateway"),
+    transactionId: joi.string().trim().required().label("Transaction ID")
 });
 
 module.exports = { createBookValidator };
