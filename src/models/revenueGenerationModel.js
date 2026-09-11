@@ -13,7 +13,7 @@ const revenueGenerationSchema = new Schema({
     // Payment info
     paymentGateway: { type: String, trim: true, enum: ["Apple Pay", "Google Pay"],  required: true },
     transactionId: { type: String, trim: true, required: true },
-    status: { type: String, trim: true, enum: ["pending", "paid", "failed"] }
+    status: { type: String, trim: true, enum: ["pending", "paid", "failed"], default: "pending" }
 }, { timestamps: true });
 
 // Model
