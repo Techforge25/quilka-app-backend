@@ -6,8 +6,9 @@ const bookSchema = new Schema({
     // Reference
     userId: { type: Schema.Types.ObjectId, ref: "User" },
 
-    // Book creation mode
+    // Book creation mode & status
     mode: { type: String, trim: true, required: true, enum: ["CUSTOM", "AI"] },
+    status: { type: String, trim: true, required: true, enum: ["pending", "published"], default: "pending" },
 
     // Basic info
     title: { type: String, trim: true, required: true, index: true },
