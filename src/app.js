@@ -31,10 +31,12 @@ async function startApp()
     // Import Routes
     const authRouter = require("./routes/authRoute");
     const bookRouter = require("./routes/bookRoute");
+    const paymentRouter = require("./routes/paymentRoute");
 
     // Registered Routes
     app.use("/api/v1/auth", authRouter);
     app.use("/api/v1/book", bookRouter);
+    app.use("/api/v1/payment", paymentRouter);
 
     // Import Admin Routes
     const adminAuthRouter = require("./routes/admin/adminAuthRoute");
