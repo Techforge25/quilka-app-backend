@@ -33,7 +33,7 @@ const createBook = asyncHandler(async (request, response) => {
     if(!book) throw new ApiError(500, "Failed to create book");
 
     // Response
-    return response.status(201).json(new ApiResponse(201, null, "Book has been published"));
+    return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created"));
 });
 
 module.exports = { createBook };
