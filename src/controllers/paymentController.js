@@ -17,7 +17,7 @@ const payForBook = asyncHandler(async (request, response) => {
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
     // Sanitize payload
-    const { payment, paymentGateway, transactionId } = validatePayload(payForBookValidator, request.body) || {};
+    const { price, paymentGateway, transactionId } = validatePayload(payForBookValidator, request.body) || {};
 
     // Find book
     const book = await Book.findById(bookId).select("userId status");
@@ -30,7 +30,7 @@ const payForBook = asyncHandler(async (request, response) => {
     // Save to revenue generation
     const revenueGeneration = await RevenueGeneration.create({ 
         userId,
-        revenue: payment,
+        revenue: price,
         sourceId: bookId,
         sourceModel: "Book",
         paymentGateway,
