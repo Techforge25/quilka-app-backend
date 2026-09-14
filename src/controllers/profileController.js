@@ -3,8 +3,8 @@ const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
-const { isValidObjectId } = require("mongoose");
-const { updateInfoValidator } = require("../validators/profileValidator");
+const { updateInfoValidator, updatePasswordValidator } = require("../validators/profileValidator");
+const bcrypt = require("bcrypt");
 
 // View personal info
 const viewPersonalInfo = asyncHandler(async (request, response) => {
@@ -30,7 +30,34 @@ const updateInfo = asyncHandler(async (request, response) => {
     if(!update) throw new ApiError(500, "Failed to update personal info");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, fullName, "Personal info has been fetched"));
+    return response.status(200).json(new ApiResponse(200, fullName, "Personal info has been updated"));
 });
 
-module.exports = { viewPersonalInfo, updateInfo };
+// Update password
+const updatePassword = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get validated payload
+    const { currentPassword, newPassword } = validatePayload(updatePasswordValidator, request.body) || {};
+
+    // Find user
+    const user = await User.findById(userId).select("password");
+    if(!user) throw new ApiError(404, "User not found");
+
+    // Check current password
+    const compare = await user.matchPassword(currentPassword);
+    if(!compare) throw new ApiError(400, "Invalid current password");
+
+    // Prevent restting new password as old password
+    const isMatched = await user.matchPassword(newPassword);
+    if(isMatched) throw new ApiError(400, "Your new password cannot be the same as your previous password");
+
+    // Save to db
+    user.password = newPassword;
+    await user.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Password has been updated"));
+});
+
+module.exports = { viewPersonalInfo, updateInfo, updatePassword };

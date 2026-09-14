@@ -10,4 +10,7 @@ profileRouter.route("/info")
 .get(authentication, viewPersonalInfo)
 .patch(authentication, updateInfo);
 
+// Update password
+profileRouter.route("/password").patch(authentication, updateInfo);
+
 module.exports = profileRouter;
