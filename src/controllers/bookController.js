@@ -80,4 +80,48 @@ const viewBook = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, book, "Book has been fetched"));
 });
 
-module.exports = { createBook, viewBook };
+// View book content
+const viewBookContent = asyncHandler(async (request, response) => {
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Fetch
+    const [book] = await Book.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(bookId) } },
+
+        // Add fields to calculate characters, book length
+        {
+            $addFields: {
+                totalCharacters: { $sum: "$spreads.characterLimit" },
+                bookLength: {
+                    spreads: "$spreadsCount",
+                    pages: { $multiply: ["$spreadsCount", 2] },
+                },
+                storyContent: {
+                    $cond: [
+                        { $eq: ["$mode", "CUSTOM"] },
+                        "$txtContent",
+                        "$aiContent"
+                    ]
+                }
+            }
+        },
+
+        // Projection
+        {
+            $project: {
+                title: 1,
+                bookLength: 1,
+                totalCharacters: 1,
+                storyContent: 1
+            }
+        }
+    ]);
+    if(!book) throw new ApiError(404, "Book content not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, book, "Book content has been fetched"));
+});
+
+module.exports = { createBook, viewBook, viewBookContent };
