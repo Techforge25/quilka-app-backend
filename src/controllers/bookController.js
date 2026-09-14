@@ -6,6 +6,7 @@ const validatePayload = require("../utils/validatePayload");
 const { createBookValidator } = require("../validators/bookValidator");
 const { isValidObjectId } = require("mongoose");
 const convertToMongoId = require("../utils/convertToMongoId");
+const { emptyList } = require("../constants");
 
 // Create book
 const createBook = asyncHandler(async (request, response) => {
@@ -36,6 +37,37 @@ const createBook = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created"));
+});
+
+// Fetch my books
+const fetchMyBooks = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+    const userId = convertToMongoId(request.user._id);
+
+    // Fetch
+    const books = await Book.aggregatePaginate([
+        // Match
+        { $match: { userId, status: "published" } },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        {
+            $project: {
+                title: 1,
+                authorName: 1,
+                frontImage: 1,
+                pages: {
+                    $multiply: ["$spreadsCount", 2]
+                }
+            }
+        }
+    ], { page, limit });
+    if(!books.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No books found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, books, "Books have been fetched"));
 });
 
 // View book
@@ -124,4 +156,4 @@ const viewBookContent = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, book, "Book content has been fetched"));
 });
 
-module.exports = { createBook, viewBook, viewBookContent };
+module.exports = { createBook, fetchMyBooks, viewBook, viewBookContent };
