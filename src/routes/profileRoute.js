@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
-const { viewPersonalInfo, updateInfo } = require("../controllers/profileController");
+const { viewPersonalInfo, updateInfo, updatePassword } = require("../controllers/profileController");
 
 // Router instance
 const profileRouter = Router();
@@ -11,6 +11,6 @@ profileRouter.route("/info")
 .patch(authentication, updateInfo);
 
 // Update password
-profileRouter.route("/password").patch(authentication, updateInfo);
+profileRouter.route("/password").patch(authentication, updatePassword);
 
 module.exports = profileRouter;
