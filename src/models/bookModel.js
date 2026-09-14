@@ -26,7 +26,7 @@ const bookSchema = new Schema({
 
     // Spreads config
     spreads: [{
-        chararacterLimit: { type: Number },
+        characterLimit: { type: Number },
         illustrationLimit: { type: Number },
         layout: {
             name: { type: String, trim: true, required: true }, // Classic story book

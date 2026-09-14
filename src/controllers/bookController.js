@@ -51,7 +51,7 @@ const viewBook = asyncHandler(async (request, response) => {
         // Add fields to calculate characters, illustrations and book length
         {
             $addFields: {
-                totalCharacters: { $sum: "$spreads.chararacterLimit" },
+                totalCharacters: { $sum: "$spreads.characterLimit" },
                 totalIllustrations: { $sum: "$spreads.illustrationLimit" },
                 bookLength: {
                     spreads: "$spreadsCount",
