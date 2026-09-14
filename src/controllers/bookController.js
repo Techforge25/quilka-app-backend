@@ -48,24 +48,33 @@ const viewBook = asyncHandler(async (request, response) => {
         // Match
         { $match: { _id: convertToMongoId(bookId) } },
 
+        // Add fields to calculate characters, illustrations and book length
+        {
+            $addFields: {
+                totalCharacters: { $sum: "$spreads.chararacterLimit" },
+                totalIllustrations: { $sum: "$spreads.illustrationLimit" },
+                bookLength: {
+                    spreads: "$spreadsCount",
+                    pages: { $multiply: ["$spreadsCount", 2] },
+                }
+            }
+        },
+
         // Projection
         {
             $project: {
                 title: 1,
                 authorName: 1,
-                spreadsCount: 1,
-                txtContent: 1,
+                bookLength: 1,
                 ageGroup: 1,
-                bookSize: 1,
                 illustrationStyle: 1,
-                language: 1, 
+                language: 1,
+                totalCharacters: 1,
+                totalIllustrations: 1               
             }
         }
     ]);
     if(!book) throw new ApiError(404, "Book not found");
-
-    // Compute pages based on spreads
-    book.pages = book.spreadsCount * 2;
 
     // Response
     return response.status(200).json(new ApiResponse(200, book, "Book has been fetched"));
