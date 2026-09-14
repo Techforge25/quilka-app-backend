@@ -4,6 +4,8 @@ const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
 const { createBookValidator } = require("../validators/bookValidator");
+const { isValidObjectId } = require("mongoose");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Create book
 const createBook = asyncHandler(async (request, response) => {
@@ -36,4 +38,37 @@ const createBook = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created"));
 });
 
-module.exports = { createBook };
+// View book
+const viewBook = asyncHandler(async (request, response) => {
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Fetch
+    const [book] = await Book.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(bookId) } },
+
+        // Projection
+        {
+            $project: {
+                title: 1,
+                authorName: 1,
+                spreadsCount: 1,
+                txtContent: 1,
+                ageGroup: 1,
+                bookSize: 1,
+                illustrationStyle: 1,
+                language: 1, 
+            }
+        }
+    ]);
+    if(!book) throw new ApiError(404, "Book not found");
+
+    // Compute pages based on spreads
+    book.pages = book.spreadsCount * 2;
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, book, "Book has been fetched"));
+});
+
+module.exports = { createBook, viewBook };
