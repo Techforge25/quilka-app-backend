@@ -25,7 +25,7 @@ const payForBook = asyncHandler(async (request, response) => {
     // Validate edge cases
     if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to access this book.");
-    if(book.status === "published") throw new ApiError(403, "Forbidden! Payment has already been processed for this book");
+    if(book.status !== "pending") throw new ApiError(403, "Forbidden! Payment has already been processed for this book");
 
     // Save to revenue generation
     const revenueGeneration = await RevenueGeneration.create({ 
@@ -38,6 +38,10 @@ const payForBook = asyncHandler(async (request, response) => {
         status: "paid"
     });
     if(!revenueGeneration) throw new ApiError(500, "Failed to save record in revenue generation");
+
+    // Mark book status as draft
+    book.status = "draft";
+    await book.save();
 
     // Add 5 free regeneration to this book
     const regeneration = await Regeneration.create({ userId, bookId, limit: 5 });
