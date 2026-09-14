@@ -24,6 +24,10 @@ const bookSchema = new Schema({
     illustrationStyle: { type: String, trim: true, required: true },
     language: { type: String, trim: true, required: true, enum: ["English", "Arabic", "Spanish", "Hindi", "Afrikaans"] },
 
+    // Media
+    frontImage: { type: String, trim: true, default: null },
+    backImage: { type: String, trim: true, default: null },
+
     // Spreads config
     spreads: [{
         characterLimit: { type: Number },
