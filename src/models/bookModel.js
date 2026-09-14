@@ -8,7 +8,7 @@ const bookSchema = new Schema({
 
     // Book creation mode & status
     mode: { type: String, trim: true, required: true, enum: ["CUSTOM", "AI"] },
-    status: { type: String, trim: true, required: true, enum: ["pending", "published"], default: "pending" },
+    status: { type: String, trim: true, required: true, enum: ["pending", "draft", "published"], default: "pending" },
 
     // Basic info
     title: { type: String, trim: true, required: true, index: true },
