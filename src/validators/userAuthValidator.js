@@ -6,7 +6,7 @@ const fullNamePattern = /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/;
 
 // User signup validator
 const userSignupValidator = joi.object({
-    fullName: joi.string().trim().min(2).max(60).pattern(fullNamePattern).required().label("Email"),
+    fullName: joi.string().trim().min(2).max(60).pattern(fullNamePattern).required().label("Full name"),
     email: joi.string().trim().email().max(50).lowercase().required().label("Email"),
     password: joi.string().min(8).max(128).pattern(new RegExp(passowrdPattern)).required().messages({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
