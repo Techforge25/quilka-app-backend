@@ -4,7 +4,6 @@ const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
 const { updateInfoValidator, updatePasswordValidator } = require("../validators/profileValidator");
-const bcrypt = require("bcrypt");
 
 // View personal info
 const viewPersonalInfo = asyncHandler(async (request, response) => {
