@@ -41,13 +41,21 @@ const createBook = asyncHandler(async (request, response) => {
 
 // Fetch my books
 const fetchMyBooks = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, search = "", status = "all" } = request.query;
     const userId = convertToMongoId(request.user._id);
+
+    // Sanitize status key
+    if(status && !["all", "draft", "published"].includes(status)) throw new ApiError(400, "Invalid book status provided");
+
+    // Base filter
+    const baseFilter = {};
+    if(search) baseFilter.title = { $regex: search, $options: "i" };
+    if(status && status.toLowerCase() !== "all") baseFilter.status = status;
 
     // Fetch
     const books = await Book.aggregatePaginate([
         // Match
-        { $match: { userId, status: "published" } },
+        { $match: { userId, ...baseFilter } },
 
         // Sort
         { $sort: { createdAt: -1 } },
