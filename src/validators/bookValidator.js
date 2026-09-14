@@ -29,7 +29,8 @@ const createBookValidator = joi.object({
 
     // Spreads config
     spreads: joi.array().items(joi.object({
-        chararacterLimit: joi.number().integer().positive().min(50).required(),
+        chararacterLimit: joi.number().integer().positive().min(50).required().label("Character limit"),
+        illustrationLimit: joi.number().integer().positive().min(1).max(2).required().label("Illustration limit"),
         layout: joi.object({
             name: joi.string().trim().required().min(3).max(50).label("Main layout name"),
             subLayout: joi.string().trim().required().min(3).max(50).label("Sub layout direction"),
