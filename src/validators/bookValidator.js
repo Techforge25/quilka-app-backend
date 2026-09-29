@@ -33,7 +33,7 @@ const createBookValidator = joi.object({
         illustrationLimit: joi.number().integer().positive().min(1).max(2).required().label("Illustration limit"),
         layout: joi.object({
             name: joi.string().trim().required().min(3).max(50).label("Main layout name"),
-            subLayout: joi.string().trim().required().min(3).max(50).label("Sub layout direction"),
+            subLayoutDirection: joi.string().trim().required().min(3).max(50).label("Sub layout direction"),
         })
     })).custom((value, helpers) => {
         if(value.length !== helpers.state.ancestors[0].spreadsCount) return helpers.error("any.invalid");
