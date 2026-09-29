@@ -286,7 +286,11 @@ const authStatus = asyncHandler(async (request, response) => {
 
     // Verify
     const user = verifyAccessToken(accessToken);
-    if(!user) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!")); 
+    if(!user) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
+
+    // Check token in redis
+    const token = await getCache(getUserSessionKey(user.jti));
+    if(!token) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));    
     
     // Response
     return response.status(200).json(new ApiResponse(200, { isLoggedIn: true }, "Login session found")); 
