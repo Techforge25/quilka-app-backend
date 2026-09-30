@@ -42,7 +42,7 @@ const signup = asyncHandler(async (request, response) => {
     if(!createUser) throw new ApiError(500, "Failed to signup");  
     
     // Store in redis
-    await setCache(getOTPKey(email), accountVerificationToken);    
+    await setCache(getOTPKey(email), accountVerificationToken, 5);  
 
     // Send email in backgrouund
     await emailQueue.add("signupOTP", { email, accountVerificationToken });
