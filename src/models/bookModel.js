@@ -30,12 +30,10 @@ const bookSchema = new Schema({
 
     // Spreads config
     spreads: [{
+        mainLayoutName: { type: String, trim: true, required: true }, // Classic story book
+        subLayoutDirection: { type: String, trim: true, required: true }, // Right-content, Left-content
         characterLimit: { type: Number },
-        illustrationLimit: { type: Number },
-        layout: {
-            name: { type: String, trim: true, required: true }, // Classic story book
-            subLayoutDirection: { type: String, trim: true, required: true }, // Right-content, Left-content
-        }
+        illustrationLimit: { type: Number }
     }]
 }, { timestamps: true });
 
