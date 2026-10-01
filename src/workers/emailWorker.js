@@ -39,7 +39,7 @@ const worker = new Worker("emailQueue", async (job) => {
         .replaceAll('{{resetPasswordOTP}}', resetPasswordOTP); 
 
         // Execute
-        const result = await sendEmail(email, "Password Reset Request", filledHtml);
+        const result = await sendEmail(email, "Password Reset Request", `Your reset password code is ${resetPasswordOTP}`);
         if(!result) throw new ApiError(500, "Failed to send password reset email");
     }        
 }, { connection: redisConfigOptions, concurrency: 5 });
