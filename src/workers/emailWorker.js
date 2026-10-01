@@ -21,7 +21,7 @@ const worker = new Worker("emailQueue", async (job) => {
         .replaceAll('{{accountVerificationToken}}', accountVerificationToken);     
 
         // Execute
-        const result = await sendEmail(email, "Account Activation Token", filledHtml);
+        const result = await sendEmail(email, "Account Activation Token", `Your code is ${accountVerificationToken}`);
         if(!result) throw new ApiError(500, "Failed to send OTP email");
     }
 
