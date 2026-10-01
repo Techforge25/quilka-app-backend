@@ -11,34 +11,24 @@ const createStory = asyncHandler(async (request, response) => {
     // AI instance
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-    // Send prompt to nano bnana
-    // const data = await ai.models.generateContent({
-    //     model: "gemini-2.5-flash-image",
-    //     contents: prompt
-    // });
-
-    // Output
-    // const output = data.candidates[0].content.parts;
-
     // Generate story
     const storyResponse = await ai.models.generateContent({
         model: "gemini-3.8-flash",
         contents: prompt,
     });
-
-    // Compute tokens
-    const totalTokensConsume = await ai.models.computeTokens({
-        model: "gemini-3.8-flash",
-        contents: prompt,
-    });
-
-    // // Logs
-    console.log("Tokens", totalTokensConsume);
-    console.log("Tokens info", totalTokensConsume.tokensInfo);
-
+    
+    // Get story
     const story = storyResponse.text;
 
-    console.log(story);    
+    // Get token usage
+    const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = storyResponse.usageMetadata;
+
+    // Logs
+    console.log("Input Tokens:", promptTokenCount);
+    console.log("Output Tokens:", candidatesTokenCount);
+    console.log("Thinking Tokens:", thoughtsTokenCount);
+    console.log("Total Tokens:", totalTokenCount);
+    console.log("Story", story);   
 
     // Response
     return response.status(200).json(new ApiResponse(200, story, "Story response has been generated"));
