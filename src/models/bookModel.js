@@ -14,7 +14,10 @@ const bookSchema = new Schema({
     title: { type: String, trim: true, required: true, index: true },
     authorName: { type: String, trim: true, required: true },
     spreadsCount: { type: Number, required: true },
+
+    // Content info
     txtContent: { type: String, trim: true },
+    prompt: { type: String, trim: true },
     aiContent: { type: String, trim: true },
     storyContent: { type: String, trim: true },
 
