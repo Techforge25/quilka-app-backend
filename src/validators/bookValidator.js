@@ -14,11 +14,15 @@ const createBookValidator = joi.object({
     txtContent: joi.string().min(100).required().when("mode", { 
         is: "CUSTOM", 
         then: joi.required(), 
-        otherwise: joi.optional().allow("", null) 
+        otherwise: joi.forbidden() 
     }).label("Txt content"),
 
     // Story length
-    storyLength: joi.number().integer().positive().required().label("Story length"),
+    storyLength: joi.when("mode", {
+        is: "CUSTOM",
+        then: joi.number().integer().positive().required().label("Story length"),
+        otherwise: joi.forbidden()
+    }).label("Story length"),
 
     // Prompt
     prompt: joi.when("mode", {
