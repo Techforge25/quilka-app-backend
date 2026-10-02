@@ -17,15 +17,22 @@ const createBookValidator = joi.object({
         otherwise: joi.optional().allow("", null) 
     }).label("Txt content"),
 
+    // Story length
+    storyLength: joi.number().integer().positive().required().label("Story length"),
+
+    // Prompt
+    prompt: joi.when("mode", {
+        is: "AI",
+        then: joi.string().trim().required(),
+        otherwise: joi.forbidden()
+    }).label("Prompt"),
+
     // AI content
     aiContent: joi.string().min(100).required().when("mode", { 
         is: "AI", 
         then: joi.required(), 
         otherwise: joi.forbidden() 
     }).label("AI content"),
-
-    // Story content
-    storyContent: joi.string().required().min(100).label("Story content"),
 
     // Metadata
     ageGroup: joi.string().trim().required().min(3).max(30).label("Age group"),
