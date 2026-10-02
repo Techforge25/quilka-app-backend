@@ -29,7 +29,6 @@ const createBook = asyncHandler(async (request, response) => {
         spreadsCount, 
         txtContent,
         prompt,
-        aiContent, 
         ageGroup, 
         bookSize, 
         illustrationStyle,
