@@ -20,7 +20,6 @@ const bookSchema = new Schema({
     storyLength: { type: Number },
     prompt: { type: String, trim: true, default: null },
     aiContent: { type: String, trim: true, default: null },
-    storyContent: { type: String, trim: true, default: null },
 
     // Metadata
     ageGroup: { type: String, trim: true, required: true },
