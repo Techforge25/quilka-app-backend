@@ -17,7 +17,6 @@ const bookSchema = new Schema({
 
     // Content info
     txtContent: { type: String, trim: true },
-    storyLength: { type: Number },
     prompt: { type: String, trim: true, default: null },
     aiContent: { type: String, trim: true, default: null },
 
