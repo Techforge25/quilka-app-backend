@@ -48,7 +48,7 @@ const payForBook = asyncHandler(async (request, response) => {
     if(!regeneration) throw new ApiError(500, "Failed to add 5 free regenerations");
     
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "Payment has been completed"));
+    return response.status(200).json(new ApiResponse(200, bookId, "Payment has been completed"));
 });
 
 module.exports = { payForBook };
