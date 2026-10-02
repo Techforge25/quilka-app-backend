@@ -1,10 +1,14 @@
 const { Router } = require("express");
-const { createStory } = require("../controllers/storyController");
+const { createStory, viewStoryContent } = require("../controllers/storyController");
 
 // Router instance
 const storyRouter = Router();
 
 // Create story
 storyRouter.route("/").post(createStory);
+
+// View story content / Update story
+storyRouter.route("/:bookId")
+.get(viewStoryContent);
 
 module.exports = storyRouter;
