@@ -14,7 +14,7 @@ const createBook = asyncHandler(async (request, response) => {
 
     // Get validated payload
     const { mode, title, authorName, spreadsCount, txtContent, prompt, 
-    aiContent, ageGroup, bookSize, illustrationStyle, language, spreads } = validatePayload(createBookValidator, request.body) || {};
+    ageGroup, bookSize, illustrationStyle, language, spreads } = validatePayload(createBookValidator, request.body) || {};
 
     // Extract total spread characters and validate
     const totalSpreadCharacters = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
