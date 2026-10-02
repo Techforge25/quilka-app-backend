@@ -14,8 +14,7 @@ const createBook = asyncHandler(async (request, response) => {
 
     // Get validated payload
     const { mode, title, authorName, spreadsCount, txtContent, 
-    aiContent, storyContent, ageGroup, bookSize, illustrationStyle, 
-    language, spreads } = validatePayload(createBookValidator, request.body) || {};
+    aiContent, ageGroup, bookSize, illustrationStyle, language, spreads } = validatePayload(createBookValidator, request.body) || {};
 
     // Create book
     const book = await Book.create({ 
@@ -26,7 +25,6 @@ const createBook = asyncHandler(async (request, response) => {
         spreadsCount, 
         txtContent,
         aiContent, 
-        storyContent, 
         ageGroup, 
         bookSize, 
         illustrationStyle,
