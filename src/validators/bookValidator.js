@@ -24,13 +24,6 @@ const createBookValidator = joi.object({
         otherwise: joi.forbidden()
     }).label("Prompt"),
 
-    // AI content
-    aiContent: joi.string().min(100).required().when("mode", { 
-        is: "AI", 
-        then: joi.required(), 
-        otherwise: joi.forbidden() 
-    }).label("AI content"),
-
     // Metadata
     ageGroup: joi.string().trim().required().min(3).max(30).label("Age group"),
     bookSize: joi.string().trim().required().min(3).max(30).label("Book size"),
