@@ -7,6 +7,57 @@ const { GoogleGenAI } = require("@google/genai");
 const convertToMongoId = require("../utils/convertToMongoId");
 const joi = require("joi");
 const validatePayload = require("../utils/validatePayload");
+const { promptGuide } = require("../constants");
+
+// Generate story with AI
+const generateWithAi = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to access this book.");
+    if(book.status !== "draft") throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft state");
+    if(book.mode !== "AI") throw new ApiError(400, "To generate story with AI, the book 'mode' must be an AI");
+    if(book.hasUsedAi) throw new ApiError(403, "You have already generated story using AI");
+
+    // Extract total spread characters
+    const totalSpreadCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
+
+    // AI instance
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+    const data = promptGuide({ 
+        ageGroup: book.ageGroup,
+        language: book.language,
+        prompt: book.prompt,
+        title: book.title,
+        totalCharacters: totalSpreadCharacters,
+        spreads: book.spreads,
+    });
+
+    // Generate story
+    const storyResponse = await ai.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: data,
+    });    
+    const aiContent = storyResponse.text;
+
+    // Validate AI content length with total spread characters
+    if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
+    
+    // Save to db
+    book.aiContent = aiContent;
+    book.hasUsedAi = true;
+    await book.save();
+    
+    // Response
+    return  response.status(200).json(new ApiResponse(200, aiContent, "Content has been generated"));
+});
 
 // Create story
 const createStory = asyncHandler(async (request, response) => {
@@ -103,4 +154,4 @@ const viewStoryContent = asyncHandler(async (request, response) => {
 //     return response.status(200).json(new ApiResponse(200, storyContent, "Story has been updated"));
 // });
 
-module.exports = { createStory, viewStoryContent };
+module.exports = { generateWithAi, createStory, viewStoryContent };

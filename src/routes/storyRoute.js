@@ -1,8 +1,15 @@
 const { Router } = require("express");
-const { createStory, viewStoryContent } = require("../controllers/storyController");
+const { generateWithAi, createStory, viewStoryContent } = require("../controllers/storyController");
+const { authentication } = require("../middlewares/auth");
 
 // Router instance
 const storyRouter = Router();
+
+// Inject middleware
+storyRouter.use(authentication);
+
+// Generate story with AI
+storyRouter.route("/:bookId").post(generateWithAi);
 
 // Create story
 storyRouter.route("/").post(createStory);
