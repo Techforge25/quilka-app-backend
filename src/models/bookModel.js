@@ -17,10 +17,10 @@ const bookSchema = new Schema({
 
     // Content info
     txtContent: { type: String, trim: true },
-    storyLength: { type: Number, required: true },
-    prompt: { type: String, trim: true },
-    aiContent: { type: String, trim: true },
-    storyContent: { type: String, trim: true },
+    storyLength: { type: Number },
+    prompt: { type: String, trim: true, default: null },
+    aiContent: { type: String, trim: true, default: null },
+    storyContent: { type: String, trim: true, default: null },
 
     // Metadata
     ageGroup: { type: String, trim: true, required: true },
