@@ -11,21 +11,21 @@ const createBookValidator = joi.object({
     spreadsCount: joi.number().integer().positive().min(1).required().label("Spreads count"),
 
     // Txt content
-    txtContent: joi.string().trim().min(100).required().when("mode", { 
+    txtContent: joi.string().min(100).required().when("mode", { 
         is: "CUSTOM", 
         then: joi.required(), 
         otherwise: joi.optional().allow("", null) 
     }).label("Txt content"),
 
     // AI content
-    aiContent: joi.string().trim().min(100).required().when("mode", { 
+    aiContent: joi.string().min(100).required().when("mode", { 
         is: "AI", 
         then: joi.required(), 
         otherwise: joi.forbidden() 
     }).label("AI content"),
 
     // Story content
-    storyContent: joi.string().trim().required().min(100).label("Story content"),
+    storyContent: joi.string().required().min(100).label("Story content"),
 
     // Metadata
     ageGroup: joi.string().trim().required().min(3).max(30).label("Age group"),
