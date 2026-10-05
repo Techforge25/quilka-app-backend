@@ -12,6 +12,7 @@ const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
 const { getOTPKey, getResetPasswordKey, getUserSessionKey } = require("../utils/redisKeys");
 const emailQueue = require("../queues/emailQueue");
 const { redis } = require("../redis/connection");
+const event = require("../utils/events");
 
 // Signup
 const signup = asyncHandler(async (request, response) => {
@@ -45,7 +46,8 @@ const signup = asyncHandler(async (request, response) => {
     await setCache(getOTPKey(email), accountVerificationToken, 10);
 
     // Send email in backgrouund
-    await emailQueue.add("signupOTP", { email, accountVerificationToken });
+    // await emailQueue.add("signupOTP", { email, accountVerificationToken });
+    event.emit("signupOTP", { email, accountVerificationToken });
 
     // Response
     return response.status(200)
