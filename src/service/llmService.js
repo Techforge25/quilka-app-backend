@@ -16,13 +16,19 @@ class LLMService
     }
 
     // Generate story text
-    async generateStoryText(aiModel = "gemini-3.8-flash", dynamicPrompt)
+    async generateStoryText(dynamicPrompt, aiModel = "gemini-3.5-flash")
     {
         try
         {
-            const storyResponse = await this.ai.models.generateContent({ model: aiModel, contents: dynamicPrompt });    
+            const storyResponse = await this.ai.models.generateContent({ contents: dynamicPrompt, model: aiModel });
+            if(!storyResponse) return null;
+
+            // Extract story text
             const aiContent = storyResponse.text;
-            return aiContent;
+
+            // Extract token counts
+            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = storyResponse.usageMetadata;
+            return { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };            
         }
         catch(error)
         {
