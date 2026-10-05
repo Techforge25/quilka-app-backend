@@ -108,16 +108,82 @@ const createStory = asyncHandler(async (request, response) => {
 const viewStoryContent = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
-    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");   
 
     // Find book
-    const book = await Book.findById(bookId).select("storyContent spreadsCount spreads status").lean();
+    const [book] = await Book.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(bookId) } },
+
+        // Add fields
+        {
+            $addFields: {
+                storyContent: {
+                    $cond: [
+                        { $eq: ["$mode", "CUSTOM"] },
+                        "$txtContent",
+                        "$aiContent"
+                    ]
+                }
+            }
+        },
+
+        // Add story parts
+        {
+            $addFields: {
+                storyParts: {
+                    $split: [
+                        { $ifNull: ["$storyContent", ""] },
+                        "\n\nspread\n\n"
+                    ]
+                }
+            }
+        },
+
+        // Map spreads with content
+        {
+            $addFields: {
+                spreads: {
+                    $map: {
+                        input: {
+                            $range: [
+                                0,
+                                { $size: { $ifNull: ["$spreads", []] } }
+                            ]
+                        },
+                        as: "index",
+                        in: {
+                            $mergeObjects: [
+                                { $arrayElemAt: ["$spreads", "$$index"] },
+                                {
+                                    content: {
+                                        $ifNull: [
+                                            { $arrayElemAt: ["$storyParts", "$$index"] },
+                                            ""
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+
+        // Projection
+        {
+            $project: {
+                spreadsCount: 1,
+                spreads: 1,
+                status: 1
+            }
+        }
+    ]);
     if(!book) throw new ApiError(404, "Book not found");
     if(book.status !== "draft") throw new ApiError(403, "This story cannot be viewed while the book is not in draft state");
 
     // Payload
     const payload = {
-        storyContent: book.storyContent || "",
         spreadsCount: book.spreadsCount || 0,
         spreads: book.spreads || []
     };
@@ -126,36 +192,43 @@ const viewStoryContent = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Story content has been fetched"));
 });
 
-// // Update story
-// const updateStory = asyncHandler(async (request, response) => {
-//     // Sanitize book ID
-//     const { bookId } = request.params;
-//     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+// Update story
+const updateStory = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
 
-//     // Compute character limit
-//     const [book] = await Book.aggregate([
-//         // Match
-//         { $match: { _id: convertToMongoId(bookId) } },      
+    // Sanitize book ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
-//         // Projection
-//         {
-//             $project: {
-//                 totalCharacters: { $sum: "$spreads.characterLimit" },
-//                 status: 1
-//             }
-//         }
-//     ]);
-//     if(!book) throw new ApiError(404, "Book not found");
-//     if(book.status !== "draft") throw new ApiError(403, "This story cannot be updated while the book is not in draft state");
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! This book does not belong to you");
+    if(book.status !== "draft") throw new ApiError(403, "You cannot update book content while it is not in draft state");
+    if(book.draftStage !== 1) throw new ApiError(403, "You cannot update book content while it is not in draft stage 1");
 
-//     // Sanitize payload
-//     const updateStoryValidator = joi.object({
-//         storyContent: joi.string().min(3).max(book.totalCharacters).required().label("Story content")
-//     });
-//     const { storyContent } = validatePayload(updateStoryValidator, request.body) || {};
+    // Total story characters
+    const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
 
-//     // Response
-//     return response.status(200).json(new ApiResponse(200, storyContent, "Story has been updated"));
-// });
+    // Sanitize payload
+    const updateStoryValidator = joi.object({
+        storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content")
+    });
+    const { storyContent } = validatePayload(updateStoryValidator, request.body) || {};
 
-module.exports = { generateWithAi, createStory, viewStoryContent };
+    // Save to db
+    if(book.mode === "CUSTOM")
+    {
+        book.txtContent = storyContent;
+    }
+    else
+    {
+        book.aiContent = storyContent;
+    }
+    await book.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, storyContent, "Story has been updated"));
+});
+
+module.exports = { generateWithAi, createStory, viewStoryContent, updateStory };
