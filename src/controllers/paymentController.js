@@ -20,7 +20,7 @@ const payForBook = asyncHandler(async (request, response) => {
     const { price, paymentGateway, transactionId } = validatePayload(payForBookValidator, request.body) || {};
 
     // Find book
-    const book = await Book.findById(bookId).select("userId status");
+    const book = await Book.findById(bookId).select("userId status draftStage");
 
     // Validate edge cases
     if(!book) throw new ApiError(404, "Book not found");
@@ -41,6 +41,7 @@ const payForBook = asyncHandler(async (request, response) => {
 
     // Mark book status as draft
     book.status = "draft";
+    book.draftStage = 1;
     await book.save();
 
     // Add 5 free regeneration to this book
