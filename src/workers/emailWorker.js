@@ -13,12 +13,12 @@ const worker = new Worker("emailQueue", async (job) => {
         const { email, accountVerificationToken } = job.data;
               
         // Get HTML template
-        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/signupOTPEmail.html"), "utf-8");
+        // const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/signupOTPEmail.html"), "utf-8");
 
         // Replace placeholders
-        const filledHtml = html
-        .replaceAll('{{email}}', email)
-        .replaceAll('{{accountVerificationToken}}', accountVerificationToken);     
+        // const filledHtml = html
+        // .replaceAll('{{email}}', email)
+        // .replaceAll('{{accountVerificationToken}}', accountVerificationToken);     
 
         // Execute
         const result = await sendEmail(email, "Account Activation Token", `Your code is ${accountVerificationToken}`);
@@ -31,12 +31,12 @@ const worker = new Worker("emailQueue", async (job) => {
         const { email, resetPasswordOTP } = job.data;
 
         // Get HTML template
-        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/forgotPasswordEmail.html"), "utf-8");
+        // const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/forgotPasswordEmail.html"), "utf-8");
 
         // Replace placeholders
-        const filledHtml = html
-        .replaceAll('{{email}}', email)
-        .replaceAll('{{resetPasswordOTP}}', resetPasswordOTP); 
+        // const filledHtml = html
+        // .replaceAll('{{email}}', email)
+        // .replaceAll('{{resetPasswordOTP}}', resetPasswordOTP); 
 
         // Execute
         const result = await sendEmail(email, "Password Reset Request", `Your reset password code is ${resetPasswordOTP}`);
