@@ -170,7 +170,7 @@ const forgotPassword = asyncHandler(async (request, response) => {
     const key = `forgotPasswordEmailAttempts:${email}`;
     const attempts = await redis.incr(key);
     if(attempts === 1) await redis.expire(key, 60 * 10); // 10 minutes
-    if(attempts > 5) throw new ApiError(429, "Too many requests for reset password");
+    if(attempts > 5) throw new ApiError(429, "Too many password reset requests. You can request up to 5 resets within 10 minutes. Please try again later");
 
     // Find user
     const user = await User.findOne({ email });
