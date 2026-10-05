@@ -8,6 +8,7 @@ const convertToMongoId = require("../utils/convertToMongoId");
 const joi = require("joi");
 const validatePayload = require("../utils/validatePayload");
 const { promptGuideForTextGeneration } = require("../utils/promptGuide");
+const llm = require("../service/llmService");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response) => {
@@ -28,9 +29,6 @@ const generateWithAi = asyncHandler(async (request, response) => {
     // Extract total spread characters
     const totalSpreadCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
 
-    // AI instance
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
     // Get dynamic prompt for text based generation
     const dynamicPrompt = promptGuideForTextGeneration({ 
         ageGroup: book.ageGroup,
@@ -43,11 +41,8 @@ const generateWithAi = asyncHandler(async (request, response) => {
     if(!dynamicPrompt) throw new ApiError(500, "Failed to generate prompt for text-based story generation");
 
     // Generate story
-    const storyResponse = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: dynamicPrompt,
-    });    
-    const aiContent = storyResponse.text;
+    const aiContent = await llm.generateStoryText("gemini-3.8-flash", dynamicPrompt);
+    if(!aiContent) throw new ApiError(500, "Failed to generate AI content. LLM is temporarily down");
 
     // Validate AI content length with total spread characters
     if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
