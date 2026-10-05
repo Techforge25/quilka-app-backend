@@ -6,6 +6,8 @@ const event = new EventEmitter();
 
 // Listen on signup otp
 event.on("signupOTP", async ({ email, accountVerificationToken }) => {
+    console.log(`signupOTP event triggered`);
+
     // Execute
     const result = await sendEmail(email, "Your verification code", `
         Your verification code is ${accountVerificationToken}. 
@@ -17,6 +19,8 @@ event.on("signupOTP", async ({ email, accountVerificationToken }) => {
 
 // Listen on forgot password otp
 event.on("sendResetPasswordEmail", async ({ email, resetPasswordOTP }) => {
+    console.log(`sendResetPasswordEmail event triggered`);
+
     // Execute
     const result = await sendEmail(email, "Password Reset Request", `Your reset password code is ${resetPasswordOTP}`);
     if(!result) throw new Error("Failed to send password reset email");    
