@@ -42,7 +42,7 @@ const signup = asyncHandler(async (request, response) => {
     if(!createUser) throw new ApiError(500, "Failed to signup");  
     
     // Store in redis
-    await setCache(getOTPKey(email), accountVerificationToken, 5);  
+    await setCache(getOTPKey(email), accountVerificationToken, 5);
 
     // Send email in backgrouund
     await emailQueue.add("signupOTP", { email, accountVerificationToken });
@@ -60,10 +60,6 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     const user = await User.findOne({ email });
     if(!user) throw new ApiError(404, "User not found associated with this email");
     if(user.status !== "pending") throw new ApiError(400, "Your account is already activated");
-
-    // Check existing otp
-    const exist = await getCache(getOTPKey(email));
-    if(exist) throw new ApiError(400, "Please wait until your current OTP expires before requesting a new one");
 
     // Generate new OTP token
     const { code: accountVerificationToken } = generateCode(6);
