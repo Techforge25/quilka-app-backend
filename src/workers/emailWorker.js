@@ -1,12 +1,13 @@
 const { Worker } = require("bullmq");
 const { redisConfigOptions } = require("../redis/connection");
 const sendEmail = require("../service/email");
-const ApiError = require("../utils/ApiError");
 const fs = require("fs");
 const path = require("path");
 
 // Email Worker
 const worker = new Worker("emailQueue", async (job) => {
+    console.log(`Email worker started`);
+
     // Send OTP Email
     if(job.name === "signupOTP")
     {
@@ -26,7 +27,7 @@ const worker = new Worker("emailQueue", async (job) => {
             This code is for verifying your account. If you did not request this code, you can safely ignore this email.
             Please do not reply to this automated message.
         `);
-        if(!result) throw new ApiError(500, "Failed to send OTP email");
+        if(!result) throw new Error("Failed to send OTP email");
     }
 
     // Send Reset password email
@@ -44,7 +45,7 @@ const worker = new Worker("emailQueue", async (job) => {
 
         // Execute
         const result = await sendEmail(email, "Password Reset Request", `Your reset password code is ${resetPasswordOTP}`);
-        if(!result) throw new ApiError(500, "Failed to send password reset email");
+        if(!result) throw new Error("Failed to send password reset email");
     }        
 }, { connection: redisConfigOptions, concurrency: 5 });
 
