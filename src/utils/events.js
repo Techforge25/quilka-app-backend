@@ -14,7 +14,7 @@ event.on("signupOTP", async ({ email, accountVerificationToken }) => {
         This code is for verifying your account. If you did not request this code, you can safely ignore this email.
         Please do not reply to this automated message.
     `);
-    if(!result) throw new Error("Failed to send OTP email");
+    if(!result) return console.log("Failed to send OTP email", result);
 });
 
 // Listen on forgot password otp
@@ -23,7 +23,7 @@ event.on("sendResetPasswordEmail", async ({ email, resetPasswordOTP }) => {
 
     // Execute
     const result = await sendEmail(email, "Password Reset Request", `Your reset password code is ${resetPasswordOTP}`);
-    if(!result) throw new Error("Failed to send password reset email");    
+    if(!result) return console.log("Failed to send password reset email", result);
 });
 
 module.exports = event;
