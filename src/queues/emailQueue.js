@@ -12,4 +12,7 @@ const emailQueue = new Queue("emailQueue", {
     }
 });
 
+// Attach error handler
+emailQueue.on("error", (error) => console.error("Email queue error:", error));
+
 module.exports = emailQueue;
