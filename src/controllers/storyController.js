@@ -41,7 +41,7 @@ const generateWithAi = asyncHandler(async (request, response) => {
     if(!dynamicPrompt) throw new ApiError(500, "Failed to generate prompt for text-based story generation");
 
     // Generate story
-    const aiContent = await llm.generateStoryText("gemini-3.8-flash", dynamicPrompt);
+    const aiContent = await llm.generateStoryText(dynamicPrompt, "gemini-3.8-flash");
     if(!aiContent) throw new ApiError(500, "Failed to generate AI content. LLM is temporarily down");
 
     // Validate AI content length with total spread characters
