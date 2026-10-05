@@ -15,4 +15,11 @@ event.on("signupOTP", async ({ email, accountVerificationToken }) => {
     if(!result) throw new Error("Failed to send OTP email");
 });
 
+// Listen on forgot password otp
+event.on("sendResetPasswordEmail", async ({ email, resetPasswordOTP }) => {
+    // Execute
+    const result = await sendEmail(email, "Password Reset Request", `Your reset password code is ${resetPasswordOTP}`);
+    if(!result) throw new Error("Failed to send password reset email");    
+});
+
 module.exports = event;
