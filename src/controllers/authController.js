@@ -42,7 +42,7 @@ const signup = asyncHandler(async (request, response) => {
     if(!createUser) throw new ApiError(500, "Failed to signup");  
     
     // Store in redis
-    await setCache(getOTPKey(email), accountVerificationToken, 5);
+    await setCache(getOTPKey(email), accountVerificationToken, 10);
 
     // Send email in backgrouund
     await emailQueue.add("signupOTP", { email, accountVerificationToken });
@@ -66,7 +66,7 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     if(!accountVerificationToken) throw new ApiError(500, "Failed to generate OTP");
 
     // Store OTP in redis
-    await setCache(getOTPKey(email), accountVerificationToken);
+    await setCache(getOTPKey(email), accountVerificationToken, 10);
 
     // Send email in backgrouund
     await emailQueue.add("signupOTP", { email, accountVerificationToken }); 
@@ -169,8 +169,8 @@ const forgotPassword = asyncHandler(async (request, response) => {
     // Track attempts
     const key = `forgotPasswordEmailAttempts:${email}`;
     const attempts = await redis.incr(key);
-    if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes   
-    if(attempts > 1) throw new ApiError(400, "Please wait 5 minutes for next password reset request");
+    if(attempts === 1) await redis.expire(key, 60 * 10); // 10 minutes
+    if(attempts > 5) throw new ApiError(429, "Too many requests for reset password");
 
     // Find user
     const user = await User.findOne({ email });
@@ -182,7 +182,7 @@ const forgotPassword = asyncHandler(async (request, response) => {
     if(!resetPasswordOTP) throw new ApiError(500, "Failed to generate password reset token");
 
     // Store token in redis
-    await setCache(getResetPasswordKey(email), resetPasswordOTP, 5); // 5 minutes
+    await setCache(getResetPasswordKey(email), resetPasswordOTP, 10); // 10 minutes
 
     // Send email in backgrouund
     await emailQueue.add("sendResetPasswordEmail", { email, resetPasswordOTP });
