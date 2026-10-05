@@ -13,7 +13,8 @@ const promptGuideForTextGeneration = ({ title, ageGroup, language, prompt, total
     }
     catch(error)
     {
-        console.log(`Failed to generate prompt for text generation`);
+        console.log("Failed to generate prompt for text generation", error.message);
+        return null;
     }
 };
 

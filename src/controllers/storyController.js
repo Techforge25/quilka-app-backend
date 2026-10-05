@@ -7,7 +7,7 @@ const { GoogleGenAI } = require("@google/genai");
 const convertToMongoId = require("../utils/convertToMongoId");
 const joi = require("joi");
 const validatePayload = require("../utils/validatePayload");
-const { promptGuide } = require("../constants");
+const { promptGuideForTextGeneration } = require("../utils/promptGuide");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response) => {
@@ -31,7 +31,8 @@ const generateWithAi = asyncHandler(async (request, response) => {
     // AI instance
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-    const data = promptGuide({ 
+    // Get prompt for text based generation
+    const data = promptGuideForTextGeneration({ 
         ageGroup: book.ageGroup,
         language: book.language,
         prompt: book.prompt,
@@ -39,6 +40,7 @@ const generateWithAi = asyncHandler(async (request, response) => {
         totalCharacters: totalSpreadCharacters,
         spreads: book.spreads,
     });
+    if(!data) throw new ApiError(500, "Failed to generate prompt for text-based story generation");
 
     // Generate story
     const storyResponse = await ai.models.generateContent({
