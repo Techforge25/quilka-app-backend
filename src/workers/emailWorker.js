@@ -21,7 +21,11 @@ const worker = new Worker("emailQueue", async (job) => {
         // .replaceAll('{{accountVerificationToken}}', accountVerificationToken);     
 
         // Execute
-        const result = await sendEmail(email, "Account Activation Token", `Your code is ${accountVerificationToken}`);
+        const result = await sendEmail(email, "Your verification code", `
+            Your verification code is ${accountVerificationToken}. 
+            This code is for verifying your account. If you did not request this code, you can safely ignore this email.
+            Please do not reply to this automated message.
+        `);
         if(!result) throw new ApiError(500, "Failed to send OTP email");
     }
 
