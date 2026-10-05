@@ -13,7 +13,7 @@ authRouter.route("/signup").post(signup);
 
 // Resend OTP token
 authRouter.route("/resend-otp")
-.post(limitRequest({ minutes: 1, maxRequests: 1, message: "Please wait 1 minute for next otp request" }), resendOTPToken);
+.post(limitRequest({ minutes: 1, maxRequests: 3, message: "Please wait 1 minute for next otp request" }), resendOTPToken);
 
 // Account activation
 authRouter.route("/verify-otp").post(verifyOTP);
