@@ -31,8 +31,8 @@ const generateWithAi = asyncHandler(async (request, response) => {
     // AI instance
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-    // Get prompt for text based generation
-    const data = promptGuideForTextGeneration({ 
+    // Get dynamic prompt for text based generation
+    const dynamicPrompt = promptGuideForTextGeneration({ 
         ageGroup: book.ageGroup,
         language: book.language,
         prompt: book.prompt,
@@ -40,12 +40,12 @@ const generateWithAi = asyncHandler(async (request, response) => {
         totalCharacters: totalSpreadCharacters,
         spreads: book.spreads,
     });
-    if(!data) throw new ApiError(500, "Failed to generate prompt for text-based story generation");
+    if(!dynamicPrompt) throw new ApiError(500, "Failed to generate prompt for text-based story generation");
 
     // Generate story
     const storyResponse = await ai.models.generateContent({
         model: "gemini-3.8-flash",
-        contents: data,
+        contents: dynamicPrompt,
     });    
     const aiContent = storyResponse.text;
 
