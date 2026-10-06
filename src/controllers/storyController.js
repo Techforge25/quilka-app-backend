@@ -239,8 +239,32 @@ const updateStory = asyncHandler(async (request, response) => {
     }
     await book.save();
 
+    // Dynamic response
+    const responseData = book.mode === "CUSTOM" ? book.txtContent : book.aiContent;
+
     // Response
-    return response.status(200).json(new ApiResponse(200, dataInSpreads, "Story has been updated"));
+    return response.status(200).json(new ApiResponse(200, responseData, "Story has been updated"));
 });
 
-module.exports = { generateWithAi, createStory, viewStoryContent, updateStory };
+// Finalize text phase
+const finalizeTextPhase = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to mark this book for draft 2 stage");
+    if(book.draftStage === 2) throw new ApiError(409, "Book has already been marked for draft stage 2");
+
+    // Save to db
+    book.draftStage = 2;
+    await book.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Book has been marked for draft stage 2"));
+});
+
+module.exports = { generateWithAi, createStory, viewStoryContent, updateStory, finalizeTextPhase };

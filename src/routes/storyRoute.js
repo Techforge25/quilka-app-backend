@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { generateWithAi, createStory, viewStoryContent, updateStory } = require("../controllers/storyController");
+const { generateWithAi, createStory, viewStoryContent, updateStory, finalizeTextPhase } = require("../controllers/storyController");
 const { authentication } = require("../middlewares/auth");
 
 // Router instance
@@ -18,5 +18,8 @@ storyRouter.route("/").post(createStory);
 storyRouter.route("/:bookId")
 .get(viewStoryContent)
 .patch(updateStory);
+
+// Finalize text phase
+storyRouter.route("/:bookId/finalizeTextStory").post(finalizeTextPhase);
 
 module.exports = storyRouter;
