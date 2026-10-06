@@ -12,8 +12,6 @@ const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
 const { getOTPKey, getResetPasswordKey, getUserSessionKey } = require("../utils/redisKeys");
 const emailQueue = require("../queues/emailQueue");
 const { redis } = require("../redis/connection");
-const event = require("../utils/events");
-const sendEmail = require("../service/email");
 
 // Signup
 const signup = asyncHandler(async (request, response) => {
