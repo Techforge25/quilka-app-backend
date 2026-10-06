@@ -18,4 +18,17 @@ const promptGuideForTextGeneration = ({ title, ageGroup, language, prompt, total
     }
 };
 
-module.exports = { promptGuideForTextGeneration };
+// Prompt guide for illustration
+const promptGuideForIllustration = () => {
+    const data = `
+        A children’s storybook illustration, whimsical digital painting of: [They sit together on the soft green grass. Look at the book! It has beautiful, bright pictures. There is a happy yellow sun in the sky. There is a little blue fish in the water. Splash, splash! "I love the fish," says Duck. "I love the sun," says Rabbit. They turn the page together. Turn, turn, turn. What do they see next? A bouncy green frog! "Ribbit, ribbit," says the frog. Rabbit and Duck laugh. Reading together is so much fun!].
+        [Layout & Size Composition Guide]:
+        - Target Aspect Ratio: 1: and object-fit: 'cover' (Optimized for width: 370px height: 148px).
+
+        Style: High-quality 3D Animated.
+
+        Strict Technical Constraints: A completely borderless, edge-to-edge illustration. Absolutely NO text, NO labels, NO speech bubbles, NO words, and NO margins.`;
+        return data;
+};
+
+module.exports = { promptGuideForTextGeneration, promptGuideForIllustration };
