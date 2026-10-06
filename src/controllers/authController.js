@@ -13,6 +13,7 @@ const { getOTPKey, getResetPasswordKey, getUserSessionKey } = require("../utils/
 const emailQueue = require("../queues/emailQueue");
 const { redis } = require("../redis/connection");
 const event = require("../utils/events");
+const sendEmail = require("../service/email");
 
 // Signup
 const signup = asyncHandler(async (request, response) => {
@@ -47,7 +48,14 @@ const signup = asyncHandler(async (request, response) => {
 
     // Send email in backgrouund
     // await emailQueue.add("signupOTP", { email, accountVerificationToken });
-    event.emit("signupOTP", { email, accountVerificationToken });
+
+    // Execute
+    const result = await sendEmail(email, "Your verification code", `
+        Your verification code is ${accountVerificationToken}. 
+        This code is for verifying your account. If you did not request this code, you can safely ignore this email.
+        Please do not reply to this automated message.
+    `);
+    if(!result) throw new ApiError(500, "Failed to send OTP email");
 
     // Response
     return response.status(200)
@@ -72,7 +80,14 @@ const resendOTPToken = asyncHandler(async (request, response) => {
 
     // Send email in backgrouund
     // await emailQueue.add("signupOTP", { email, accountVerificationToken }); 
-    event.emit("signupOTP", { email, accountVerificationToken });
+
+    // Execute
+    const result = await sendEmail(email, "Your verification code", `
+        Your verification code is ${accountVerificationToken}. 
+        This code is for verifying your account. If you did not request this code, you can safely ignore this email.
+        Please do not reply to this automated message.
+    `);
+    if(!result) throw new ApiError(500, "Failed to send OTP email");
 
     // Response
     return response.status(200).json(new ApiResponse(200, { userId: user._id }, "We have re-sent you an OTP to your email"));         
@@ -189,7 +204,10 @@ const forgotPassword = asyncHandler(async (request, response) => {
 
     // Send email in backgrouund
     // await emailQueue.add("sendResetPasswordEmail", { email, resetPasswordOTP });
-    event.emit("sendResetPasswordEmail", { email, resetPasswordOTP });
+
+    // Execute
+    const result = await sendEmail(email, "Password Reset Request", `Your reset password code is ${resetPasswordOTP}`);
+    if(!result) throw new ApiError(500, "Failed to send password reset email");
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Password reset token has been sent to your email"));
