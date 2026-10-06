@@ -6,8 +6,6 @@ const path = require("path");
 
 // Email Worker
 const worker = new Worker("emailQueue", async (job) => {
-    console.log(`Email worker started`);
-
     // Send OTP Email
     if(job.name === "signupOTP")
     {
