@@ -60,7 +60,7 @@ const emptyList = {
     nextPage: null 
 };
 
-// Allowed illustration style
+// Allowed illustration styles
 const allowedIllustrationStyles = [
     "Watercolor", 
     "Soft Storybook", 
@@ -69,7 +69,7 @@ const allowedIllustrationStyles = [
     "Whimiscal"
 ];
 
-// Allowed book size
+// Allowed book sizes
 const allowedBookSizes = [
     "Large Square 8.5in x 8.5in", 
     "Square 8in x 8in", 
@@ -77,6 +77,23 @@ const allowedBookSizes = [
     "Large Portrait 8.5in x 11in", 
     "Compact Portrait 7in x 10in", 
     "Landscape 10in x 8in"
+];
+
+// Allowed illustration sizes
+const allowedIllustrationSizes = [
+    "Large Square 8.5in x 8.5in", 
+    "Square 8in x 8in", 
+    "Portrait 8in x 10in", 
+    "Large Portrait 8.5in x 11in", 
+    "Compact Portrait 7in x 10in", 
+    "Landscape 10in x 8in"
+];
+
+// Allowed text sizes
+const allowedTextSizes = [
+    "20px",
+    "30px",
+    "40px"
 ];
 
 module.exports = {
@@ -90,5 +107,7 @@ module.exports = {
     cookieOptions,
     emptyList,
     allowedIllustrationStyles,
-    allowedBookSizes
+    allowedBookSizes,
+    allowedIllustrationSizes,
+    allowedTextSizes
 };

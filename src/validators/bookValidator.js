@@ -1,5 +1,5 @@
 const joi = require("joi");
-const { allowedIllustrationStyles, allowedBookSizes } = require("../constants");
+const { allowedIllustrationStyles, allowedBookSizes, allowedIllustrationSizes, allowedTextSizes } = require("../constants");
 
 // Create book validator
 const createBookValidator = joi.object({
@@ -34,9 +34,15 @@ const createBookValidator = joi.object({
     // Spreads config
     spreads: joi.array().items(joi.object({
         mainLayoutName: joi.string().trim().required().min(3).max(50).label("Main layout name"),
-        subLayoutDirection: joi.string().trim().required().min(3).max(50).label("Sub layout direction"),        
+        subLayoutDirection: joi.string().trim().required().min(3).max(50).label("Sub layout direction"),
+        
+        // Limit
         characterLimit: joi.number().integer().positive().min(50).required().label("Character limit"),
         illustrationLimit: joi.number().integer().positive().min(1).max(2).required().label("Illustration limit"),
+
+        // Sizes
+        illustrationSize: joi.string().trim().required().valid(...allowedIllustrationSizes).label("Illustration size"),
+        textSize: joi.string().trim().required().valid(...allowedTextSizes).label("Text size")
     })).custom((value, helpers) => {
         if(value.length !== helpers.state.ancestors[0].spreadsCount) return helpers.error("any.invalid");
         return value;

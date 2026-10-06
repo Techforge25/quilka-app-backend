@@ -1,6 +1,6 @@
 const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
-const { allowedBookSizes, allowedIllustrationStyles } = require("../constants");
+const { allowedBookSizes, allowedIllustrationStyles, allowedIllustrationSizes, allowedTextSizes } = require("../constants");
 
 // Schema
 const bookSchema = new Schema({
@@ -39,8 +39,14 @@ const bookSchema = new Schema({
     spreads: [{
         mainLayoutName: { type: String, trim: true, required: true }, // Classic story book
         subLayoutDirection: { type: String, trim: true, required: true }, // Right-content, Left-content
+
+        // Limit
         characterLimit: { type: Number },
-        illustrationLimit: { type: Number }
+        illustrationLimit: { type: Number },
+
+        // Sizes
+        illustrationSize: { type: String, trim: true, enum: allowedIllustrationSizes }, // 100 x 200 | 400 x 600
+        textSize: { type: String, trim: true, enum: allowedTextSizes }
     }]
 }, { timestamps: true });
 
