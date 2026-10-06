@@ -34,6 +34,7 @@ async function startApp()
     const paymentRouter = require("./routes/paymentRoute");
     const profileRouter = require("./routes/profileRoute");
     const storyRouter = require("./routes/storyRoute");
+    const illustrationRouter = require("./routes/illustrationRoute");
 
     // Registered Routes
     app.use("/api/v1/auth", authRouter);
@@ -41,6 +42,7 @@ async function startApp()
     app.use("/api/v1/payment", paymentRouter);
     app.use("/api/v1/profile", profileRouter);
     app.use("/api/v1/story", storyRouter);
+    app.use("/api/v1/story", illustrationRouter);
 
     // Import Admin Routes
     const adminAuthRouter = require("./routes/admin/adminAuthRoute");
