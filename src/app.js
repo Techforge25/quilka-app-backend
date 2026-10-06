@@ -42,7 +42,7 @@ async function startApp()
     app.use("/api/v1/payment", paymentRouter);
     app.use("/api/v1/profile", profileRouter);
     app.use("/api/v1/story", storyRouter);
-    app.use("/api/v1/story", illustrationRouter);
+    app.use("/api/v1/illustration", illustrationRouter);
 
     // Import Admin Routes
     const adminAuthRouter = require("./routes/admin/adminAuthRoute");
