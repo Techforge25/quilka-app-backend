@@ -1,4 +1,5 @@
 const joi = require("joi");
+const { allowedIllustrationStyles, allowedBookSizes } = require("../constants");
 
 // Create book validator
 const createBookValidator = joi.object({
@@ -26,8 +27,8 @@ const createBookValidator = joi.object({
 
     // Metadata
     ageGroup: joi.string().trim().required().min(3).max(30).label("Age group"),
-    bookSize: joi.string().trim().required().min(3).max(30).label("Book size"),
-    illustrationStyle: joi.string().trim().required().min(3).max(30).label("Illustration Style"),
+    bookSize: joi.string().trim().required().valid(...allowedBookSizes).label("Book size"),
+    illustrationStyle: joi.string().trim().required().valid(...allowedIllustrationStyles).label("Illustration Style"),
     language: joi.string().trim().required().valid("English", "Arabic", "Spanish", "Hindi", "Afrikaans").label("Language"),
 
     // Spreads config

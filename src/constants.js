@@ -60,6 +60,25 @@ const emptyList = {
     nextPage: null 
 };
 
+// Allowed illustration style
+const allowedIllustrationStyles = [
+    "Watercolor", 
+    "Soft Storybook", 
+    "Cartoon", 
+    "3D Animated", 
+    "Whimiscal"
+];
+
+// Allowed book size
+const allowedBookSizes = [
+    "Large Square 8.5in x 8.5in", 
+    "Square 8in x 8in", 
+    "Portrait 8in x 10in", 
+    "Large Portrait 8.5in x 11in", 
+    "Compact Portrait 7in x 10in", 
+    "Landscape 10in x 8in"
+];
+
 module.exports = {
     port,
     isProduction,
@@ -69,5 +88,7 @@ module.exports = {
     superAdminId,
     corsOptions,
     cookieOptions,
-    emptyList
+    emptyList,
+    allowedIllustrationStyles,
+    allowedBookSizes
 };
