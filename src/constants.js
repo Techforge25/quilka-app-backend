@@ -81,19 +81,12 @@ const allowedBookSizes = [
 
 // Allowed illustration sizes
 const allowedIllustrationSizes = [
-    "Large Square 8.5in x 8.5in", 
-    "Square 8in x 8in", 
-    "Portrait 8in x 10in", 
-    "Large Portrait 8.5in x 11in", 
-    "Compact Portrait 7in x 10in", 
-    "Landscape 10in x 8in"
+
 ];
 
 // Allowed text sizes
 const allowedTextSizes = [
-    "20px",
-    "30px",
-    "40px"
+
 ];
 
 module.exports = {
