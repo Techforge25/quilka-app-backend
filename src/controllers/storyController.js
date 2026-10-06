@@ -216,6 +216,18 @@ const updateStory = asyncHandler(async (request, response) => {
     });
     const { storyContent } = validatePayload(updateStoryValidator, request.body) || {};
 
+    // Divide spreads
+    const dataInSpreads = storyContent.split("\n\nspread\n\n");
+    if(!dataInSpreads.length) throw new ApiError(400, "Story content is missing");
+    
+    // Validate character limit for each spread
+    dataInSpreads.forEach((content, index) => {
+        if(content.length > book.spreads[index].characterLimit)
+        {
+            throw new ApiError(400, `Character limit exceeded for Spread ${index + 1}`);
+        }
+    });
+
     // Save to db
     if(book.mode === "CUSTOM")
     {
@@ -228,7 +240,7 @@ const updateStory = asyncHandler(async (request, response) => {
     await book.save();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, storyContent, "Story has been updated"));
+    return response.status(200).json(new ApiResponse(200, dataInSpreads, "Story has been updated"));
 });
 
 module.exports = { generateWithAi, createStory, viewStoryContent, updateStory };
