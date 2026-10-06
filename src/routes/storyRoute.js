@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { generateWithAi, createStory, viewStoryContent, updateStory, finalizeTextPhase } = require("../controllers/storyController");
+const { generateWithAi, viewStoryContent, updateStory, finalizeTextPhase } = require("../controllers/storyController");
 const { authentication } = require("../middlewares/auth");
 
 // Router instance
@@ -10,9 +10,6 @@ storyRouter.use(authentication);
 
 // Generate story with AI
 storyRouter.route("/:bookId").post(generateWithAi);
-
-// Create story
-storyRouter.route("/").post(createStory);
 
 // View story content / Update story
 storyRouter.route("/:bookId")

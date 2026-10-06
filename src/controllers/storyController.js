@@ -3,7 +3,6 @@ const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const Book = require("../models/bookModel");
 const { isValidObjectId } = require("mongoose");
-const { GoogleGenAI } = require("@google/genai");
 const convertToMongoId = require("../utils/convertToMongoId");
 const joi = require("joi");
 const validatePayload = require("../utils/validatePayload");
@@ -61,47 +60,6 @@ const generateWithAi = asyncHandler(async (request, response) => {
     
     // Response
     return  response.status(200).json(new ApiResponse(200, aiContent, "Content has been generated"));
-});
-
-// Create story
-const createStory = asyncHandler(async (request, response) => {
-    const { prompt } = request.body || {};
-    if(!prompt) throw new ApiError(400, "Prompt is required");
-
-    // AI instance
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-    // Send prompt to nano bnana
-    // const data = await ai.models.generateContent({
-    //     model: "gemini-2.5-flash-image",
-    //     contents: prompt
-    // });
-
-    // Output
-    // const output = data.candidates[0].content.parts;
-
-    // Generate story
-    const storyResponse = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: prompt,
-    });
-
-    // Compute tokens
-    const totalTokensConsume = await ai.models.computeTokens({
-        model: "gemini-3.8-flash",
-        contents: prompt,
-    });
-
-    // // Logs
-    console.log("Tokens", totalTokensConsume);
-    console.log("Tokens info", totalTokensConsume.tokensInfo);
-
-    const story = storyResponse.text;
-
-    console.log(story);    
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, story, "Story response has been generated"));
 });
 
 // View story content
@@ -267,4 +225,4 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Book has been marked for draft stage 2"));
 });
 
-module.exports = { generateWithAi, createStory, viewStoryContent, updateStory, finalizeTextPhase };
+module.exports = { generateWithAi, viewStoryContent, updateStory, finalizeTextPhase };
