@@ -6,9 +6,13 @@ const { promptGuideForIllustration } = require("../utils/promptGuide");
 const { uploadToCloudinary } = require("../utils/cloudinary");
 const llm = require("../service/llmService");
 const Book = require("../models/bookModel");
+const validatePayload = require("../utils/validatePayload");
+const { createIllustrationValidator } = require("../validators/illustrationValidator");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response) => {
+    const { content } = validatePayload(createIllustrationValidator, request.body) || {};
+
     // Sanitize Book and spread ID
     const { bookId, spreadId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
@@ -26,8 +30,16 @@ const createIllustration = asyncHandler(async (request, response) => {
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation with AI cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be created in draft stage 2");
 
+    // Generate dynamic prompt
+    const prompt = promptGuideForIllustration({
+        illustrationStyle: book.illustrationStyle,
+        content,
+        size: spread.illustrationSize.size,
+        aspectRatio: spread.illustrationSize.aspectRatio
+    });
+
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(promptGuideForIllustration(), "gemini-3.1-flash-image");
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image");
     if(!illustrationResponse) throw new ApiError(400, "Failed to generate illustration! Please write appropriate prompt.");
 
     // Extract generated image buffer and token consumption count
