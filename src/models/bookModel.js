@@ -1,6 +1,7 @@
 const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
-const { allowedBookSizes, allowedIllustrationStyles, allowedTextSizes, allowedSpreadSizes } = require("../constants");
+const { allowedBookSizes, allowedIllustrationStyles, allowedTextSizes, 
+allowedSpreadSizes, allowedLanguages } = require("../constants");
 
 // Schema
 const bookSchema = new Schema({
@@ -28,7 +29,7 @@ const bookSchema = new Schema({
     spreadSize: { type: String, trim: true, required: true, enum: allowedSpreadSizes },
     textStyle: { type: String, trim: true, required: true },
     illustrationStyle: { type: String, trim: true, required: true, enum: allowedIllustrationStyles },
-    language: { type: String, trim: true, required: true, enum: ["English", "Arabic", "Spanish", "Hindi", "Afrikaans"] },
+    language: { type: String, trim: true, required: true, enum: allowedLanguages },
 
     // Media
     frontImage: { type: String, trim: true, default: null },

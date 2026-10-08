@@ -123,6 +123,9 @@ const allowedSpreadSizes = [
     "370 x 296"
 ];
 
+// Allowed languages
+const allowedLanguages = ["English", "Arabic", "Spanish", "Hindi", "Afrikaans"];
+
 module.exports = {
     port,
     isProduction,
@@ -137,5 +140,6 @@ module.exports = {
     allowedIllustrationStyles,
     allowedIllustrationSizes,
     allowedTextSizes,
-    allowedSpreadSizes
+    allowedSpreadSizes,
+    allowedLanguages
 };
