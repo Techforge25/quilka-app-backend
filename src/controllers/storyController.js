@@ -8,6 +8,7 @@ const joi = require("joi");
 const validatePayload = require("../utils/validatePayload");
 const { promptGuideForTextGeneration } = require("../utils/promptGuide");
 const llm = require("../service/llmService");
+const { allowedTextSizes } = require("../constants");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response) => {
@@ -158,13 +159,20 @@ const viewStoryContent = asyncHandler(async (request, response) => {
 const updateStory = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Sanitize book ID
-    const { bookId } = request.params;
+    // Sanitize book and spread ID
+    const { bookId, spreadId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
 
     // Find book
     const book = await Book.findById(bookId);
     if(!book) throw new ApiError(404, "Book not found");
+
+    // Find spread
+    const spread = book.spreads.id(bookId);
+    if(!spread) throw new ApiError(404, "Spread not found");
+
+    // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! This book does not belong to you");
     if(book.status !== "draft") throw new ApiError(403, "You cannot update book content while it is not in draft state");
     if(book.draftStage > 1) throw new ApiError(403, "You cannot update book content while it is not in draft stage 1");
@@ -174,9 +182,10 @@ const updateStory = asyncHandler(async (request, response) => {
 
     // Sanitize payload
     const updateStoryValidator = joi.object({
-        storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content")
+        storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content"),
+        textSize: joi.string().trim().required().valid(...allowedTextSizes).label("Text size")
     });
-    const { storyContent } = validatePayload(updateStoryValidator, request.body) || {};
+    const { storyContent, textSize } = validatePayload(updateStoryValidator, request.body) || {};
 
     // Divide spreads
     const dataInSpreads = storyContent.split("spread break");
@@ -199,6 +208,7 @@ const updateStory = asyncHandler(async (request, response) => {
     {
         book.aiContent = storyContent;
     }
+    spread.textSize = textSize;
     await book.save();
 
     // Dynamic response
