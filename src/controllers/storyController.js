@@ -135,6 +135,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         {
             $project: {
                 _id: 1,
+                mode: 1,
                 spreadsCount: 1,
                 spreads: 1,
                 status: 1
@@ -147,6 +148,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
     // Payload
     const payload = {
         bookId: book._id,
+        mode: book.mode,
         spreadsCount: book.spreadsCount || 0,
         spreads: book.spreads || []
     };
