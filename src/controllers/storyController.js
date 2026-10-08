@@ -36,6 +36,7 @@ const generateWithAi = asyncHandler(async (request, response) => {
         title: book.title,
         totalCharacters: totalSpreadCharacters,
         spreads: book.spreads,
+        
     });
     if(!dynamicPrompt) throw new ApiError(500, "Failed to generate prompt for text-based story generation");
 
@@ -51,7 +52,7 @@ const generateWithAi = asyncHandler(async (request, response) => {
     console.log("Total token", totalTokenCount);
 
     // Validate AI content length with total spread characters
-    if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
+    if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit", spreadWiseCharacterLimit);
     
     // Save to db
     book.aiContent = aiContent;
@@ -92,7 +93,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
                 storyParts: {
                     $split: [
                         { $ifNull: ["$storyContent", ""] },
-                        "\n\nspread\n\n"
+                        "spread break"
                     ]
                 }
             }
@@ -175,7 +176,7 @@ const updateStory = asyncHandler(async (request, response) => {
     const { storyContent } = validatePayload(updateStoryValidator, request.body) || {};
 
     // Divide spreads
-    const dataInSpreads = storyContent.split("\n\nspread\n\n");
+    const dataInSpreads = storyContent.split("spread break");
     if(!dataInSpreads.length) throw new ApiError(400, "Story content is missing");
     
     // Validate character limit for each spread
