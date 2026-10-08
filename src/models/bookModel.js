@@ -54,6 +54,10 @@ const bookSchema = new Schema({
         },
         textSize: { type: String, trim: true, enum: allowedTextSizes, default: "Small" },
 
+        // Colors
+        textColor: { type: String, trim: true, default: "#211827" },
+        textBgColor: { type: String, trim: true, default: "#FFF0F0" },
+
         // Illustration URL
         illustrationURL: { type: String, trim: true, default: null }
     }]
