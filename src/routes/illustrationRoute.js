@@ -9,6 +9,6 @@ const illustrationRouter = Router();
 illustrationRouter.use(authentication);
 
 // Create illustration
-illustrationRouter.route("/:bookId/spreads/:spreadId").post(createIllustration);
+illustrationRouter.route("/:bookId/spread/:spreadId").post(createIllustration);
 
 module.exports = illustrationRouter;
