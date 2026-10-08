@@ -133,6 +133,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: {
+                _id: 1,
                 spreadsCount: 1,
                 spreads: 1,
                 status: 1
@@ -144,6 +145,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
 
     // Payload
     const payload = {
+        bookId: book._id,
         spreadsCount: book.spreadsCount || 0,
         spreads: book.spreads || []
     };
