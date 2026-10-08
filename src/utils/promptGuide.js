@@ -20,16 +20,23 @@ const promptGuideForTextGeneration = ({ title, ageGroup, language, prompt, total
 };
 
 // Prompt guide for illustration
-const promptGuideForIllustration = () => {
+const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRatio }) => {
     const data = `
-        A children’s storybook illustration, whimsical digital painting of: [Now the black box was a fast car. Vroom, vroom! Mia and the puppy sat inside. They zoomed all around the living room. \"This is the best box ever!\" Mia said with a big smile.].
-        [Layout & Size Composition Guide]:
-        - Target Aspect Ratio: 5:7 and object-fit: 'cover' 
-        - Image size: width: 185px height: 259px most important!!.
+        A children’s book illustration in ${illustrationStyle} style depicting the scene:
+        ${content}
 
-        Style: High-quality Water color design.
+        Dimensions & Canvas Specifications:
+        - Target Dimensions: Exactly ${size} (width x height in px).
+        - Aspect Ratio: ${aspectRatio} orientation.
+        - Framing: Full-bleed, edge-to-edge illustration structured to fit a ${size} container with zero outer padding or white space.
+        - Composition Safe-Zone: Center key subjects with balanced breathing room around the edges to ensure no elements are clipped when rendered.
 
-        Strict Technical Constraints: A completely borderless, edge-to-edge illustration. Absolutely NO text, NO labels, NO speech bubbles, NO words, and NO margins.`;
+        Visual Art Style:
+        - ${illustrationStyle} with rich detailing, coherent textures, and an expressive storybook aesthetic.
+
+        Strict Constraints:
+        - Completely borderless, full-bleed, edge-to-edge canvas.
+        - Absolutely NO text, NO dialogue, NO typography, NO sound effect lettering, and NO speech bubbles. Pure visual illustration only.`;
         return data;
 };
 
