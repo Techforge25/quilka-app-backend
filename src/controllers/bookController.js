@@ -113,6 +113,7 @@ const viewBook = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: {
+                mode: 1,
                 title: 1,
                 authorName: 1,
                 bookLength: 1,
