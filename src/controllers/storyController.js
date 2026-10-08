@@ -52,7 +52,7 @@ const generateWithAi = asyncHandler(async (request, response) => {
     console.log("Total token", totalTokenCount);
 
     // Validate AI content length with total spread characters
-    if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit", spreadWiseCharacterLimit);
+    if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
     
     // Save to db
     book.aiContent = aiContent;
