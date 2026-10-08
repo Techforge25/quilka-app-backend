@@ -11,12 +11,13 @@ const { createIllustrationValidator } = require("../validators/illustrationValid
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response) => {
-    const { content } = validatePayload(createIllustrationValidator, request.body) || {};
-
     // Sanitize Book and spread ID
     const { bookId, spreadId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
     if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
+
+    // Sanitize payload
+    const { content } = validatePayload(createIllustrationValidator, request.body) || {};    
 
     // Find book
     const book = await Book.findById(bookId);
