@@ -22,6 +22,7 @@ const generateWithAi = asyncHandler(async (request, response) => {
     if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to access this book.");
     if(book.status !== "draft") throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft state");
+    if(book.draftStage !== 1) throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft stage 1");
     if(book.mode !== "AI") throw new ApiError(400, "To generate story with AI, the book 'mode' must be an AI");
     if(book.hasUsedAi) throw new ApiError(403, "You have already generated story using AI");
 
@@ -164,7 +165,7 @@ const updateStory = asyncHandler(async (request, response) => {
     if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! This book does not belong to you");
     if(book.status !== "draft") throw new ApiError(403, "You cannot update book content while it is not in draft state");
-    if(book.draftStage !== 1) throw new ApiError(403, "You cannot update book content while it is not in draft stage 1");
+    if(book.draftStage > 1) throw new ApiError(403, "You cannot update book content while it is not in draft stage 1");
 
     // Total story characters
     const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
@@ -215,8 +216,9 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
 
     const book = await Book.findById(bookId);
     if(!book) throw new ApiError(404, "Book not found");
-    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to mark this book for draft 2 stage");
-    if(book.draftStage === 2) throw new ApiError(409, "Book has already been marked for draft stage 2");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to mark this book for draft stage 2");
+    if(book.status !== "draft") throw new ApiError(403, "Book can only be finalized in draft state");
+    if(book.draftStage > 1) throw new ApiError(409, "This book has already been marked for draft stage 2");
 
     // Save to db
     book.draftStage = 2;
