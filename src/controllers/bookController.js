@@ -14,7 +14,8 @@ const createBook = asyncHandler(async (request, response) => {
 
     // Get validated payload
     const { mode, title, authorName, spreadsCount, txtContent, prompt, 
-    ageGroup, bookSize, illustrationStyle, language, spreads } = validatePayload(createBookValidator, request.body) || {};
+    ageGroup, bookSize, spreadSize, textStyle,  illustrationStyle, 
+    language, spreads } = validatePayload(createBookValidator, request.body) || {};
 
     // Validate custom mode
     if(mode === "CUSTOM")
@@ -35,6 +36,8 @@ const createBook = asyncHandler(async (request, response) => {
         prompt,
         ageGroup, 
         bookSize, 
+        spreadSize,
+        textStyle,
         illustrationStyle,
         language, 
         spreads
