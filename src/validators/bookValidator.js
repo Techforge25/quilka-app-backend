@@ -1,5 +1,6 @@
 const joi = require("joi");
-const { allowedIllustrationStyles, allowedBookSizes, allowedIllustrationSizes, allowedTextSizes } = require("../constants");
+const { allowedIllustrationStyles, allowedBookSizes, allowedIllustrationSizes, 
+allowedTextSizes, allowedSpreadSizes, allowedLanguages } = require("../constants");
 
 // Create book validator
 const createBookValidator = joi.object({
@@ -28,8 +29,10 @@ const createBookValidator = joi.object({
     // Metadata
     ageGroup: joi.string().trim().required().min(3).max(30).label("Age group"),
     bookSize: joi.string().trim().required().valid(...allowedBookSizes).label("Book size"),
+    spreadSize: joi.string().trim().required().valid(...allowedSpreadSizes).label("Spread size"),
+    textStyle: joi.string().trim().required().label("Text style"),
     illustrationStyle: joi.string().trim().required().valid(...allowedIllustrationStyles).label("Illustration Style"),
-    language: joi.string().trim().required().valid("English", "Arabic", "Spanish", "Hindi", "Afrikaans").label("Language"),
+    language: joi.string().trim().required().valid(...allowedLanguages).label("Language"),
 
     // Spreads config
     spreads: joi.array().items(joi.object({
@@ -41,8 +44,14 @@ const createBookValidator = joi.object({
         illustrationLimit: joi.number().integer().positive().min(1).max(2).required().label("Illustration limit"),
 
         // Sizes
-        illustrationSize: joi.string().trim().required().valid(...allowedIllustrationSizes).label("Illustration size"),
-        textSize: joi.string().trim().required().valid(...allowedTextSizes).label("Text size")
+        illustrationSize: joi.object({
+            size: joi.string().trim().required().label("Size"),
+            aspectRatio: joi.string().trim().required().label("Aspect ratio")
+        }).valid(...allowedIllustrationSizes).label("Illustration size"),
+        textSize: joi.string().trim().required().valid(...allowedTextSizes).label("Text size"),
+
+        // Illustration URL
+        illustrationURL: joi.string().trim().uri().optional().allow(null, "").default(null).label("Illustration url")
     })).custom((value, helpers) => {
         if(value.length !== helpers.state.ancestors[0].spreadsCount) return helpers.error("any.invalid");
         return value;
