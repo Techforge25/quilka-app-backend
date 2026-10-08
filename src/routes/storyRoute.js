@@ -11,10 +11,11 @@ storyRouter.use(authentication);
 // Generate story with AI
 storyRouter.route("/:bookId").post(generateWithAi);
 
-// View story content / Update story
-storyRouter.route("/:bookId")
-.get(viewStoryContent)
-.patch(updateStory);
+// View story content
+storyRouter.route("/:bookId").get(viewStoryContent);
+
+// Update story
+storyRouter.route("/:bookId/spread/:spreadId").patch(updateStory);
 
 // Finalize text phase
 storyRouter.route("/:bookId/finalizeTextStory").post(finalizeTextPhase);
