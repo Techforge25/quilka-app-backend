@@ -53,6 +53,7 @@ const bookSchema = new Schema({
             aspectRatio: { type: String, trim: true }
         },
         textSize: { type: String, trim: true, enum: allowedTextSizes },
+        textColor: { type: String, trim: true, default: "black" },
 
         // Illustration URL
         illustrationURL: { type: String, trim: true, default: null }

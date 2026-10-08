@@ -49,6 +49,7 @@ const createBookValidator = joi.object({
             aspectRatio: joi.string().trim().required().label("Aspect ratio")
         }).valid(...allowedIllustrationSizes).label("Illustration size"),
         textSize: joi.string().trim().required().valid(...allowedTextSizes).label("Text size"),
+        textColor: joi.string().trim().required().label("Text color"),
 
         // Illustration URL
         illustrationURL: joi.string().trim().uri().optional().allow(null, "").default(null).label("Illustration url")
