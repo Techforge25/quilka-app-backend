@@ -7,7 +7,7 @@ const { uploadToCloudinary } = require("../utils/cloudinary");
 const llm = require("../service/llmService");
 const Book = require("../models/bookModel");
 const validatePayload = require("../utils/validatePayload");
-const { createIllustrationValidator } = require("../validators/illustrationValidator");
+const { createIllustrationValidator, updateColorValidator } = require("../validators/illustrationValidator");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response) => {
@@ -62,4 +62,35 @@ const createIllustration = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { illustration: cloudinaryUrl }, "Illustration has been created"));
 });
 
-module.exports = { createIllustration };
+// Update text and bg text color
+const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
+    // Sanitize Book and spread ID
+    const { bookId, spreadId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
+
+    // Sanitize payload
+    const { textColor, textBgColor } = validatePayload(updateColorValidator, request.body) || {};    
+
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+
+    // Find spread
+    const spread = book.spreads.id(spreadId);
+    if(!spread) throw new ApiError(404, "Spread not found");
+
+    // Validate
+    if(book.status !== "draft") throw new ApiError(403, "Text color and text bg color cannot be updated while the book is not in draft state");
+    if(book.draftStage !== 2) throw new ApiError(403, "Text color and text bg color cannot be updated while the book is not in draft stage 2");
+
+    // Save to db
+    spread.textColor = textColor;
+    spread.textBgColor = textBgColor;
+    await book.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { textColor, textBgColor }, "Text color and text bg color has been updated"));
+});
+
+module.exports = { createIllustration, updateTextAndBgTextColor };
