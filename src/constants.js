@@ -60,15 +60,6 @@ const emptyList = {
     nextPage: null 
 };
 
-// Allowed illustration styles
-const allowedIllustrationStyles = [
-    "Watercolor", 
-    "Soft Storybook", 
-    "Cartoon", 
-    "3D Animated", 
-    "Whimiscal"
-];
-
 // Allowed book sizes
 const allowedBookSizes = [
     "Large Square 8.5in x 8.5in", 
@@ -79,14 +70,57 @@ const allowedBookSizes = [
     "Landscape 10in x 8in"
 ];
 
+// Allowed illustration styles
+const allowedIllustrationStyles = [
+    "Watercolor", 
+    "Soft Storybook", 
+    "Cartoon", 
+    "3D Animated", 
+    "Whimiscal"
+];
+
 // Allowed illustration sizes
 const allowedIllustrationSizes = [
+    { size: '185 x 370', aspectRatio: "1:1" },
+    { size: '185 x 462', aspectRatio: "4:5" },
+    { size: '185 x 478', aspectRatio: "3:4" },
+    { size: '185 x 528', aspectRatio: "7:10" },
 
+    { size: '185 x 296', aspectRatio: "5:4" },
+    { size: '370 x 370', aspectRatio: "1:1" },
+    { size: '370 x 462', aspectRatio: "4:5" },
+    { size: '370 x 478', aspectRatio: "3:4" },
+
+    { size: '370 x 528', aspectRatio: "7:10" },
+    { size: '370 x 296', aspectRatio: "5:4" },
+    { size: '370 x 148', aspectRatio: "1:1" },
+    { size: '370 x 184', aspectRatio: "4:5" },
+
+    { size: '370 x 191', aspectRatio: "3:4" },
+    { size: '370 x 211', aspectRatio: "7:10" },
+    { size: '370 x 118', aspectRatio: "5:4" },
+    { size: '185 x 259', aspectRatio: "1:1" },
+    
+    { size: '185 x 323', aspectRatio: "4:5" },
+    { size: '185 x 334', aspectRatio: "3:4" },
+    { size: '185 x 369', aspectRatio: "7:10" },
+    { size: '185 x 207', aspectRatio: "5:4" }
 ];
 
 // Allowed text sizes
 const allowedTextSizes = [
+    "Small",
+    "Medium",
+    "Large"
+];
 
+// Allowed spread sizes
+const allowedSpreadSizes = [
+    "370 x 370",
+    "370 x 462",
+    "370 x 478",
+    "370 x 528",
+    "370 x 296"
 ];
 
 module.exports = {
@@ -99,8 +133,9 @@ module.exports = {
     corsOptions,
     cookieOptions,
     emptyList,
-    allowedIllustrationStyles,
     allowedBookSizes,
+    allowedIllustrationStyles,
     allowedIllustrationSizes,
-    allowedTextSizes
+    allowedTextSizes,
+    allowedSpreadSizes
 };
