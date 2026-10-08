@@ -169,7 +169,7 @@ const updateStory = asyncHandler(async (request, response) => {
     if(!book) throw new ApiError(404, "Book not found");
 
     // Find spread
-    const spread = book.spreads.id(bookId);
+    const spread = book.spreads.id(spreadId);
     if(!spread) throw new ApiError(404, "Spread not found");
 
     // Validate
