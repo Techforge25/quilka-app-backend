@@ -59,7 +59,8 @@ const promptGuideForFrontImage = ({ content, illustrationStyle, size }) => {
 
     Strict Constraints:
     - Completely borderless and marginless canvas.    
-    `;    
+    `;
+    return data;  
 };
 
 // Prompt for cover image
@@ -82,6 +83,7 @@ const promptGuideForCoverImage = ({ content, illustrationStyle, size }) => {
     - Completely borderless and marginless canvas.
     - Absolutely NO text, NO blurb writing, NO barcodes, and NO speech bubbles. Pure visual background art only.    
     `;
+    return data;
 };
 
 module.exports = { promptGuideForTextGeneration, promptGuideForIllustration, 
