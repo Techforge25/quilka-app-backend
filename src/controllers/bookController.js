@@ -7,6 +7,8 @@ const { createBookValidator } = require("../validators/bookValidator");
 const { isValidObjectId } = require("mongoose");
 const convertToMongoId = require("../utils/convertToMongoId");
 const { emptyList } = require("../constants");
+const llm = require("../service/llmService");
+const { promptGuideForCoverImage, promptGuideForFrontImage } = require("../utils/promptGuide");
 
 // Create book
 const createBook = asyncHandler(async (request, response) => {
@@ -176,4 +178,49 @@ const viewBookContent = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, book, "Book content has been fetched"));
 });
 
-module.exports = { createBook, fetchMyBooks, viewBook, viewBookContent };
+// Create book front and cover images
+const createFrontAndCoverImages = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+
+    // Validate
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate cover image for this book");
+    if(book.status !== "draft") throw new ApiError(403, "Cover image can only be generated in draft state");
+    if(book.draftStage < 2) throw new ApiError(400, "You need to complete story-text phase first");
+    if(book.draftStage < 3) throw new ApiError(400, "You need to complete illustration phase first");
+
+    // Generate parallel
+    const [frontImage, coverImage] = await Promise.all([
+        llm.generateStoryIllustration(promptGuideForFrontImage({
+            content: mode === "CUSTOM" ? book.txtContent : book.aiContent,
+            size: book.spreadSize,
+            illustrationStyle: book.illustrationStyle
+        }), "gemini-3.1-flash-image"),
+
+        llm.generateStoryIllustration(promptGuideForCoverImage({
+            content: mode === "CUSTOM" ? book.txtContent : book.aiContent,
+            size: book.spreadSize,
+            illustrationStyle: book.illustrationStyle
+        }), "gemini-3.1-flash-image"),
+    ]);
+    if(!frontImage) throw new ApiError(500, "Failed to generate front image");
+    if(!coverImage) throw new ApiError(500, "Failed to generate cover image");
+
+    // Extract
+    const { imageBuffer:frontImageBuffer, totalTokenCount:frontImageTokens } = frontImage;
+    const { imageBuffer:coverImageBuffer, totalTokenCount:coverImageTokens } = coverImage;
+
+    console.log("Total token consumption", frontImageTokens + coverImageTokens);
+    
+    // Response
+    return response.status(201).json(new ApiResponse(201, null, "Book front & cover images have been created"));
+});
+
+module.exports = { createBook, fetchMyBooks, viewBook, viewBookContent, createFrontAndCoverImages };
