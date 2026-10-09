@@ -187,7 +187,7 @@ const updateStory = asyncHandler(async (request, response) => {
     if(!spread) throw new ApiError(404, "Spread not found");
 
     // Validate
-    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! This book does not belong to you");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to update story of this book");
     if(book.status !== "draft") throw new ApiError(403, "You cannot update book content while it is not in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "You cannot update book content while it is not in draft stage 1");
 

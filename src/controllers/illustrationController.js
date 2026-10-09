@@ -11,6 +11,8 @@ const { createIllustrationValidator, updateColorValidator } = require("../valida
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
     // Sanitize Book and spread ID
     const { bookId, spreadId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
@@ -28,6 +30,7 @@ const createIllustration = asyncHandler(async (request, response) => {
     if(!spread) throw new ApiError(404, "Spread not found");
 
     // Validate
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to create illustration for this book");
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation with AI cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be created in draft stage 2");
 
@@ -64,6 +67,8 @@ const createIllustration = asyncHandler(async (request, response) => {
 
 // Update text and bg text color
 const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
     // Sanitize Book and spread ID
     const { bookId, spreadId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
@@ -81,6 +86,7 @@ const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
     if(!spread) throw new ApiError(404, "Spread not found");
 
     // Validate
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized update text and text bg color");
     if(book.status !== "draft") throw new ApiError(403, "Text color and text bg color cannot be updated while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Text color and text bg color cannot be updated while the book is not in draft stage 2");
 
