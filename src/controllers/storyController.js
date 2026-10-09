@@ -257,6 +257,8 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     // Find book
     const book = await Book.findById(bookId);
     if(!book) throw new ApiError(404, "Book not found");
+
+    // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to mark this book for draft stage 3");
     if(book.status !== "draft") throw new ApiError(403, "Illustration phase can only be finalized in draft state");
     if(book.draftStage < 2) throw new ApiError(400, "You need to complete story-text phase first");
