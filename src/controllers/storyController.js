@@ -138,6 +138,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
                 mode: 1,
                 spreadsCount: 1,
                 spreads: 1,
+                spreadSize: 1,
                 status: 1
             }
         }
@@ -150,7 +151,8 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         bookId: book._id,
         mode: book.mode,
         spreadsCount: book.spreadsCount || 0,
-        spreads: book.spreads || []
+        spreads: book.spreads || [],
+        spreadSize: book.spreadSize
     };
 
     // Response
