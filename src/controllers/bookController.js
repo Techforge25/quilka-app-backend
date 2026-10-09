@@ -194,8 +194,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate front and cover images for this book");
     if(book.status !== "draft") throw new ApiError(400, "Front and cover images can only be generated in draft state");
-    if(book.draftStage < 3) throw new ApiError(403, "You need to complete illustration phase first");
-    if(book.draftStage > 3) throw new ApiError(403, "Front and cover images cannot be generated once the book has been published");
+    if(book.draftStage !== 3) throw new ApiError(403, "Book should be in draft stage 3 before generating front and cover images");
 
     // Prompt for front image
     const frontPrompt = promptGuideForFrontImage({
@@ -247,4 +246,31 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { frontUrl, coverUrl }, "Book front & cover images have been created"));
 });
 
-module.exports = { createBook, fetchMyBooks, viewBook, viewBookContent, createFrontAndCoverImages };
+// Publish book
+const publishBook = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+
+    // Validate
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to publish this book");
+    if(book.status !== "draft") throw new ApiError(400, "Book must be in draft state before publish");
+    if(book.draftStage !== 3) throw new ApiError(403, "Book must be in draft stage 3 before publish");
+
+    // Save to db
+    book.draftStage = 4;
+    book.status = "published";
+    await book.save();
+    
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Book has been published"));
+});
+
+module.exports = { createBook, fetchMyBooks, viewBook, 
+viewBookContent, createFrontAndCoverImages, publishBook };

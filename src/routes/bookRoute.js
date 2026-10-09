@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
-const { createBook, fetchMyBooks, viewBook, viewBookContent, createFrontAndCoverImages } = require("../controllers/bookController");
+const { createBook, fetchMyBooks, viewBook, viewBookContent, 
+createFrontAndCoverImages, publishBook } = require("../controllers/bookController");
 
 // Router instance
 const bookRouter = Router();
@@ -18,5 +19,8 @@ bookRouter.route("/:bookId/content").get(authentication, viewBookContent);
 
 // Generate front and cover images
 bookRouter.route("/:bookId/frontAndCover").post(authentication, createFrontAndCoverImages);
+
+// Publish book
+bookRouter.route("/:bookId/publish").patch(authentication, publishBook);
 
 module.exports = bookRouter;
