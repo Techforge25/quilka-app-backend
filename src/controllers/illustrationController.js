@@ -59,7 +59,7 @@ const createIllustration = asyncHandler(async (request, response) => {
     await book.save();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { illustration: cloudinaryUrl }, "Illustration has been created"));
+    return response.status(201).json(new ApiResponse(201, { illustration: cloudinaryUrl }, "Illustration has been created"));
 });
 
 // Update text and bg text color

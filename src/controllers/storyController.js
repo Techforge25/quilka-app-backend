@@ -62,7 +62,7 @@ const generateWithAi = asyncHandler(async (request, response) => {
     await book.save();
     
     // Response
-    return  response.status(200).json(new ApiResponse(200, aiContent, "Content has been generated"));
+    return  response.status(201).json(new ApiResponse(201, aiContent, "Content has been generated"));
 });
 
 // View story content
