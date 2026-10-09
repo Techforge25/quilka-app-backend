@@ -92,6 +92,9 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
 
 // View book
 const viewBook = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
@@ -116,6 +119,7 @@ const viewBook = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: {
+                userId: 1,
                 mode: 1,
                 title: 1,
                 authorName: 1,
@@ -129,7 +133,13 @@ const viewBook = asyncHandler(async (request, response) => {
             }
         }
     ]);
+
+    // Validate
     if(!book) throw new ApiError(404, "Book not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to view this book");
+
+    // Exclude property
+    delete book.userId;
 
     // Response
     return response.status(200).json(new ApiResponse(200, book, "Book has been fetched"));
@@ -137,6 +147,9 @@ const viewBook = asyncHandler(async (request, response) => {
 
 // View book content
 const viewBookContent = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
@@ -166,6 +179,7 @@ const viewBookContent = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: {
+                userId: 1,
                 title: 1,
                 bookLength: 1,
                 totalCharacters: 1,
@@ -173,7 +187,13 @@ const viewBookContent = asyncHandler(async (request, response) => {
             }
         }
     ]);
+
+    // Validate
     if(!book) throw new ApiError(404, "Book content not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to view this book content");
+
+    // Exclude property
+    delete book.userId;
 
     // Response
     return response.status(200).json(new ApiResponse(200, book, "Book content has been fetched"));
