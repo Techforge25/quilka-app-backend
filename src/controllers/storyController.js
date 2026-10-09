@@ -67,6 +67,8 @@ const generateWithAi = asyncHandler(async (request, response) => {
 
 // View story content
 const viewStoryContent = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");   
@@ -135,6 +137,10 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         {
             $project: {
                 _id: 1,
+                userId: 1,
+                title: 1,
+                authorName: 1,
+                illustrationStyle: 1,
                 mode: 1,
                 spreadsCount: 1,
                 spreads: 1,
@@ -145,10 +151,14 @@ const viewStoryContent = asyncHandler(async (request, response) => {
     ]);
     if(!book) throw new ApiError(404, "Book not found");
     if(book.status !== "draft") throw new ApiError(403, "This story cannot be viewed while the book is not in draft state");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to view this story content");
 
     // Payload
     const payload = {
         bookId: book._id,
+        title: book.title,
+        authorName: book.authorName,
+        illustrationStyle: book.illustrationStyle,
         mode: book.mode,
         spreadsCount: book.spreadsCount || 0,
         spreads: book.spreads || [],
