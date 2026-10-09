@@ -41,47 +41,58 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
 };
 
 // Prompt for front image
-const promptGuideForFrontImage = ({ content, illustrationStyle, size }) => {
+const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size }) => {
     const data = `
-    A children’s book FRONT COVER illustration in ${illustrationStyle} style for the book:
+    A complete, professional children's picture book FRONT COVER design in ${illustrationStyle} style for the book titled "${bookTitle}".
+    Front Cover Typography & Layout:
+    - Prominent Book Title: Render the title text "${bookTitle}" prominently at the top-to-center area.
+    - Typography Style: Bold, charming, whimsical storybook title lettering with playful curves, subtle dimensional depth, and vibrant colors that pop against the background.
+
+    Hero Cover Illustration & Subject:
     ${content}
 
-    Canvas & Layout Specifications:
-    - Target Dimensions: Exactly ${size} (width x height in px).
-    - Framing: Full-bleed, borderless, edge-to-edge illustration.
-    - Composition Safe Zones:
-      * Lower-to-middle area: Focal point featuring the active characters and key scene action.
-      * TOP 25%: Clean, uncluttered, softly toned negative space reserved strictly for book title overlay.
-      * BOTTOM 15%: Clean, uncluttered foreground floor/ground space reserved for author name overlay.
+    Cover Art Direction & Composition:
+    - Commercial children's book cover aesthetic: Eye-catching poster layout with a strong central hero focal point designed to stand out on a bookstore display.
+    - Dynamic interaction: The characters and environment should frame and complement the title text naturally.
+    - Canvas Specifications: Exactly ${size} (width x height in px), full-bleed, edge-to-edge vertical portrait format.
 
-    Visual Art Style:
-    - ${illustrationStyle} with rich textures, cohesive storybook depth, and bright focal lighting.
+    Visual Style:
+    - ${illustrationStyle} with rich storybook textures, radiant lighting, clean depth, and polished finish.
 
     Strict Constraints:
+    - Render ONLY the exact specified title ${bookTitle}. Absolutely NO random gibberish letters, NO messy placeholder text, and NO speech bubbles.
     - Completely borderless and marginless canvas.    
     `;
     return data;  
 };
 
 // Prompt for cover image
-const promptGuideForCoverImage = ({ content, illustrationStyle, size }) => {
+const promptGuideForCoverImage = ({ bookTitle, authorName, content, illustrationStyle, size }) => {
     const data = `
-    A children’s book BACK COVER illustration in ${illustrationStyle} style matching the story world of:
+    A complete, professional children's picture book BACK COVER design in ${illustrationStyle} style matching the story world of:
     ${content}
 
-    Canvas & Layout Specifications:
-    - Target Dimensions: Exactly ${size} (width x height in px).
-    - Framing: Full-bleed, borderless, edge-to-edge illustration.
-    - Composition & Negative Space (CRITICAL):
-      * UPPER & MIDDLE 60%: Highly muted, soft, and uncluttered negative space designed specifically for readable blurb/summary text overlay.
-      * BOTTOM CORNER: Keep one bottom corner flat and empty for barcode placement.
+    Back Cover Layout & Graphic Design Elements:
 
-    Visual Art Style & Consistency:
-    - ${illustrationStyle} matching the exact color palette, lighting temperature, and textures of the front cover.
+    - Story Blurb Block: Neatly framed, legible story summary text in the middle for the book ${content}.
+    - Author Credit: Neatly displayed credit at the bottom: "Written by ${authorName}".
+    - Commercial Publishing Details: Include a small, clean rectangular white barcode/ISBN box neatly aligned in the bottom corner to give an authentic commercial book finish.
+
+    Background Illustration & Spot Art:
+    - A cohesive, gentle environment illustration from the story world (${content}) framing the text gracefully.
+    - The illustration should use soft, readable contrast so all cover typography remains crisp and clear.
+
+    Canvas & Print Specifications:
+    - Target Dimensions: Exactly ${size} (width x height in px), vertical portrait orientation.
+    - Full-bleed, edge-to-edge layout with balanced margins.
+
+    Visual Art Style:
+    - ${illustrationStyle} with identical color palette, lighting warmth, and paper textures as the front cover.
 
     Strict Constraints:
-    - Completely borderless and marginless canvas.
-    - Absolutely NO text, NO blurb writing, NO barcodes, and NO speech bubbles. Pure visual background art only.    
+    - Render ONLY the specified text, the blurb, and "Written by ${authorName}").
+    - Absolutely NO unreadable gibberish, NO messy placeholder scribbles, and NO speech bubbles.
+    - Completely borderless and marginless canvas.    
     `;
     return data;
 };
