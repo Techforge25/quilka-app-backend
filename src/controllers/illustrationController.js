@@ -17,7 +17,7 @@ const createIllustration = asyncHandler(async (request, response) => {
     if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
 
     // Sanitize payload
-    const { content } = validatePayload(createIllustrationValidator, request.body) || {};    
+    const { content } = validatePayload(createIllustrationValidator, request.body) || {};
 
     // Find book
     const book = await Book.findById(bookId);

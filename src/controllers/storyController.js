@@ -189,7 +189,7 @@ const updateStory = asyncHandler(async (request, response) => {
     // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! This book does not belong to you");
     if(book.status !== "draft") throw new ApiError(403, "You cannot update book content while it is not in draft state");
-    if(book.draftStage > 1) throw new ApiError(403, "You cannot update book content while it is not in draft stage 1");
+    if(book.draftStage !== 1) throw new ApiError(403, "You cannot update book content while it is not in draft stage 1");
 
     // Total story characters
     const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
@@ -246,8 +246,8 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
 
     // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to mark this book for draft stage 2");
-    if(book.status !== "draft") throw new ApiError(403, "Book can only be finalized in draft state");
-    if(book.draftStage > 1) throw new ApiError(409, "This book has already been marked for draft stage 2");
+    if(book.status !== "draft") throw new ApiError(403, "Story text can only be finalized in draft state");
+    if(book.draftStage !== 1) throw new ApiError(403, "Stroy text can only be finalized in draft stage 1");
     if(!book.txtContent && !book.aiContent) throw new ApiError(400, "Please create some text for your story, before making it to draft stage 2");
 
     // Save to db
@@ -272,13 +272,15 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
 
     // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to mark this book for draft stage 3");
-    if(book.status !== "draft") throw new ApiError(403, "Illustration phase can only be finalized in draft state");
-    if(book.draftStage < 2) throw new ApiError(400, "You need to complete story-text phase first");
-    if(book.draftStage > 2) throw new ApiError(409, "This book has already been marked for draft stage 3");
+    if(book.status !== "draft") throw new ApiError(403, "Illustrations can only be finalized in draft state");
+    if(book.draftStage !== 2) throw new ApiError(400, "Illustrations can only be finalized in draft stage 2");
 
-    // Check if all illustrations generated
-    const allIllustrations = book.spreads.filter(spread => spread.illustrationURL === null);
-    if(allIllustrations.length) throw new ApiError(400, `Please generate illustrations for remaining ${allIllustrations.length} spreads before making it to draft stage 3`);
+    // Check if all illustrations are generated and fulfilled
+    const unfilledIllustrations = book.spreads.filter(spread => spread.illustrationURL === null);
+    if(unfilledIllustrations.length > 0)
+    {
+        throw new ApiError(400, `Please generate illustrations for remaining ${unfilledIllustrations.length} spreads before making it to draft stage 3`);
+    }
 
     // Save to db
     book.draftStage = 3;
