@@ -40,4 +40,51 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
         return data;
 };
 
-module.exports = { promptGuideForTextGeneration, promptGuideForIllustration };
+// Prompt for front image
+const promptGuideForFrontImage = ({ content, illustrationStyle, size, aspectRatio }) => {
+    const data = `
+    A children’s book FRONT COVER illustration in ${illustrationStyle} style for the book:
+    ${content}
+
+    Canvas & Layout Specifications:
+    - Target Dimensions: Exactly ${size} (width x height in px).
+    - Aspect Ratio: ${aspectRatio} portrait orientation.
+    - Framing: Full-bleed, borderless, edge-to-edge illustration.
+    - Composition Safe Zones:
+      * Lower-to-middle area: Focal point featuring the active characters and key scene action.
+      * TOP 25%: Clean, uncluttered, softly toned negative space reserved strictly for book title overlay.
+      * BOTTOM 15%: Clean, uncluttered foreground floor/ground space reserved for author name overlay.
+
+    Visual Art Style:
+    - ${illustrationStyle} with rich textures, cohesive storybook depth, and bright focal lighting.
+
+    Strict Constraints:
+    - Completely borderless and marginless canvas.    
+    `;    
+};
+
+// Prompt for cover image
+const promptGuideForCoverImage = ({ content, illustrationStyle, size, aspectRatio }) => {
+    const data = `
+    A children’s book BACK COVER illustration in ${illustrationStyle} style matching the story world of:
+    ${content}
+
+    Canvas & Layout Specifications:
+    - Target Dimensions: Exactly ${size} (width x height in px).
+    - Aspect Ratio: ${aspectRatio} portrait orientation.
+    - Framing: Full-bleed, borderless, edge-to-edge illustration.
+    - Composition & Negative Space (CRITICAL):
+      * UPPER & MIDDLE 60%: Highly muted, soft, and uncluttered negative space designed specifically for readable blurb/summary text overlay.
+      * BOTTOM CORNER: Keep one bottom corner flat and empty for barcode placement.
+
+    Visual Art Style & Consistency:
+    - ${illustrationStyle} matching the exact color palette, lighting temperature, and textures of the front cover.
+
+    Strict Constraints:
+    - Completely borderless and marginless canvas.
+    - Absolutely NO text, NO blurb writing, NO barcodes, and NO speech bubbles. Pure visual background art only.    
+    `;
+};
+
+module.exports = { promptGuideForTextGeneration, promptGuideForIllustration, 
+promptGuideForFrontImage, promptGuideForCoverImage };
