@@ -9,6 +9,7 @@ const convertToMongoId = require("../utils/convertToMongoId");
 const { emptyList } = require("../constants");
 const llm = require("../service/llmService");
 const { promptGuideForCoverImage, promptGuideForFrontImage } = require("../utils/promptGuide");
+const { uploadToCloudinary } = require("../utils/cloudinary");
 
 // Create book
 const createBook = asyncHandler(async (request, response) => {
@@ -191,36 +192,59 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     if(!book) throw new ApiError(404, "Book not found");
 
     // Validate
-    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate cover image for this book");
-    if(book.status !== "draft") throw new ApiError(403, "Cover image can only be generated in draft state");
-    if(book.draftStage < 2) throw new ApiError(400, "You need to complete story-text phase first");
-    if(book.draftStage < 3) throw new ApiError(400, "You need to complete illustration phase first");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate front and cover images for this book");
+    if(book.status !== "draft") throw new ApiError(400, "Front and cover images can only be generated in draft state");
+    if(book.draftStage < 3) throw new ApiError(403, "You need to complete illustration phase first");
+    if(book.draftStage > 3) throw new ApiError(403, "Front and cover images cannot be generated once the book has been published");
 
-    // Generate parallel
-    const [frontImage, coverImage] = await Promise.all([
-        llm.generateStoryIllustration(promptGuideForFrontImage({
-            content: mode === "CUSTOM" ? book.txtContent : book.aiContent,
-            size: book.spreadSize,
-            illustrationStyle: book.illustrationStyle
-        }), "gemini-3.1-flash-image"),
+    // Prompt for front image
+    const frontPrompt = promptGuideForFrontImage({
+        bookTitle: book.title,
+        content: book.mode === "CUSTOM" ? book.txtContent : book.aiContent,
+        size: book.spreadSize,
+        illustrationStyle: book.illustrationStyle
+    });
 
-        llm.generateStoryIllustration(promptGuideForCoverImage({
-            content: mode === "CUSTOM" ? book.txtContent : book.aiContent,
-            size: book.spreadSize,
-            illustrationStyle: book.illustrationStyle
-        }), "gemini-3.1-flash-image"),
-    ]);
-    if(!frontImage) throw new ApiError(500, "Failed to generate front image");
-    if(!coverImage) throw new ApiError(500, "Failed to generate cover image");
+    // Prompt for cover image
+    const coverPrompt = promptGuideForCoverImage({
+        bookTitle: book.title,
+        authorName: book.authorName,
+        content: book.mode === "CUSTOM" ? book.txtContent : book.aiContent,
+        size: book.spreadSize,
+        illustrationStyle: book.illustrationStyle
+    });
+
+    // LLM Response
+    const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image");
+    if(!llmResponse) throw new ApiError(500, "Failed to generate front and cover images");
 
     // Extract
-    const { imageBuffer:frontImageBuffer, totalTokenCount:frontImageTokens } = frontImage;
-    const { imageBuffer:coverImageBuffer, totalTokenCount:coverImageTokens } = coverImage;
+    const { frontImageBuffer, coverImageBuffer, totalTokenCount } = llmResponse;
 
-    console.log("Total token consumption", frontImageTokens + coverImageTokens);
+    // Validate
+    if(!frontImageBuffer) throw new ApiError(500, "Failed to generate front image");
+    if(!coverImageBuffer) throw new ApiError(500, "Failed to generate cover image");
+    console.log("Total token consumption", totalTokenCount);
+
+    // Upload to cloudinary from illustration pipeline
+    const [uploadFront, uploadCover] = await Promise.all([
+        uploadToCloudinary(frontImageBuffer),
+        uploadToCloudinary(coverImageBuffer)
+    ]);
+    if(!uploadFront) throw new ApiError(500, "Failed to upload front image to cloudinary");
+    if(!uploadCover) throw new ApiError(500, "Failed to upload cover image to cloudinary");
+
+    // Get URLs
+    const frontUrl = uploadFront.secure_url;
+    const coverUrl = uploadCover.secure_url;
+
+    // Save to db
+    book.frontImage = frontUrl;
+    book.backImage = coverUrl;
+    await book.save();
     
     // Response
-    return response.status(201).json(new ApiResponse(201, null, "Book front & cover images have been created"));
+    return response.status(201).json(new ApiResponse(201, { frontUrl, coverUrl }, "Book front & cover images have been created"));
 });
 
 module.exports = { createBook, fetchMyBooks, viewBook, viewBookContent, createFrontAndCoverImages };

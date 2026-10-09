@@ -65,7 +65,57 @@ class LLMService
         }
         catch(error)
         {
-            console.log("Failed to generate prompt for text generation", error.message);
+            console.log("Failed to generate prompt for illustration generation", error.message);
+            return null;
+        }
+    }
+
+    // Generate front and cover images
+    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image")
+    {
+        try
+        {
+            // Generate parallel
+            const [frontResponse, coverResponse] = await Promise.all([
+                // Front
+                this.ai.models.generateContent({
+                    contents: frontPrompt,
+                    model: aiModel,
+                    config: { responseModalities: ["IMAGE"] },
+                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                }),
+
+                // Cover
+                this.ai.models.generateContent({
+                    contents: coverPrompt,
+                    model: aiModel,
+                    config: { responseModalities: ["IMAGE"] },
+                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                }),
+            ]);
+            if(!frontResponse) return null;
+            if(!coverResponse) return null;
+
+            // Find generated images
+            const frontImagePart = frontResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
+            const coverImagePart = coverResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
+            if(!frontImagePart?.inlineData?.data) return null;
+            if(!coverImagePart?.inlineData?.data) return null;
+
+            // Convert base64 images to buffer
+            const frontImageBuffer = Buffer.from(frontImagePart.inlineData.data, "base64");
+            const coverImageBuffer = Buffer.from(coverImagePart.inlineData.data, "base64");
+            if(!frontImageBuffer) return null;
+            if(!coverImageBuffer) return null;
+
+            // Extract token counts
+            const { totalTokenCount: frontTotalTokenCount } = frontResponse.usageMetadata;
+            const { totalTokenCount: coverTotalTokenCount } = coverResponse.usageMetadata;
+            return { frontImageBuffer, coverImageBuffer, totalTokenCount: frontTotalTokenCount + coverTotalTokenCount };
+        }
+        catch(error)
+        {
+            console.log("Failed to generate prompt for front and cover generation", error.message);
             return null;
         }
     }    
