@@ -228,11 +228,15 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
+    // Find book
     const book = await Book.findById(bookId);
     if(!book) throw new ApiError(404, "Book not found");
+
+    // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to mark this book for draft stage 2");
     if(book.status !== "draft") throw new ApiError(403, "Book can only be finalized in draft state");
     if(book.draftStage > 1) throw new ApiError(409, "This book has already been marked for draft stage 2");
+    if(!book.txtContent && !book.aiContent) throw new ApiError(400, "Please create some text for your story, before making it to draft stage 2");
 
     // Save to db
     book.draftStage = 2;
@@ -242,4 +246,33 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Book has been marked for draft stage 2"));
 });
 
-module.exports = { generateWithAi, viewStoryContent, updateStory, finalizeTextPhase };
+// Finalize illustration
+const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize Book
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to mark this book for draft stage 3");
+    if(book.status !== "draft") throw new ApiError(403, "Illustration phase can only be finalized in draft state");
+    if(book.draftStage < 2) throw new ApiError(400, "You need to complete story-text phase first");
+    if(book.draftStage > 2) throw new ApiError(409, "This book has already been marked for draft stage 3");
+
+    // Check if all illustrations generated
+    const allIllustrations = book.spreads.filter(spread => spread.illustrationURL === null);
+    if(allIllustrations.length) throw new ApiError(400, `Please generate illustrations for remaining ${allIllustrations.length} spreads before making it to draft stage 3`);
+
+    // Save to db
+    book.draftStage = 3;
+    await book.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));
+});
+
+module.exports = { generateWithAi, viewStoryContent, updateStory, 
+finalizeTextPhase, finalizeIllustrationPhase };
