@@ -41,14 +41,13 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
 };
 
 // Prompt for front image
-const promptGuideForFrontImage = ({ content, illustrationStyle, size, aspectRatio }) => {
+const promptGuideForFrontImage = ({ content, illustrationStyle, size }) => {
     const data = `
     A children’s book FRONT COVER illustration in ${illustrationStyle} style for the book:
     ${content}
 
     Canvas & Layout Specifications:
     - Target Dimensions: Exactly ${size} (width x height in px).
-    - Aspect Ratio: ${aspectRatio} portrait orientation.
     - Framing: Full-bleed, borderless, edge-to-edge illustration.
     - Composition Safe Zones:
       * Lower-to-middle area: Focal point featuring the active characters and key scene action.
@@ -64,14 +63,13 @@ const promptGuideForFrontImage = ({ content, illustrationStyle, size, aspectRati
 };
 
 // Prompt for cover image
-const promptGuideForCoverImage = ({ content, illustrationStyle, size, aspectRatio }) => {
+const promptGuideForCoverImage = ({ content, illustrationStyle, size }) => {
     const data = `
     A children’s book BACK COVER illustration in ${illustrationStyle} style matching the story world of:
     ${content}
 
     Canvas & Layout Specifications:
     - Target Dimensions: Exactly ${size} (width x height in px).
-    - Aspect Ratio: ${aspectRatio} portrait orientation.
     - Framing: Full-bleed, borderless, edge-to-edge illustration.
     - Composition & Negative Space (CRITICAL):
       * UPPER & MIDDLE 60%: Highly muted, soft, and uncluttered negative space designed specifically for readable blurb/summary text overlay.
