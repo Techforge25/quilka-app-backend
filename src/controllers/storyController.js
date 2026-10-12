@@ -192,6 +192,8 @@ const viewStoryContent = asyncHandler(async (request, response) => {
                 _id: 1,
                 userId: 1,
                 title: 1,
+                frontImage: 1,
+                backImage: 1,
                 authorName: 1,
                 illustrationStyle: 1,
                 mode: 1,
