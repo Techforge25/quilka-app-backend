@@ -45,6 +45,33 @@ const typeDefs = `
         totalCharacters: Int!
         totalIllustrations: Int!
     }
+
+    type MyBook {
+        bookId: ID!
+        mode: String!
+        status: String!
+        draftStage: Int!
+        title: String!
+        authorName: String!
+        spreadsCount: Int!
+        language: String!
+        frontImage: String
+        backImage: String
+        totalCharacters: Int!
+        totalIllustrations: Int!                   
+    }
+
+    type BookPagination {
+        docs: [MyBook]
+        totalDocs: Int!
+        totalPages: Int!
+        page: Int!
+        limit: Int!
+        hasPrevPage: Boolean!
+        hasNextPage: Boolean!
+        prevPage: Int
+        nextPage: Int
+    }     
 `;
 
 module.exports = { typeDefs };
