@@ -165,6 +165,7 @@ const viewBookContent = asyncHandler(async (request, response) => {
         {
             $addFields: {
                 totalCharacters: { $sum: "$spreads.characterLimit" },
+                totalIllustrations: { $sum: "$spreads.illustrationLimit" },
                 bookLength: {
                     spreads: "$spreadsCount",
                     pages: { $multiply: ["$spreadsCount", 2] },
@@ -183,9 +184,12 @@ const viewBookContent = asyncHandler(async (request, response) => {
         {
             $project: {
                 userId: 1,
+                authorName: 1,
+                frontImage: 1,
                 title: 1,
                 bookLength: 1,
                 totalCharacters: 1,
+                totalIllustrations: 1,
                 storyContent: 1
             }
         }
