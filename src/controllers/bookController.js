@@ -300,5 +300,32 @@ const publishBook = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Book has been published"));
 });
 
-module.exports = { createBook, fetchMyBooks, viewBook, 
-viewBookContent, createFrontAndCoverImages, publishBook };
+// Fetch front and back images
+const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Find book
+    const book = await Book.findById(bookId).select("userId status draftStage frontImage backImage");
+    if(!book) throw new ApiError(404, "Book not found");
+
+    // Validate
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to access this book");
+    if(book.status !== "draft") throw new ApiError(400, "Book must be in draft state to view front and back images");
+    if(book.draftStage !== 3) throw new ApiError(403, "Book must be in draft stage 3 to view front and back images");
+
+    // Payload
+    const payload = {
+        frontImage: book.frontImage,
+        backImage: book.backImage
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "Front and back images have been fetched"));
+});
+
+module.exports = { createBook, fetchMyBooks, viewBook, viewBookContent, 
+createFrontAndCoverImages, publishBook, fetchFrontAndBackImages };
