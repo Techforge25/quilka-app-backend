@@ -80,7 +80,8 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
                 frontImage: 1,
                 pages: {
                     $multiply: ["$spreadsCount", 2]
-                }
+                },
+                status: 1
             }
         }
     ], { page, limit });
