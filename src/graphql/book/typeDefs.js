@@ -14,10 +14,16 @@ const typeDefs = `
         textColor: String!
         textBgColor: String!
         illustrationURL: String
+        content: String
+    }
+
+    type BookLength {
+        spreads: Int!
+        pages: Int!
     }
 
     type Book {
-        _id: ID!
+        bookId: ID!
         mode: String!
         status: String!
         draftStage: Int!
@@ -35,6 +41,9 @@ const typeDefs = `
         frontImage: String
         backImage: String
         spreads: [Spread!]!
+        bookLength: BookLength!
+        totalCharacters: Int!
+        totalIllustrations: Int!
     }
 `;
 
