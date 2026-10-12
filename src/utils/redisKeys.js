@@ -10,4 +10,7 @@ const getResetPasswordKey = (email) => `resetPassword:${email}`;
 // Get user session key
 const getUserSessionKey = (jwtid) => `userSession:${jwtid}`;
 
-module.exports = { getOTPKey, getResetPasswordKey, getCancelSubscriptionOTPKey, getUserSessionKey };
+// Get my book key
+const getMyBookKey = (bookId, userId) => `book:${bookId}:user:${userId}`;
+
+module.exports = { getOTPKey, getResetPasswordKey, getCancelSubscriptionOTPKey, getUserSessionKey, getMyBookKey };
