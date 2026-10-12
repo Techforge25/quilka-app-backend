@@ -11,6 +11,7 @@ const helmet = require("helmet");
 const limitRequest = require("./middlewares/rateLimit");
 const apolloServer = require("./graphql");
 const { expressMiddleware } = require("@as-integrations/express5");
+const { authentication } = require("./middlewares/auth");
 
 // Initialize express app
 async function startApp()
@@ -34,7 +35,9 @@ async function startApp()
     await apolloServer.start();
 
     // Register GraphQL middleware
-    app.use("/graphql", expressMiddleware(apolloServer));
+    app.use("/graphql", authentication, expressMiddleware(apolloServer, { context: ({ req, res }) => {
+        return { request: req, response: res };
+    } }));
 
     // Import Routes
     const authRouter = require("./routes/authRoute");
