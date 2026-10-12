@@ -217,7 +217,9 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         mode: book.mode,
         spreadsCount: book.spreadsCount || 0,
         spreads: book.spreads || [],
-        spreadSize: book.spreadSize
+        spreadSize: book.spreadSize,
+        frontImage: book.frontImage,
+        backImage: book.backImage
     };
 
     // Response
