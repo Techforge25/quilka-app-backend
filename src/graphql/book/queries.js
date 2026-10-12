@@ -1,5 +1,5 @@
 const queries = `
-    viewMyBook(bookId: ID!): String!
+    viewMyBook(bookId: ID!): Book!
 `;
 
 module.exports = { queries };
