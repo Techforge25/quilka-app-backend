@@ -10,6 +10,8 @@ const { emptyList } = require("../constants");
 const llm = require("../service/llmService");
 const { promptGuideForCoverImage, promptGuideForFrontImage } = require("../utils/promptGuide");
 const { uploadToCloudinary } = require("../utils/cloudinary");
+const { deleteCacheByPattern } = require("../redis/redisHelpers");
+const { getMyBookKey } = require("../utils/redisKeys");
 
 // Create book
 const createBook = asyncHandler(async (request, response) => {
@@ -269,6 +271,9 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     book.frontImage = frontUrl;
     book.backImage = coverUrl;
     await book.save();
+
+    // Delete from cache
+    await deleteCacheByPattern(getMyBookKey(bookId, userId));
     
     // Response
     return response.status(201).json(new ApiResponse(201, { frontUrl, coverUrl }, "Book front & cover images have been created"));
@@ -295,6 +300,9 @@ const publishBook = asyncHandler(async (request, response) => {
     book.draftStage = 4;
     book.status = "published";
     await book.save();
+
+    // Delete from cache
+    await deleteCacheByPattern(getMyBookKey(bookId, userId));    
     
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Book has been published"));
