@@ -8,7 +8,8 @@ const llm = require("../service/llmService");
 const Book = require("../models/bookModel");
 const validatePayload = require("../utils/validatePayload");
 const { createIllustrationValidator, updateColorValidator, 
-uploadManualIllustrationValidator } = require("../validators/illustrationValidator");
+uploadManualIllustrationValidator, 
+generateWithCustomPromptValidator} = require("../validators/illustrationValidator");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response) => {
@@ -55,15 +56,15 @@ const createIllustration = asyncHandler(async (request, response) => {
     const uploadResult = await uploadToCloudinary(imageBuffer);
     if(!uploadResult) throw new ApiError(500, "Failed to upload to cloudinary");
     
-    // Grab the production-ready secure public URL
-    const cloudinaryUrl = uploadResult.secure_url;
+    // Get secure URL
+    const illustrationURL = uploadResult.secure_url;
 
     // Save illustration to specific spread
-    spread.illustrationURL = cloudinaryUrl;
+    spread.illustrationURL = illustrationURL;
     await book.save();
 
     // Response
-    return response.status(201).json(new ApiResponse(201, { illustration: cloudinaryUrl }, "Illustration has been created"));
+    return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been created"));
 });
 
 // Upload manual illustration
@@ -97,6 +98,62 @@ const uploadManualIllustration = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been uploaded"));
+});
+
+// Generate illustration with custom prompt
+const generateWithCustomPrompt = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize Book and spread ID
+    const { bookId, spreadId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
+
+    // Sanitize payload
+    const { customPrompt, imageURL } = validatePayload(generateWithCustomPromptValidator, request.body) || {};
+
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+
+    // Find spread
+    const spread = book.spreads.id(spreadId);
+    if(!spread) throw new ApiError(404, "Spread not found");
+
+    // Validate
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate illustration for this book");
+    if(book.status !== "draft") throw new ApiError(403, "The illustration generation cannot be proceeded while the book is not in draft state");
+    if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be generated in draft stage 2");
+
+    // Generate dynamic prompt
+    const prompt = promptGuideForIllustration({
+        illustrationStyle: book.illustrationStyle,
+        content: `${customPrompt} - And here is the image reference: ${imageURL}`,
+        size: spread.illustrationSize.size,
+        aspectRatio: spread.illustrationSize.aspectRatio
+    });
+
+    // Generate illustration
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image");
+    if(!illustrationResponse) throw new ApiError(400, "Failed to generate illustration! Please write appropriate prompt.");
+
+    // Extract generated image buffer and token consumption count
+    const { imageBuffer, totalTokenCount } = illustrationResponse;
+    console.log("Total Token", totalTokenCount);
+
+    // Upload to cloudinary
+    const uploadResult = await uploadToCloudinary(imageBuffer);
+    if(!uploadResult) throw new ApiError(500, "Failed to upload to cloudinary");
+    
+    // Get secure URL
+    const illustrationURL = uploadResult.secure_url;
+
+    // Save illustration to specific spread
+    spread.illustrationURL = illustrationURL;
+    await book.save();
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been generated with custom prompt"));
 });
 
 // Update text and bg text color
@@ -133,4 +190,5 @@ const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { textColor, textBgColor }, "Text color and text bg color has been updated"));
 });
 
-module.exports = { createIllustration, uploadManualIllustration, updateTextAndBgTextColor };
+module.exports = { createIllustration, uploadManualIllustration, 
+updateTextAndBgTextColor, generateWithCustomPrompt };
