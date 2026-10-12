@@ -2,14 +2,10 @@ const { redis } = require("./connection");
 
 // Set Cache
 const setCache = async (key, value, minutes = 1) => {
-    if(!key || value === undefined || value === null) return false;
+    if(!key || !value) return false;
 
     try 
     {
-        // Remove old data for extra safety check
-        const isExist = await redis.exists(key);
-        if(isExist) await redis.del(key);
-
         // Set new string
         await redis.set(key, JSON.stringify(value), "EX", minutes * 60);
         return true;
