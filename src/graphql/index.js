@@ -7,13 +7,13 @@ const apolloServer = new ApolloServer({
         ${Book.typeDefs}
 
         type Query {
-            fetchBooks: String
+            ${Book.queries}
         }
     `,
 
-    resolvers:{
+    resolvers: {
         Query: {
-
+            ...Book.resolvers.queries
         },
     }
 });
