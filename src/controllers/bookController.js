@@ -190,7 +190,8 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 totalCharacters: 1,
                 totalIllustrations: 1,
                 storyContent: 1,
-                status: 1
+                status: 1,
+                draftStage: 1
             }
         }
     ]);
