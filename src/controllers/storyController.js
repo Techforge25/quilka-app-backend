@@ -95,9 +95,62 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         {
             $addFields: {
                 storyParts: {
-                    $split: [
-                        { $ifNull: ["$storyContent", ""] },
-                        "spread break"
+                    $cond: [
+                        { $eq: ["$mode", "AI"] },
+
+                        // AI story content
+                        {
+                            $split: [
+                                { $ifNull: ["$storyContent", ""] },
+                                "spread break"
+                            ]
+                        },
+
+                        // Custom story content
+                        {
+                            $reduce: {
+                                input: { $ifNull: ["$spreads", []] },
+                                initialValue: {
+                                    offset: 0,
+                                    parts: []
+                                },
+                                in: {
+                                    offset: {
+                                        $add: [
+                                            "$$value.offset",
+                                            { $max: [0, { $ifNull: ["$$this.characterLimit", 0] }] }
+                                        ]
+                                    },
+                                    parts: {
+                                        $concatArrays: [
+                                            "$$value.parts",
+                                            [
+                                                {
+                                                    $substrCP: [
+                                                        { $ifNull: ["$storyContent", ""] },
+                                                        "$$value.offset",
+                                                        { $max: [0, { $ifNull: ["$$this.characterLimit", 0] }] }
+                                                    ]
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+
+        // Extract custom story parts
+        {
+            $addFields: {
+                storyParts: {
+                    $cond: [
+                        { $eq: ["$mode", "CUSTOM"] },
+                        "$storyParts.parts",
+                        "$storyParts"
                     ]
                 }
             }
