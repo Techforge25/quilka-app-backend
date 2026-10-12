@@ -7,9 +7,8 @@ const { uploadToCloudinary } = require("../utils/cloudinary");
 const llm = require("../service/llmService");
 const Book = require("../models/bookModel");
 const validatePayload = require("../utils/validatePayload");
-const { createIllustrationValidator, updateColorValidator, 
-uploadManualIllustrationValidator, 
-generateWithCustomPromptValidator} = require("../validators/illustrationValidator");
+const { createIllustrationValidator, updateColorValidator, uploadManualIllustrationValidator, 
+generateWithCustomPromptValidator } = require("../validators/illustrationValidator");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response) => {
