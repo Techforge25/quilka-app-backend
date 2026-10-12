@@ -18,7 +18,7 @@ const uploadManualIllustrationValidator = joi.object({
 
 // Generate illustration with custom prompt validator
 const generateWithCustomPromptValidator = joi.object({
-    prompt: joi.string().trim().min(20).max(500).required().label("Prompt"),
+    customPrompt: joi.string().trim().min(20).max(500).required().label("Prompt"),
     imageURL: joi.string().trim().uri().required().label("Image URL")
 });
 
