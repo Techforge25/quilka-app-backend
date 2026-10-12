@@ -11,4 +11,9 @@ const updateColorValidator = joi.object({
     textBgColor: joi.string().trim().required().label("Text bg color")
 });
 
-module.exports = { createIllustrationValidator, updateColorValidator };
+// Upload manual illustration validator
+const uploadManualIllustrationValidator = joi.object({
+    illustrationURL: joi.string().trim().uri().required().label("Illustration URL")
+});
+
+module.exports = { createIllustrationValidator, updateColorValidator, uploadManualIllustrationValidator };
