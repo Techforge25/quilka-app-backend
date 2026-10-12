@@ -7,8 +7,6 @@ const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
 const { isValidObjectId } = require("mongoose");
 const { payForBookValidator } = require("../validators/paymentValidator");
-const { deleteCacheByPattern } = require("../redis/redisHelpers");
-const { getMyBookKey } = require("../utils/redisKeys");
 
 // Pay for book
 const payForBook = asyncHandler(async (request, response) => {
@@ -49,9 +47,6 @@ const payForBook = asyncHandler(async (request, response) => {
     // Add 5 free regeneration to this book
     const regeneration = await Regeneration.create({ userId, bookId, limit: 5 });
     if(!regeneration) throw new ApiError(500, "Failed to add 5 free regenerations");
-
-    // Delete from cache
-    await deleteCacheByPattern(getMyBookKey(bookId, userId));    
     
     // Response
     return response.status(200).json(new ApiResponse(200, bookId, "Payment has been completed"));

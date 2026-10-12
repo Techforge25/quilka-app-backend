@@ -9,8 +9,6 @@ const validatePayload = require("../utils/validatePayload");
 const { promptGuideForTextGeneration } = require("../utils/promptGuide");
 const llm = require("../service/llmService");
 const { allowedTextSizes } = require("../constants");
-const { deleteCacheByPattern } = require("../redis/redisHelpers");
-const { getMyBookKey } = require("../utils/redisKeys");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response) => {
@@ -61,10 +59,7 @@ const generateWithAi = asyncHandler(async (request, response) => {
     // Save to db
     book.aiContent = aiContent;
     book.hasUsedAi = true;
-    await book.save();
-
-    // Delete from cache
-    await deleteCacheByPattern(getMyBookKey(bookId, userId));    
+    await book.save(); 
     
     // Response
     return  response.status(201).json(new ApiResponse(201, aiContent, "Content has been generated"));
@@ -283,9 +278,6 @@ const updateStory = asyncHandler(async (request, response) => {
     spread.textSize = textSize;
     await book.save();
 
-    // Delete from cache
-    await deleteCacheByPattern(getMyBookKey(bookId, userId));
-
     // Dynamic response
     const responseData = book.mode === "CUSTOM" ? book.txtContent : book.aiContent;
 
@@ -314,9 +306,6 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
     // Save to db
     book.draftStage = 2;
     await book.save();
-
-    // Delete from cache
-    await deleteCacheByPattern(getMyBookKey(bookId, userId));
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Book has been marked for draft stage 2"));
@@ -349,9 +338,6 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     // Save to db
     book.draftStage = 3;
     await book.save();
-
-    // Delete from cache
-    await deleteCacheByPattern(getMyBookKey(bookId, userId));
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));

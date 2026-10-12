@@ -2,19 +2,14 @@ const { isValidObjectId } = require("mongoose");
 const Book = require("../../models/bookModel");
 const convertToMongoId = require("../../utils/convertToMongoId");
 const { ApiError } = require("@google/genai");
-const { getCache, setCache } = require("../../redis/redisHelpers");
-const { getMyBookKey } = require("../../utils/redisKeys");
 
 const queries = {
+    // View book
     viewMyBook: async (_, { bookId }, { request }) => {
         const userId = request.user._id;
 
         // Sanitize book ID
         if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-
-        // Get from cache
-        const cache = await getCache(getMyBookKey(bookId, userId));
-        if(cache) return cache;
 
         // Fetch
         const [book] = await Book.aggregate([
@@ -176,9 +171,6 @@ const queries = {
 
         // Exclude property
         delete book.userId;
-
-        // Set cache
-        await setCache(getMyBookKey(bookId, userId), book, 10);
 
         return book;
     }

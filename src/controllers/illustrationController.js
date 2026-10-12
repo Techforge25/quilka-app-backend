@@ -8,8 +8,6 @@ const llm = require("../service/llmService");
 const Book = require("../models/bookModel");
 const validatePayload = require("../utils/validatePayload");
 const { createIllustrationValidator, updateColorValidator } = require("../validators/illustrationValidator");
-const { deleteCacheByPattern } = require("../redis/redisHelpers");
-const { getMyBookKey } = require("../utils/redisKeys");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response) => {
@@ -63,9 +61,6 @@ const createIllustration = asyncHandler(async (request, response) => {
     spread.illustrationURL = cloudinaryUrl;
     await book.save();
 
-    // Delete from cache
-    await deleteCacheByPattern(getMyBookKey(bookId, userId));    
-
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: cloudinaryUrl }, "Illustration has been created"));
 });
@@ -99,9 +94,6 @@ const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
     spread.textColor = textColor;
     spread.textBgColor = textBgColor;
     await book.save();
-
-    // Delete from cache
-    await deleteCacheByPattern(getMyBookKey(bookId, userId));    
 
     // Response
     return response.status(200).json(new ApiResponse(200, { textColor, textBgColor }, "Text color and text bg color has been updated"));
