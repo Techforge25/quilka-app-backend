@@ -150,7 +150,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         }
     ]);
     if(!book) throw new ApiError(404, "Book not found");
-    if(book.status !== "draft") throw new ApiError(403, "This story cannot be viewed while the book is not in draft state");
+    if(book.status === "pending") throw new ApiError(403, "This story cannot be viewed while the book is in a pending state");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to view this story content");
 
     // Payload
