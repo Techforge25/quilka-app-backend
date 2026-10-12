@@ -70,7 +70,7 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
         { $match: { userId, ...baseFilter } },
 
         // Sort
-        { $sort: { createdAt: -1 } },
+        { $sort: { updatedAt: -1 } },
 
         // Projection
         {
@@ -83,7 +83,6 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
                 },
                 status: 1,
                 draftStage: 1
-
             }
         }
     ], { page, limit });
