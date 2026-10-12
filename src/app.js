@@ -9,6 +9,8 @@ const passport = require("passport");
 // require("./service/social-auth");
 const helmet = require("helmet");
 const limitRequest = require("./middlewares/rateLimit");
+const apolloServer = require("./graphql");
+const { expressMiddleware } = require("@as-integrations/express5");
 
 // Initialize express app
 async function startApp()
@@ -27,6 +29,12 @@ async function startApp()
     app.use(passport.initialize());
     app.use("/public", express.static(path.resolve("public")));
     app.use(compression());
+
+    // Start apollo server
+    await apolloServer.start();
+
+    // Register GraphQL middleware
+    app.use("/graphql", expressMiddleware(apolloServer));
 
     // Import Routes
     const authRouter = require("./routes/authRoute");
