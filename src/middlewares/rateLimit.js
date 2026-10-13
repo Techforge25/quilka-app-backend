@@ -16,19 +16,20 @@ const limitRequest = ({ minutes = 1, maxRequests = 10, message = "Too many reque
 };
 
 // Redis rate limiter
-const rateLimit = asyncHandler((totalAttempts = 10, minutes = 1) => {
-    return async (request, response, next) => {
-        // Get IP (IPv4)
+const rateLimit = (totalAttempts = 10, minutes = 1, message = "Too many requests!") => {
+    return asyncHandler(async (request, response, next) => {
+        // Get IP (IPv4) & API path
         const ip = request.headers["x-real-ip"];
-        const key = `rateLimit:${ip}`;
+        const path = request.path;
+        const key = `rateLimit:${path}:${ip}`;
 
         // Attempts
         const attempts = await redis.incr(key);
         if(attempts === 1) await redis.expire(key, 60 * minutes); // 1 minute
-        if(attempts > totalAttempts) throw new ApiError(429, "Too many requests!");
+        if(attempts > totalAttempts) throw new ApiError(429, message);
 
-        return next();
-    };
-});
+        return next();        
+    });
+};
 
 module.exports = { limitRequest, rateLimit };

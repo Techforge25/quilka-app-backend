@@ -2,6 +2,7 @@ const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createBook, updateBook, fetchMyBooks, viewBook, viewBookContent, 
 createFrontAndCoverImages, publishBook, fetchFrontAndBackImages } = require("../controllers/bookController");
+const { rateLimit } = require("../middlewares/rateLimit");
 
 // Router instance
 const bookRouter = Router();
@@ -24,7 +25,7 @@ bookRouter.route("/:bookId/content").get(viewBookContent);
 
 // Generate front and cover images / Fetch front and back images
 bookRouter.route("/:bookId/frontAndCover")
-.post(createFrontAndCoverImages)
+.post(rateLimit(1, 1), createFrontAndCoverImages)
 .get(fetchFrontAndBackImages);
 
 // Publish book
