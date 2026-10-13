@@ -13,4 +13,4 @@ const limitRequest = ({ minutes = 1, maxRequests = 10, message = "Too many reque
     return limiter;
 };
 
-module.exports = limitRequest;
+module.exports = { limitRequest };

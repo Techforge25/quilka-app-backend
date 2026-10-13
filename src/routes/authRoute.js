@@ -3,7 +3,7 @@ const { signup, login, logout, forgotPassword, verifyResetpasswordOTP,
 resetPassword, googleLogin, verifyOTP, resendOTPToken, authMe, authStatus } = require("../controllers/authController");
 const { authentication } = require("../middlewares/auth");
 const passport = require("passport");
-const limitRequest = require("../middlewares/rateLimit");
+const { limitRequest } = require("../middlewares/rateLimit");
 
 // Router instance
 const authRouter = Router();
