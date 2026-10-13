@@ -1,3 +1,5 @@
+const ApiError = require("./ApiError");
+
 // Prompt guide for AI model training (Text-based generation)
 const promptGuideForTextGeneration = ({ title, ageGroup, language, prompt, totalCharacters, spreads }) => {
     try
@@ -14,8 +16,7 @@ const promptGuideForTextGeneration = ({ title, ageGroup, language, prompt, total
     }
     catch(error)
     {
-        console.log("Failed to generate prompt for text generation", error.message);
-        return null;
+        throw new ApiError(400, "Failed to generate prompt for text generation");
     }
 };
 
