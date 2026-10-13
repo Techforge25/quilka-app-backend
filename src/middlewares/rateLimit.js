@@ -19,7 +19,7 @@ const limitRequest = ({ minutes = 1, maxRequests = 10, message = "Too many reque
 const rateLimit = (totalAttempts = 10, minutes = 1, message = "Too many requests!") => {
     return asyncHandler(async (request, response, next) => {
         // Get IP (IPv4) & API path
-        const ip = request.headers["x-real-ip"];
+        const ip = request.headers["x-real-ip"] || request.ip;
         const path = request.path;
         const key = `rateLimit:${path}:${ip}`;
 
