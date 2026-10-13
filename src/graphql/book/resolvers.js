@@ -173,6 +173,50 @@ const queries = {
         delete book.userId;
 
         return book;
+    },
+
+    // Fetch my books
+    fetchMyBooks: async (_, { page = 1, limit = 10, search = "", status = "all" }, { request, response }) => {
+        const userId = convertToMongoId(request.user._id);
+
+        // Sanitize status key
+        if(status && !["all", "draft", "published"].includes(status)) throw new ApiError(400, "Invalid book status provided");
+
+        // Base filter
+        const baseFilter = {};
+        if(search) baseFilter.title = { $regex: search, $options: "i" };
+        if(status && status.toLowerCase() !== "all") baseFilter.status = status;
+
+        // Fetch
+        const books = await Book.aggregatePaginate([
+            // Match
+            { $match: { userId, ...baseFilter } },
+
+            // Sort
+            { $sort: { updatedAt: -1 } },
+
+            // Projection
+            {
+                $project: {
+                    bookId: "$_id",
+                    mode: 1,
+                    status: 1,
+                    draftStage: 1,
+                    title: 1,
+                    spreadsCount: 1,
+                    language: 1,
+                    authorName: 1,
+                    frontImage: 1,
+                    backImage: 1,
+                    totalCharacters: { $sum: "$spreads.characterLimit" },
+                    totalIllustrations: { $sum: "$spreads.illustrationLimit" },
+                    pages: { $multiply: ["$spreadsCount", 2] }
+                }
+            }
+        ], { page, limit });        
+        if(!books.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No books found"));
+
+        return books;
     }
 };
 
