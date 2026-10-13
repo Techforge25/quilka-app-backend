@@ -1,8 +1,8 @@
 const cron = require("node-cron");
 const Book = require("../models/bookModel");
 
-// Runs daily at 12:00 AM
-const timer = "0 0 * * *";
+// Runs twice daily at 12:00 AM and 12:00 PM
+const timer = "0 0,12 * * *";
 
 // Auto exprire subscription
 cron.schedule(timer, async () => {
