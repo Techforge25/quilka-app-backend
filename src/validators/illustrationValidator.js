@@ -8,7 +8,8 @@ const createIllustrationValidator = joi.object({
 // Update text color and text bg color validator
 const updateColorValidator = joi.object({
     textColor: joi.string().trim().required().label("Text color"),
-    textBgColor: joi.string().trim().required().label("Text bg color")
+    textBgColor: joi.string().trim().required().label("Text bg color"),
+    subLayoutDirection: joi.string().trim().required().min(3).max(50).label("Sub layout direction")
 });
 
 // Upload manual illustration validator

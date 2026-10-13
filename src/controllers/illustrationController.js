@@ -163,7 +163,7 @@ const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
     if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
 
     // Sanitize payload
-    const { textColor, textBgColor } = validatePayload(updateColorValidator, request.body) || {};    
+    const { textColor, textBgColor, subLayoutDirection } = validatePayload(updateColorValidator, request.body) || {};    
 
     // Find book
     const book = await Book.findById(bookId);
@@ -181,10 +181,11 @@ const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
     // Save to db
     spread.textColor = textColor;
     spread.textBgColor = textBgColor;
+    spread.subLayoutDirection = subLayoutDirection;
     await book.save();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { textColor, textBgColor }, "Text color and text bg color has been updated"));
+    return response.status(200).json(new ApiResponse(200, { textColor, textBgColor }, "Spread has been updated"));
 });
 
 module.exports = { createIllustration, uploadManualIllustration, 
