@@ -12,6 +12,7 @@ const { limitRequest } = require("./middlewares/rateLimit");
 const apolloServer = require("./graphql");
 const { expressMiddleware } = require("@as-integrations/express5");
 const { authentication } = require("./middlewares/auth");
+require("./cron/deletePendingBooks");
 
 // Initialize express app
 async function startApp()
