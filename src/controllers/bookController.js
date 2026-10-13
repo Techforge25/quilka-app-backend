@@ -51,6 +51,39 @@ const createBook = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created"));
 });
 
+// Update book
+const updateBook = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Get validated payload
+    const { mode, title, authorName, spreadsCount, txtContent, prompt, 
+    ageGroup, bookSize, spreadSize, textStyle,  illustrationStyle, 
+    language, spreads } = validatePayload(createBookValidator, request.body) || {};    
+
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+
+    // Validate
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to re-create this book");
+    if(book.status !== "pending") throw new ApiError(400, "Book must be in pending state to update book details");
+    
+    // Update in db
+    Object.assign(book, { 
+        mode, title, authorName, spreadsCount, txtContent, prompt, 
+        ageGroup, bookSize, spreadSize, textStyle, illustrationStyle,
+        language, spreads
+    });
+    await book.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { bookId: book._id }, "Book details have been updated"));
+});
+
 // Fetch my books
 const fetchMyBooks = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search = "", status = "all" } = request.query;
@@ -326,5 +359,5 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Front and back images have been fetched"));
 });
 
-module.exports = { createBook, fetchMyBooks, viewBook, viewBookContent, 
+module.exports = { createBook, updateBook, fetchMyBooks, viewBook, viewBookContent, 
 createFrontAndCoverImages, publishBook, fetchFrontAndBackImages };
