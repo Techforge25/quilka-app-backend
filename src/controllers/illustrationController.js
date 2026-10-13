@@ -109,7 +109,7 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
     if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
 
     // Sanitize payload
-    const { customPrompt, imageURL } = validatePayload(generateWithCustomPromptValidator, request.body) || {};
+    const { customPrompt, referenceImageURL } = validatePayload(generateWithCustomPromptValidator, request.body) || {};
 
     // Find book
     const book = await Book.findById(bookId);
@@ -127,13 +127,13 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
     // Generate dynamic prompt
     const prompt = promptGuideForIllustration({
         illustrationStyle: book.illustrationStyle,
-        content: `${customPrompt} - And here is the image reference: ${imageURL}`,
+        content: customPrompt,
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
 
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image");
+    const illustrationResponse = await llm.generateIllustrationWithCustomPrompt(prompt, referenceImageURL, "gemini-3.1-flash-image");
     if(!illustrationResponse) throw new ApiError(400, "Failed to generate illustration! Please write appropriate prompt.");
 
     // Extract generated image buffer and token consumption count
