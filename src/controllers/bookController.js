@@ -95,7 +95,16 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
     // Base filter
     const baseFilter = {};
     if(search) baseFilter.title = { $regex: search, $options: "i" };
-    if(status && status.toLowerCase() !== "all") baseFilter.status = status;
+
+    // Status filter
+    if(status.toLowerCase() === "all")
+    {
+        baseFilter.status = { $in: ["draft", "published"] };
+    }
+    else
+    {
+        baseFilter.status = status;
+    }
 
     // Fetch
     const books = await Book.aggregatePaginate([
