@@ -54,7 +54,7 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size 
     Cover Art Direction & Composition:
     - Commercial children's book cover aesthetic: Eye-catching poster layout with a strong central hero focal point designed to stand out on a bookstore display.
     - Dynamic interaction: The characters and environment should frame and complement the title text naturally.
-    - Canvas Specifications: Exactly ${size} (width x height in px), full-bleed, edge-to-edge vertical portrait format.
+    - Canvas Specifications: Exactly ${size} (width divided by 2 x height in px), full-bleed, edge-to-edge vertical portrait format.
 
     Visual Style:
     - ${illustrationStyle} with rich storybook textures, radiant lighting, clean depth, and polished finish.
@@ -83,7 +83,7 @@ const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size
     - The illustration should use soft, readable contrast so all cover typography remains crisp and clear.
 
     Canvas & Print Specifications:
-    - Target Dimensions: Exactly ${size} (width x height in px), vertical portrait orientation.
+    - Target Dimensions: Exactly ${size} (width divided by 2 x height in px), vertical portrait orientation.
     - Full-bleed, edge-to-edge layout with balanced margins.
 
     Visual Art Style:
