@@ -35,9 +35,6 @@ const bookSchema = new Schema({
     frontImage: { type: String, trim: true, default: null },
     backImage: { type: String, trim: true, default: null },
 
-    // First time AI usage flag
-    hasUsedAi: { type: Boolean, default: false },
-
     // Spreads config
     spreads: [{
         mainLayoutName: { type: String, trim: true, required: true }, // Classic story book
