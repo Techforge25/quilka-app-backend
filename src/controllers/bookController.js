@@ -276,7 +276,6 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
 
     // Prompt for cover image
     const coverPrompt = promptGuideForCoverImage({
-        bookTitle: book.title,
         authorName: book.authorName,
         content: book.mode === "CUSTOM" ? book.txtContent : book.aiContent,
         size: book.spreadSize,

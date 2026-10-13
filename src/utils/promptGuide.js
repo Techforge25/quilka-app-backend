@@ -67,7 +67,7 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size 
 };
 
 // Prompt for cover image
-const promptGuideForCoverImage = ({ bookTitle, authorName, content, illustrationStyle, size }) => {
+const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size }) => {
     const data = `
     A complete, professional children's picture book BACK COVER design in ${illustrationStyle} style matching the story world of:
     ${content}
