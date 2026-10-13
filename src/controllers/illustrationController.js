@@ -7,7 +7,7 @@ const { uploadToCloudinary } = require("../utils/cloudinary");
 const llm = require("../service/llmService");
 const Book = require("../models/bookModel");
 const validatePayload = require("../utils/validatePayload");
-const { createIllustrationValidator, updateColorValidator, uploadManualIllustrationValidator, 
+const { createIllustrationValidator, updateSpreadSublayoutValidator, uploadManualIllustrationValidator, 
 generateWithCustomPromptValidator } = require("../validators/illustrationValidator");
 
 // Create illustration
@@ -153,8 +153,8 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been generated with custom prompt"));
 });
 
-// Update text and bg text color
-const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
+// Update spread sublayout
+const updateSpreadSublayout = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Sanitize Book and spread ID
@@ -163,7 +163,7 @@ const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
     if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
 
     // Sanitize payload
-    const { textColor, textBgColor, subLayoutDirection } = validatePayload(updateColorValidator, request.body) || {};    
+    const { textColor, textBgColor, subLayoutDirection } = validatePayload(updateSpreadSublayoutValidator, request.body) || {};    
 
     // Find book
     const book = await Book.findById(bookId);
@@ -189,4 +189,4 @@ const updateTextAndBgTextColor = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createIllustration, uploadManualIllustration, 
-updateTextAndBgTextColor, generateWithCustomPrompt };
+updateSpreadSublayout, generateWithCustomPrompt };

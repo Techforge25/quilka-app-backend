@@ -5,8 +5,8 @@ const createIllustrationValidator = joi.object({
     content: joi.string().trim().required().label("Content")
 });
 
-// Update text color and text bg color validator
-const updateColorValidator = joi.object({
+// Update spread sublayout validator
+const updateSpreadSublayoutValidator = joi.object({
     textColor: joi.string().trim().required().label("Text color"),
     textBgColor: joi.string().trim().required().label("Text bg color"),
     subLayoutDirection: joi.string().trim().required().min(3).max(50).label("Sub layout direction")
@@ -23,5 +23,5 @@ const generateWithCustomPromptValidator = joi.object({
     referenceImageURL: joi.string().trim().uri().required().label("Reference Image URL")
 });
 
-module.exports = { createIllustrationValidator, updateColorValidator, 
+module.exports = { createIllustrationValidator, updateSpreadSublayoutValidator, 
 uploadManualIllustrationValidator, generateWithCustomPromptValidator };
