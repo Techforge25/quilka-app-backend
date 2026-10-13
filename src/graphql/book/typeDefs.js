@@ -22,7 +22,7 @@ const typeDefs = `
         pages: Int!
     }
 
-    type Book {
+    type ViewBook {
         bookId: ID!
         mode: String!
         status: String!
@@ -54,11 +54,12 @@ const typeDefs = `
         title: String!
         authorName: String!
         spreadsCount: Int!
+        pages: Int!
         language: String!
         frontImage: String
         backImage: String
         totalCharacters: Int!
-        totalIllustrations: Int!                   
+        totalIllustrations: Int!
     }
 
     type BookPagination {
