@@ -61,7 +61,7 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size 
 
     Strict Constraints:
     - Render ONLY the exact specified title ${bookTitle}. Absolutely NO random gibberish letters, NO messy placeholder text, and NO speech bubbles.
-    - Completely borderless and marginless canvas.    
+    - Completely borderless, full-bleed, edge-to-edge canvas of exct provided size.    
     `;
     return data;  
 };
@@ -92,7 +92,7 @@ const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size
     Strict Constraints:
     - Render ONLY the specified text, the blurb, and "Written by ${authorName}").
     - Absolutely NO unreadable gibberish, NO messy placeholder scribbles, and NO speech bubbles.
-    - Completely borderless and marginless canvas.    
+    - Completely borderless, full-bleed, edge-to-edge canvas of exct provided size.  
     `;
     return data;
 };
