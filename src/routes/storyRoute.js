@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { generateWithAi, viewStoryContent, updateStory, 
+const { generateWithAi, regenerateStoryText, viewStoryContent, updateStory, 
 finalizeTextPhase, finalizeIllustrationPhase } = require("../controllers/storyController");
 const { authentication } = require("../middlewares/auth");
 const { rateLimit } = require("../middlewares/rateLimit");
@@ -10,8 +10,8 @@ const storyRouter = Router();
 // Inject middleware
 storyRouter.use(authentication);
 
-// Generate story with AI
-storyRouter.route("/:bookId").post(rateLimit(1, 1), generateWithAi);
+// Generate & Regenerate story text with AI
+storyRouter.route("/:bookId").post(rateLimit(1, 1), generateWithAi, regenerateStoryText);
 
 // View story content
 storyRouter.route("/:bookId").get(viewStoryContent);

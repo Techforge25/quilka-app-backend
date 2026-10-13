@@ -6,12 +6,13 @@ const { isValidObjectId } = require("mongoose");
 const convertToMongoId = require("../utils/convertToMongoId");
 const joi = require("joi");
 const validatePayload = require("../utils/validatePayload");
-const { promptGuideForTextGeneration } = require("../utils/promptGuide");
+const { promptGuideForTextGeneration, promptGuideForTextRegeneration } = require("../utils/promptGuide");
 const llm = require("../service/llmService");
 const { allowedTextSizes } = require("../constants");
+const Regeneration = require("../models/regenerationModel");
 
 // Generate story with AI
-const generateWithAi = asyncHandler(async (request, response) => {
+const generateWithAi = asyncHandler(async (request, response, next) => {
     const userId = request.user._id;
 
     // Sanitize book ID
@@ -25,7 +26,13 @@ const generateWithAi = asyncHandler(async (request, response) => {
     if(book.status !== "draft") throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft stage 1");
     if(book.mode !== "AI") throw new ApiError(400, "To generate story with AI, the book 'mode' must be an AI");
-    if(book.hasUsedAi) throw new ApiError(403, "You have already generated story using AI");
+
+    // Pass to regeneration text controller
+    if(book.aiContent)
+    {
+        request.book = book;
+        return next();
+    }
 
     // Extract total spread characters
     const totalSpreadCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
@@ -37,31 +44,71 @@ const generateWithAi = asyncHandler(async (request, response) => {
         prompt: book.prompt,
         title: book.title,
         totalCharacters: totalSpreadCharacters,
-        spreads: book.spreads,
-        
+        spreads: book.spreads
     });
-    if(!dynamicPrompt) throw new ApiError(500, "Failed to generate prompt for text-based story generation");
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
-    const { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = output;
-
-    // Log token consumption
-    console.log("Prompt token", promptTokenCount);
-    console.log("Canditates token", candidatesTokenCount);
-    console.log("Thoughts token", thoughtsTokenCount);
-    console.log("Total token", totalTokenCount);
+    const { aiContent } = output;
 
     // Validate AI content length with total spread characters
     if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
     
     // Save to db
     book.aiContent = aiContent;
-    book.hasUsedAi = true;
     await book.save(); 
     
     // Response
     return  response.status(201).json(new ApiResponse(201, aiContent, "Content has been generated"));
+});
+
+// Regenerate story text with AI
+const regenerateStoryText = asyncHandler(async (request, response) => {
+    // Get metadata
+    const userId = request.user._id;
+    const { bookId } = request.params;
+    const book = request.book;
+
+    // Find regenerations
+    const regeneration = await Regeneration.findOne({ userId, bookId });
+
+    // Validate
+    if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
+    if(regeneration.limit <= 0) throw new ApiError(403, "You have reached your story regeneration limit. Please buy more!");
+
+    // Extract total spread characters
+    const totalSpreadCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
+
+    // Get dynamic prompt for text based generation
+    const dynamicPrompt = promptGuideForTextRegeneration({ 
+        ageGroup: book.ageGroup,
+        language: book.language,
+        prompt: book.prompt,
+        previousStory: book.aiContent,
+        title: book.title,
+        totalCharacters: totalSpreadCharacters,
+        spreads: book.spreads
+    });
+
+    // Generate story
+    const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
+    const { aiContent } = output;
+
+    // Validate AI content length with total spread characters
+    if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
+    
+    // Save to db
+    book.aiContent = aiContent;
+    await Promise.all([
+        book.save(),
+        Regeneration.updateOne(
+            { userId, bookId, limit: { $gt: 0 } },
+            { $inc: { limit: -1 } }
+        )       
+    ]);
+
+    // Response
+    return  response.status(201).json(new ApiResponse(201, aiContent, "Content has been regenerated"));
 });
 
 // View story content
@@ -346,5 +393,5 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));
 });
 
-module.exports = { generateWithAi, viewStoryContent, updateStory, 
+module.exports = { generateWithAi, regenerateStoryText, viewStoryContent, updateStory, 
 finalizeTextPhase, finalizeIllustrationPhase };
