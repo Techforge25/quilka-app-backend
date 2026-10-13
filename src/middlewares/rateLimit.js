@@ -21,7 +21,7 @@ const rateLimit = (totalAttempts = 10, minutes = 1, message = "Too many requests
         // Get IP (IPv4) & API url
         const ip = request.headers["x-real-ip"] || request.ip;
         const url = request.url;
-        const key = `rateLimit:${url}:${ip}`;
+        const key = `rateLimit:${ip}:${url}`;
 
         // Attempts
         const attempts = await redis.incr(key);
