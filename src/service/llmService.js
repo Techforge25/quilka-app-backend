@@ -1,4 +1,6 @@
 const { GoogleGenAI } = require("@google/genai");
+const ApiError = require("../utils/ApiError");
+const { getReferenceImage } = require("../utils/getReferenceImage");
 
 // LLM Service
 class LLMService
@@ -21,7 +23,7 @@ class LLMService
         try
         {
             const storyResponse = await this.ai.models.generateContent({ contents: dynamicPrompt, model: aiModel });
-            if(!storyResponse) return null;
+            if(!storyResponse) throw new ApiError(500, "Failed to generate story text! Please provide appropriate prompt");
 
             // Extract story text
             const aiContent = storyResponse.text;
@@ -32,8 +34,7 @@ class LLMService
         }
         catch(error)
         {
-            console.log("Failed to generate prompt for text generation", error.message);
-            return null;
+            throw new ApiError(500, error.message);
         }
     }
 
@@ -49,15 +50,15 @@ class LLMService
                 config: { responseModalities: ["IMAGE"] },
                 thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
             });
-            if(!illustrationResponse) return null;
+            if(!illustrationResponse) throw new ApiError(500, "Failed to generate story illustration");
             
             // Find generated image
             const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
-            if(!imagePart?.inlineData?.data) return null;
+            if(!imagePart?.inlineData?.data) throw new ApiError(500, "Inline data is missing");
 
             // Convert base64 image to buffer
             const imageBuffer = Buffer.from(imagePart.inlineData.data, "base64");
-            if(!imageBuffer) return null;
+            if(!imageBuffer) throw new ApiError(500, "Failed to convert base64 image to buffer");
 
             // Extract token counts
             const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
@@ -65,8 +66,46 @@ class LLMService
         }
         catch(error)
         {
-            console.log("Failed to generate prompt for illustration generation", error.message);
-            return null;
+            throw new ApiError(500, error.message);
+        }
+    }
+
+    // Generate illustration with custom prompt
+    async generateIllustrationWithCustomPrompt(dynamicPrompt, referenceImageURL, aiModel = "gemini-3.1-flash-image")
+    {
+        try
+        {
+            // Fetch reference image
+            const base64Image = await getReferenceImage(referenceImageURL);
+
+            // Generate illustration
+            const illustrationResponse = await this.ai.models.generateContent({
+                model: aiModel,
+                contents: [
+                    { text: dynamicPrompt },
+                    {
+                        inlineData: { mimeType: "image/jpg", data: base64Image }
+                    }
+                ],
+                config: { responseModalities: ["IMAGE"] }
+            });
+            if(!illustrationResponse) throw new ApiError(500, "Failed to generate illustration with custom prompt");
+            
+            // Find generated image
+            const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
+            if(!imagePart?.inlineData?.data) throw new ApiError(500, "Inline data is missing");
+
+            // Convert base64 image to buffer
+            const imageBuffer = Buffer.from(imagePart.inlineData.data, "base64");
+            if(!imageBuffer) throw new ApiError(500, "Failed to convert base64 image to buffer");
+
+            // Extract token counts
+            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
+            return { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };            
+        }
+        catch(error)
+        {
+            throw new ApiError(500, error.message);
         }
     }
 
@@ -93,20 +132,20 @@ class LLMService
                     thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
                 }),
             ]);
-            if(!frontResponse) return null;
-            if(!coverResponse) return null;
+            if(!frontResponse) throw new ApiError(500, "Failed to generate front image");
+            if(!coverResponse) throw new ApiError(500, "Failed to generate cover image");
 
             // Find generated images
             const frontImagePart = frontResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
             const coverImagePart = coverResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
-            if(!frontImagePart?.inlineData?.data) return null;
-            if(!coverImagePart?.inlineData?.data) return null;
+            if(!frontImagePart?.inlineData?.data) throw new ApiError(500, "Inline data of front image is missing");
+            if(!coverImagePart?.inlineData?.data) throw new ApiError(500, "Inline data of cover image is missing");
 
             // Convert base64 images to buffer
             const frontImageBuffer = Buffer.from(frontImagePart.inlineData.data, "base64");
             const coverImageBuffer = Buffer.from(coverImagePart.inlineData.data, "base64");
-            if(!frontImageBuffer) return null;
-            if(!coverImageBuffer) return null;
+            if(!frontImageBuffer) throw new ApiError(500, "Failed to convert base64 front image to buffer");
+            if(!coverImageBuffer) throw new ApiError(500, "Failed to convert base64 cover image to buffer");
 
             // Extract token counts
             const { totalTokenCount: frontTotalTokenCount } = frontResponse.usageMetadata;
@@ -115,8 +154,7 @@ class LLMService
         }
         catch(error)
         {
-            console.log("Failed to generate prompt for front and cover generation", error.message);
-            return null;
+            throw new ApiError(500, error.message);
         }
     }    
 }
