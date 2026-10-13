@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createIllustration, uploadManualIllustration, generateWithCustomPrompt,
-updateTextAndBgTextColor } = require("../controllers/illustrationController");
+updateSpreadSublayout } = require("../controllers/illustrationController");
 
 // Router instance
 const illustrationRouter = Router();
@@ -18,7 +18,7 @@ illustrationRouter.route("/:bookId/spread/:spreadId/upload").post(uploadManualIl
 // Generate illustration with custom prompt
 illustrationRouter.route("/:bookId/spread/:spreadId/prompt").post(generateWithCustomPrompt);
 
-// Update text color and text bg color
-illustrationRouter.route("/:bookId/spread/:spreadId/color").patch(updateTextAndBgTextColor);
+// Update spread sublayout
+illustrationRouter.route("/:bookId/spread/:spreadId/sublayout").patch(updateSpreadSublayout);
 
 module.exports = illustrationRouter;
