@@ -19,7 +19,7 @@ const bookSchema = new Schema({
     spreadsCount: { type: Number, required: true },
 
     // Content info
-    txtContent: { type: String, trim: true },
+    txtContent: { type: String, trim: true, default: null },
     prompt: { type: String, trim: true, default: null },
     aiContent: { type: String, trim: true, default: null },
 
