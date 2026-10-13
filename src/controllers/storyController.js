@@ -44,7 +44,6 @@ const generateWithAi = asyncHandler(async (request, response) => {
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
-    if(!output) throw new ApiError(500, "Failed to generate AI content. LLM is temporarily down");
     const { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = output;
 
     // Log token consumption

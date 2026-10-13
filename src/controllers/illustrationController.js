@@ -45,7 +45,6 @@ const createIllustration = asyncHandler(async (request, response) => {
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image");
-    if(!illustrationResponse) throw new ApiError(400, "Failed to generate illustration! Please write appropriate prompt.");
 
     // Extract generated image buffer and token consumption count
     const { imageBuffer, totalTokenCount } = illustrationResponse;
@@ -134,7 +133,6 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
 
     // Generate illustration
     const illustrationResponse = await llm.generateIllustrationWithCustomPrompt(prompt, referenceImageURL, "gemini-3.1-flash-image");
-    if(!illustrationResponse) throw new ApiError(400, "Failed to generate illustration! Please write appropriate prompt.");
 
     // Extract generated image buffer and token consumption count
     const { imageBuffer, totalTokenCount } = illustrationResponse;

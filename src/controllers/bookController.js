@@ -243,7 +243,6 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
 
     // LLM Response
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image");
-    if(!llmResponse) throw new ApiError(500, "Failed to generate front and cover images");
 
     // Extract
     const { frontImageBuffer, coverImageBuffer, totalTokenCount } = llmResponse;
