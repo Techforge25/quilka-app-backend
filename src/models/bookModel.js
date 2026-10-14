@@ -18,11 +18,6 @@ const bookSchema = new Schema({
     authorName: { type: String, trim: true, required: true },
     spreadsCount: { type: Number, required: true },
 
-    // Content info
-    txtContent: { type: String, trim: true, default: null },
-    prompt: { type: String, trim: true, default: null },
-    aiContent: { type: String, trim: true, default: null },
-
     // Metadata
     ageGroup: { type: String, trim: true, required: true },
     bookSize: { type: String, trim: true, required: true, enum: allowedBookSizes },
