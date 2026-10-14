@@ -6,11 +6,13 @@ const { isValidObjectId } = require("mongoose");
 const convertToMongoId = require("../utils/convertToMongoId");
 const joi = require("joi");
 const validatePayload = require("../utils/validatePayload");
-const { promptGuideForTextGeneration, promptGuideForTextRegeneration } = require("../utils/promptGuide");
+const { promptGuideForTextGeneration, promptGuideForTextRegeneration, 
+promptGuideForCustomStoryRefinement } = require("../utils/promptGuide");
 const llm = require("../service/llmService");
 const { allowedTextSizes } = require("../constants");
 const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
+const { customStoryRefinementValidator } = require("../validators/storyValidator");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response, next) => {
@@ -297,8 +299,140 @@ const viewStoryContent = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Story content has been fetched"));
 });
 
-// Update story
+// Refine custom story with AI
+const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book and spread ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Sanitize payload
+    const { instruction } = validatePayload(customStoryRefinementValidator, request.body) || {};
+
+    // Find book and regeneration
+    const [book, regeneration] = await Promise.all([
+        Book.findById(bookId),
+        Regeneration.findOne({ userId, bookId })
+    ]);
+
+    // Validate book
+    if(!book) throw new ApiError(404, "Book not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to refine story of this book");
+    if(book.status !== "draft") throw new ApiError(403, "You cannot refine story content while the book is not in draft state");
+    if(book.draftStage !== 1) throw new ApiError(403, "You cannot refine story content while the book is not in draft stage 1");
+    if(book.mode !== "CUSTOM") throw new ApiError(400, "Story refinement is only available for books created in CUSTOM mode");
+    if(!book.txtContent) throw new ApiError(400, "Text content for previous story is missing");
+
+    // Validate regeneration
+    if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
+    if(regeneration.limit <= 0) throw new ApiError(403, "You have reached your story regeneration limit. Please buy more!");    
+
+    // Extract total spread characters
+    const totalSpreadCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);    
+
+    // Get dynamic prompt for custom story refinement
+    const dynamicPrompt = promptGuideForCustomStoryRefinement({
+        title: book.title,
+        ageGroup: book.ageGroup,
+        language: book.language,
+        totalCharacters: totalSpreadCharacters,
+        previousStory: book.txtContent,
+        instruction
+    });
+
+    // Generate story
+    const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
+    const { aiContent } = output;
+
+    // Validate AI content length with total spread characters
+    if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
+    
+    // Create db session
+    const dbSession = await startSession();
+    try
+    {
+        // Start transaction
+        dbSession.startTransaction();
+
+        // Update custom story refinement
+        await Book.updateOne(
+            { _id: bookId, userId, mode: "CUSTOM" },
+            { $set: { txtContent: aiContent } },
+            { session: dbSession }
+        );
+
+        // Update regeneration limit
+        await Regeneration.updateOne(
+            { bookId, userId, limit: { $gt: 0 } },
+            { $inc: { limit: -1 } },
+            { session: dbSession }
+        );
+
+        // Commit transaction
+        await dbSession.commitTransaction();
+    }
+    catch(error)
+    {
+        await dbSession.abortTransaction();
+        throw new ApiError(500, error.message);
+    }
+    finally
+    {
+        dbSession.endSession();
+    }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { story: aiContent }, "Your custom story has been refined with AI"));
+});
+
+// Update story (CUSTOM FLOW)
 const updateStory = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to update this book story");
+    if(book.status !== "draft") throw new ApiError(403, "To update story, book must be in draft state");
+    if(book.draftStage !== 1) throw new ApiError(403, "To update story, book must be in draft stage 1");
+    if(book.mode !== "CUSTOM") throw new ApiError(400, "To update story, the book mode must be 'CUSTOM'");
+
+    // Total story characters
+    const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);    
+
+    // Sanitize payload
+    const updateStoryValidator = joi.object({
+        storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content"),
+    });
+    const { storyContent } = validatePayload(updateStoryValidator, request.body) || {};
+
+    // Divide spreads
+    const dataInSpreads = storyContent.split("spread break");
+    if(!dataInSpreads.length) throw new ApiError(400, "Story content is missing");
+    
+    // Validate character limit for each spread
+    dataInSpreads.forEach((content, index) => {
+        if(content.length > book.spreads[index].characterLimit)
+        {
+            throw new ApiError(400, `Character limit exceeded for Spread ${index + 1}`);
+        }
+    });
+
+    // Save to db
+    book.txtContent = storyContent;
+    await book.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, storyContent, "Story has been updated"));
+});
+
+// Update story with spread text size (AI & CUSTOM)
+const updateStoryWithSpreadTextSize = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Sanitize book and spread ID
@@ -418,5 +552,5 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));
 });
 
-module.exports = { generateWithAi, regenerateStoryText, viewStoryContent, updateStory, 
-finalizeTextPhase, finalizeIllustrationPhase };
+module.exports = { generateWithAi, regenerateStoryText, viewStoryContent, updateStory,
+refineCustomStoryWithAI, updateStoryWithSpreadTextSize, finalizeTextPhase, finalizeIllustrationPhase };

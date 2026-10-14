@@ -1,6 +1,6 @@
 const { Router } = require("express");
-const { generateWithAi, regenerateStoryText, viewStoryContent, 
-refineCustomStoryWithAI, updateStory, finalizeTextPhase, 
+const { generateWithAi, regenerateStoryText, updateStory, viewStoryContent, 
+refineCustomStoryWithAI, updateStoryWithSpreadTextSize, finalizeTextPhase, 
 finalizeIllustrationPhase } = require("../controllers/storyController");
 const { authentication } = require("../middlewares/auth");
 const { rateLimit } = require("../middlewares/rateLimit");
@@ -14,14 +14,16 @@ storyRouter.use(authentication);
 // Generate & Regenerate story text with AI
 storyRouter.route("/:bookId").post(rateLimit(1, 1), generateWithAi, regenerateStoryText);
 
-// View story content
-storyRouter.route("/:bookId").get(viewStoryContent);
+// View story content / Update story
+storyRouter.route("/:bookId")
+.get(viewStoryContent)
+.patch(updateStory);
 
 // Refine custom story with AI
-storyRouter.route("/:bookId/refine").get(rateLimit(1, 1), refineCustomStoryWithAI);
+storyRouter.route("/:bookId/refine").patch(rateLimit(1, 1), refineCustomStoryWithAI);
 
-// Update story
-storyRouter.route("/:bookId/spread/:spreadId").patch(rateLimit(10, 1), updateStory);
+// Update story with spread text size (AI & CUSTOM)
+storyRouter.route("/:bookId/spread/:spreadId").patch(rateLimit(10, 1), updateStoryWithSpreadTextSize);
 
 // Finalize text phase
 storyRouter.route("/:bookId/finalizeTextStory").post(rateLimit(1, 1), finalizeTextPhase);
