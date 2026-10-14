@@ -411,18 +411,6 @@ const updateStory = asyncHandler(async (request, response) => {
     });
     const { storyContent } = validatePayload(updateStoryValidator, request.body) || {};
 
-    // Divide spreads
-    const dataInSpreads = storyContent.split("spread break");
-    if(!dataInSpreads.length) throw new ApiError(400, "Story content is missing");
-    
-    // Validate character limit for each spread
-    dataInSpreads.forEach((content, index) => {
-        if(content.length > book.spreads[index].characterLimit)
-        {
-            throw new ApiError(400, `Character limit exceeded for Spread ${index + 1}`);
-        }
-    });
-
     // Save to db
     book.txtContent = storyContent;
     await book.save();
