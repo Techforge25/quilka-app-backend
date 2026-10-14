@@ -143,6 +143,16 @@ const viewBook = asyncHandler(async (request, response) => {
         // Match
         { $match: { _id: convertToMongoId(bookId) } },
 
+        // Lookup
+        {
+            $lookup: {
+                from: "spreads",
+                localField: "_id",
+                foreignField: "bookId",
+                as: "spreads"
+            }
+        },
+
         // Add fields to calculate characters, illustrations and book length
         {
             $addFields: {
