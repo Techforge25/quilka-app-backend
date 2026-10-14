@@ -1,6 +1,7 @@
 const { Router } = require("express");
-const { generateWithAi, regenerateStoryText, viewStoryContent, updateStory, 
-finalizeTextPhase, finalizeIllustrationPhase } = require("../controllers/storyController");
+const { generateWithAi, regenerateStoryText, viewStoryContent, 
+refineCustomStoryWithAI, updateStory, finalizeTextPhase, 
+finalizeIllustrationPhase } = require("../controllers/storyController");
 const { authentication } = require("../middlewares/auth");
 const { rateLimit } = require("../middlewares/rateLimit");
 
@@ -15,6 +16,9 @@ storyRouter.route("/:bookId").post(rateLimit(1, 1), generateWithAi, regenerateSt
 
 // View story content
 storyRouter.route("/:bookId").get(viewStoryContent);
+
+// Refine custom story with AI
+storyRouter.route("/:bookId/refine").get(rateLimit(1, 1), refineCustomStoryWithAI);
 
 // Update story
 storyRouter.route("/:bookId/spread/:spreadId").patch(rateLimit(10, 1), updateStory);
