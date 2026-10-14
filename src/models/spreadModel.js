@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
+const { allowedTextSizes } = require("../constants");
 
 // Schema
 const spreadSchema = new Schema({

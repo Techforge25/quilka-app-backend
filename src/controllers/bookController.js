@@ -10,23 +10,15 @@ const { emptyList } = require("../constants");
 const llm = require("../service/llmService");
 const { promptGuideForCoverImage, promptGuideForFrontImage } = require("../utils/promptGuide");
 const { uploadToCloudinary } = require("../utils/cloudinary");
+const Spread = require("../models/spreadModel");
 
 // Create book
 const createBook = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get validated payload
-    const { mode, title, authorName, spreadsCount, txtContent, prompt, 
-    ageGroup, bookSize, spreadSize, textStyle,  illustrationStyle, 
-    language, spreads } = validatePayload(createBookValidator, request.body) || {};
-
-    // Validate custom mode
-    if(mode === "CUSTOM")
-    {
-        // Extract total spread characters and validate
-        const totalSpreadCharacters = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
-        if(txtContent.length > totalSpreadCharacters) throw new ApiError(403, "Please increase spread limit");
-    }
+    const { mode, title, authorName, spreadsCount, ageGroup, bookSize, spreadSize, 
+    textStyle, illustrationStyle, language, spreads } = validatePayload(createBookValidator, request.body) || {};
 
     // Create book
     const book = await Book.create({ 
@@ -34,18 +26,22 @@ const createBook = asyncHandler(async (request, response) => {
         mode, 
         title, 
         authorName, 
-        spreadsCount, 
-        txtContent,
-        prompt,
+        spreadsCount,
         ageGroup, 
         bookSize, 
         spreadSize,
         textStyle,
         illustrationStyle,
         language, 
-        spreads
     });
     if(!book) throw new ApiError(500, "Failed to create book");
+
+    // Map Book ID
+    const spreadConfig = spreads.map((spread) => ({ ...spread, bookId: book._id }));
+
+    // Create spreads
+    const spread = await Spread.insertMany(spreadConfig);
+    if(!spread) throw new ApiError(400, "Failed to create spreads");
 
     // Response
     return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created"));
