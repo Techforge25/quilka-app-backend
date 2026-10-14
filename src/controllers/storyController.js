@@ -10,6 +10,7 @@ const { promptGuideForTextGeneration, promptGuideForTextRegeneration } = require
 const llm = require("../service/llmService");
 const { allowedTextSizes } = require("../constants");
 const Regeneration = require("../models/regenerationModel");
+const { startSession } = require("mongoose");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response, next) => {
@@ -22,10 +23,10 @@ const generateWithAi = asyncHandler(async (request, response, next) => {
     // Find book
     const book = await Book.findById(bookId);
     if(!book) throw new ApiError(404, "Book not found");
-    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to access this book.");
-    if(book.status !== "draft") throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft state");
-    if(book.draftStage !== 1) throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft stage 1");
-    if(book.mode !== "AI") throw new ApiError(400, "To generate story with AI, the book 'mode' must be an AI");
+    // if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to access this book.");
+    // if(book.status !== "draft") throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft state");
+    // if(book.draftStage !== 1) throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft stage 1");
+    // if(book.mode !== "AI") throw new ApiError(400, "To generate story with AI, the book 'mode' must be an AI");
 
     // Pass to regeneration text controller
     if(book.aiContent)
@@ -96,16 +97,40 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
 
     // Validate AI content length with total spread characters
     if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
-    
-    // Save to db
-    book.aiContent = aiContent;
-    await Promise.all([
-        book.save(),
-        Regeneration.updateOne(
+
+    // Create db session
+    const dbSession = await startSession();
+    try
+    {
+        // Start transaction
+        dbSession.startTransaction();
+
+        // Update AI content
+        await Book.updateOne(
+            { _id: bookId, userId }, 
+            { $set: { aiContent } }, 
+            { session: dbSession }
+        ),
+
+        // Update regeneration limit
+        await Regeneration.updateOne(
             { userId, bookId, limit: { $gt: 0 } },
-            { $inc: { limit: -1 } }
-        )       
-    ]);
+            { $inc: { limit: -1 } },
+            { session: dbSession }
+        )
+
+        // Commit transaction
+        await dbSession.commitTransaction();
+    }
+    catch(error)
+    {
+        await dbSession.abortTransaction();
+        throw new ApiError(500, error.message);
+    }
+    finally
+    {
+        dbSession.endSession();
+    }
 
     // Response
     return  response.status(201).json(new ApiResponse(201, aiContent, "Content has been regenerated"));
