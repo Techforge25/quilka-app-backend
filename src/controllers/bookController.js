@@ -143,7 +143,7 @@ const viewBook = asyncHandler(async (request, response) => {
         // Match
         { $match: { _id: convertToMongoId(bookId) } },
 
-        // Lookup
+        // Lookup spreads
         {
             $lookup: {
                 from: "spreads",
@@ -208,6 +208,18 @@ const viewBookContent = asyncHandler(async (request, response) => {
         // Match
         { $match: { _id: convertToMongoId(bookId) } },
 
+        // Lookup spreads
+        {
+            $lookup: {
+                from: "spreads",
+                localField: "_id",
+                foreignField: "bookId",
+                as: "spreads",
+                pipeline: [{ $project: { content: 1, characterLimit: 1 } }]
+            }
+        },
+
+
         // Add fields to calculate characters, book length
         {
             $addFields: {
@@ -216,13 +228,6 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 bookLength: {
                     spreads: "$spreadsCount",
                     pages: { $multiply: ["$spreadsCount", 2] },
-                },
-                storyContent: {
-                    $cond: [
-                        { $eq: ["$mode", "CUSTOM"] },
-                        "$txtContent",
-                        "$aiContent"
-                    ]
                 }
             }
         },
@@ -237,9 +242,9 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 bookLength: 1,
                 totalCharacters: 1,
                 totalIllustrations: 1,
-                storyContent: 1,
                 status: 1,
-                draftStage: 1
+                draftStage: 1,
+                spreads: 1
             }
         }
     ]);
