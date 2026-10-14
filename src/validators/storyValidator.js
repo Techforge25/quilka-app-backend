@@ -15,4 +15,4 @@ const customStoryRefinementValidator = joi.object({
     instruction: joi.string().trim().required().valid(...allowedInstructions).label("Instruction")
 });
 
-module.export = { customStoryRefinementValidator };
+module.exports = { customStoryRefinementValidator };
