@@ -1,7 +1,6 @@
 const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
-const { allowedBookSizes, allowedIllustrationStyles, allowedTextSizes, 
-allowedSpreadSizes, allowedLanguages } = require("../constants");
+const { allowedBookSizes, allowedIllustrationStyles, allowedSpreadSizes, allowedLanguages } = require("../constants");
 
 // Schema
 const bookSchema = new Schema({
