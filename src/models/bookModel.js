@@ -33,31 +33,7 @@ const bookSchema = new Schema({
 
     // Media
     frontImage: { type: String, trim: true, default: null },
-    backImage: { type: String, trim: true, default: null },
-
-    // Spreads config
-    spreads: [{
-        mainLayoutName: { type: String, trim: true, required: true }, // Classic story book
-        subLayoutDirection: { type: String, trim: true, required: true }, // Right-content, Left-content
-
-        // Limit
-        characterLimit: { type: Number },
-        illustrationLimit: { type: Number },
-
-        // Sizes
-        illustrationSize: {
-            size: { type: String, trim: true },
-            aspectRatio: { type: String, trim: true }
-        },
-        textSize: { type: String, trim: true, enum: allowedTextSizes, default: "Small" },
-
-        // Colors
-        textColor: { type: String, trim: true, default: "#211827" },
-        textBgColor: { type: String, trim: true, default: "#FFF0F0" },
-
-        // Illustration URL
-        illustrationURL: { type: String, trim: true, default: null }
-    }]
+    backImage: { type: String, trim: true, default: null }
 }, { timestamps: true });
 
 // Add pagination plugin
