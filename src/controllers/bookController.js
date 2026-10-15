@@ -26,7 +26,7 @@ const createBookInCustom = asyncHandler(async (request, response, next) => {
         return next();
     }
 
-    // Validate spreads config
+    // Validate spreads config (Content must not be empty)
     spreads.forEach((spread, index) => {
         const spreadNo = index + 1;
         if(!spread.content) throw new ApiError(400, `Spread ${spreadNo} content is missing`);
@@ -57,14 +57,49 @@ const createBookInCustom = asyncHandler(async (request, response, next) => {
     if(!spread) throw new ApiError(400, "Failed to create spreads");
 
     // Response
-    return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created"));
+    return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created in Custom Mode!"));
 });
 
 // Create book in AI
 const createBookInAI = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get validated payload
+    const { mode, title, authorName, prompt, spreadsCount, ageGroup, bookSize, spreadSize, 
+    textStyle, illustrationStyle, language, spreads } = validatePayload(createBookValidator, request.body) || {};
+
+    // Validate spreads config (Content must be empty)
+    spreads.forEach((spread, index) => {
+        const spreadNo = index + 1;
+        if(spread.content !== null) throw new ApiError(400, `Spread ${spreadNo} content must be null in AI Mode`);
+    });
+
+    // Create book
+    const book = await Book.create({
+        userId, 
+        mode, 
+        title, 
+        authorName, 
+        prompt,
+        spreadsCount,
+        ageGroup, 
+        bookSize, 
+        spreadSize,
+        textStyle,
+        illustrationStyle,
+        language,
+    });
+    if(!book) throw new ApiError(500, "Failed to create book");
+
+    // Map Book ID
+    const spreadConfig = spreads.map((spread) => ({ ...spread, bookId: book._id }));
+
+    // Create spreads
+    const spread = await Spread.insertMany(spreadConfig);
+    if(!spread) throw new ApiError(400, "Failed to create spreads");    
 
     // Response
-    return response.status(201).json(new ApiResponse(201, "Book has been created!"));
+    return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created in AI Mode!"));
 });
 
 // Update book
@@ -398,5 +433,5 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Front and back images have been fetched"));
 });
 
-module.exports = { createBookInCustom, updateBook, fetchMyBooks, viewBook, viewBookContent, 
+module.exports = { createBookInCustom, createBookInAI, updateBook, fetchMyBooks, viewBook, viewBookContent, 
 createFrontAndCoverImages, publishBook, fetchFrontAndBackImages };
