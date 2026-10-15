@@ -139,31 +139,31 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size 
 // Prompt for cover image
 const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size }) => {
     const data = `
-    A complete, professional children's picture book BACK COVER design in ${illustrationStyle} style matching the story world of:
+    A flat, borderless, full-bleed 2D digital illustration of a single-page children's picture book BACK COVER in ${illustrationStyle} style matching the story world of:
     ${content}
 
-    Back Cover Layout & Graphic Design Elements:
+    Canvas Size & Single-Page Orientation Logic:
+    - Full Spread Reference Size: ${size}.
+    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
+    - This represents ONE single back cover page ( strictly half the width of the full spread ${size}), rendered as a single-page layout.
+    - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from edge to edge. Zero outer margins, zero padding, and zero background space outside the cover.
 
-    - Story Blurb Block: Neatly framed, legible story summary text in the middle for the book ${content}.
-    - Author Credit: Neatly displayed credit at the bottom: "Written by ${authorName}".
-    - Commercial Publishing Details: Include a small, clean rectangular white barcode/ISBN box neatly aligned in the bottom corner to give an authentic commercial book finish.
+    Back Cover Layout & Graphic Design Elements:
+    - Story Blurb Block: Neatly framed, legible story summary text in the center area for the book: ${content}.
+    - Author Credit: Neatly displayed credit near the bottom: "Written by ${authorName}".
+    - Commercial Publishing Details: Include a small, clean rectangular white barcode/ISBN box neatly aligned in the bottom corner.
 
     Background Illustration & Spot Art:
-    - A cohesive, gentle environment illustration from the story world (${content}) framing the text gracefully.
-    - The illustration should use soft, readable contrast so all cover typography remains crisp and clear.
-
-    Canvas & Print Specifications:
-    - Target Dimensions: Exactly ${size} (width divided by 2 x height in px), vertical portrait orientation.
-    - Full-bleed, edge-to-edge layout with balanced margins.
+    - A cohesive, gentle environment illustration from the story world (${content}) extending across the entire canvas to all four edges while framing the central text gracefully.
+    - Soft, readable contrast behind the text area so all cover typography remains crisp and clear.
 
     Visual Art Style:
     - ${illustrationStyle} with identical color palette, lighting warmth, and paper textures as the front cover.
 
-    Strict Constraints:
-    - Render ONLY the specified text, the blurb, and "Written by ${authorName}").
+    Strict Constraints & Negative Directives:
+    - Render ONLY the specified blurb text and "Written by ${authorName}".
     - Absolutely NO unreadable gibberish, NO messy placeholder scribbles, and NO speech bubbles.
-    - Completely borderless, full-bleed, edge-to-edge canvas of exct provided size.  
-    `;
+    - FLAT 2D ARTWORK ONLY: Do NOT generate a 3D book mockup, do NOT show a book sitting on a background or surface, do NOT draw a book spine, and do NOT add white borders or frames. The illustration must touch all 4 raw edges of the generated image.`;
     return data;
 };
 
