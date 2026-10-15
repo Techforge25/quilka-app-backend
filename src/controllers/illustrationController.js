@@ -76,22 +76,20 @@ const uploadManualIllustration = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { illustrationURL } = validatePayload(uploadManualIllustrationValidator, request.body) || {};
 
-    // Find book
+    // Find book and spread
     const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
-
-    // Find spread
-    const spread = book.spreads.id(spreadId);
-    if(!spread) throw new ApiError(404, "Spread not found");
+    const spread = await Spread.findById(spreadId);
 
     // Validate
+    if(!book) throw new ApiError(404, "Book not found");
+    if(!spread) throw new ApiError(404, "Spread not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to upload illustration for this book");
     if(book.status !== "draft") throw new ApiError(403, "The illustration uploading cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be uploaded in draft stage 2");
 
-    // Save illustration to specific spread
+    // Save to db
     spread.illustrationURL = illustrationURL;
-    await book.save();
+    await spread.save();
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been uploaded"));
