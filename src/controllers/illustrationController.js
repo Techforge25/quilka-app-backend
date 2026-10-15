@@ -24,8 +24,10 @@ const createIllustration = asyncHandler(async (request, response) => {
     const { content } = validatePayload(createIllustrationValidator, request.body) || {};
 
     // Find book and spread
-    const book = await Book.findById(bookId);
-    const spread = await Spread.findById(spreadId);
+    const [book, spread] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId)
+    ]);
 
     // Validate
     if(!book) throw new ApiError(404, "Book not found");
@@ -77,8 +79,10 @@ const uploadManualIllustration = asyncHandler(async (request, response) => {
     const { illustrationURL } = validatePayload(uploadManualIllustrationValidator, request.body) || {};
 
     // Find book and spread
-    const book = await Book.findById(bookId);
-    const spread = await Spread.findById(spreadId);
+    const [book, spread] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId)
+    ]);
 
     // Validate
     if(!book) throw new ApiError(404, "Book not found");
@@ -107,15 +111,15 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { customPrompt, referenceImageURL } = validatePayload(generateWithCustomPromptValidator, request.body) || {};
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
-
-    // Find spread
-    const spread = book.spreads.id(spreadId);
-    if(!spread) throw new ApiError(404, "Spread not found");
+    // Find book and spread
+    const [book, spread] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId)
+    ]);
 
     // Validate
+    if(!book) throw new ApiError(404, "Book not found");
+    if(!spread) throw new ApiError(404, "Spread not found");    
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate illustration for this book");
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be generated in draft stage 2");
@@ -142,9 +146,9 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
     // Get secure URL
     const illustrationURL = uploadResult.secure_url;
 
-    // Save illustration to specific spread
+    // Save to db
     spread.illustrationURL = illustrationURL;
-    await book.save();
+    await spread.save();
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been generated with custom prompt"));
