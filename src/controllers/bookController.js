@@ -12,13 +12,26 @@ const { promptGuideForCoverImage, promptGuideForFrontImage } = require("../utils
 const { uploadToCloudinary } = require("../utils/cloudinary");
 const Spread = require("../models/spreadModel");
 
-// Create book
-const createBook = asyncHandler(async (request, response) => {
+// Create book in custom
+const createBookInCustom = asyncHandler(async (request, response, next) => {
     const userId = request.user._id;
 
     // Get validated payload
     const { mode, title, authorName, spreadsCount, ageGroup, bookSize, spreadSize, 
     textStyle, illustrationStyle, language, spreads } = validatePayload(createBookValidator, request.body) || {};
+
+    // Pass to AI
+    if(mode === "AI")
+    {
+        return next();
+    }
+
+    // Validate spreads config
+    spreads.forEach((spread, index) => {
+        const spreadNo = index + 1;
+        if(!spread.content) throw new ApiError(400, `Spread ${spreadNo} content is missing`);
+        if(spread.content.length > spread.characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
+    });
 
     // Create book
     const book = await Book.create({ 
@@ -45,6 +58,13 @@ const createBook = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created"));
+});
+
+// Create book in AI
+const createBookInAI = asyncHandler(async (request, response) => {
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, "Book has been created!"));
 });
 
 // Update book
@@ -378,5 +398,5 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Front and back images have been fetched"));
 });
 
-module.exports = { createBook, updateBook, fetchMyBooks, viewBook, viewBookContent, 
+module.exports = { createBookInCustom, updateBook, fetchMyBooks, viewBook, viewBookContent, 
 createFrontAndCoverImages, publishBook, fetchFrontAndBackImages };
