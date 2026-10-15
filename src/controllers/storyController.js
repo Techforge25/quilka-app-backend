@@ -168,62 +168,9 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         {
             $addFields: {
                 storyParts: {
-                    $cond: [
-                        { $eq: ["$mode", "AI"] },
-
-                        // AI story content
-                        {
-                            $split: [
-                                { $ifNull: ["$storyContent", ""] },
-                                "spread break"
-                            ]
-                        },
-
-                        // Custom story content
-                        {
-                            $reduce: {
-                                input: { $ifNull: ["$spreads", []] },
-                                initialValue: {
-                                    offset: 0,
-                                    parts: []
-                                },
-                                in: {
-                                    offset: {
-                                        $add: [
-                                            "$$value.offset",
-                                            { $max: [0, { $ifNull: ["$$this.characterLimit", 0] }] }
-                                        ]
-                                    },
-                                    parts: {
-                                        $concatArrays: [
-                                            "$$value.parts",
-                                            [
-                                                {
-                                                    $substrCP: [
-                                                        { $ifNull: ["$storyContent", ""] },
-                                                        "$$value.offset",
-                                                        { $max: [0, { $ifNull: ["$$this.characterLimit", 0] }] }
-                                                    ]
-                                                }
-                                            ]
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
-        },
-
-        // Extract custom story parts
-        {
-            $addFields: {
-                storyParts: {
-                    $cond: [
-                        { $eq: ["$mode", "CUSTOM"] },
-                        "$storyParts.parts",
-                        "$storyParts"
+                    $split: [
+                        { $ifNull: ["$storyContent", ""] },
+                        "spread break"
                     ]
                 }
             }
@@ -403,11 +350,12 @@ const updateStory = asyncHandler(async (request, response) => {
     if(book.mode !== "CUSTOM") throw new ApiError(400, "To update story, the book mode must be 'CUSTOM'");
 
     // Total story characters
-    const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);    
+    // const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);    
 
     // Sanitize payload
     const updateStoryValidator = joi.object({
-        storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content"),
+        // storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content"),
+        storyContent: joi.string().min(3).required().label("Story content"),
     });
     const { storyContent } = validatePayload(updateStoryValidator, request.body) || {};
 
@@ -442,14 +390,17 @@ const updateStoryWithSpreadTextSize = asyncHandler(async (request, response) => 
     if(book.draftStage !== 1) throw new ApiError(403, "You cannot update book content while it is not in draft stage 1");
 
     // Total story characters
-    const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
+    // const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
 
     // Sanitize payload
     const updateStoryValidator = joi.object({
-        storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content"),
+        // storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content"),
+        storyContent: joi.string().min(3).required().label("Story content"),
         textSize: joi.string().trim().required().valid(...allowedTextSizes).label("Text size")
     });
     const { storyContent, textSize } = validatePayload(updateStoryValidator, request.body) || {};
+
+    console.log(storyContent);
 
     // Divide spreads
     const dataInSpreads = storyContent.split("spread break");
