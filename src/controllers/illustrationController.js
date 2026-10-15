@@ -166,16 +166,16 @@ const updateSpreadSublayout = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { textColor, textBgColor, subLayoutDirection } = validatePayload(updateSpreadSublayoutValidator, request.body) || {};    
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
-
-    // Find spread
-    const spread = book.spreads.id(spreadId);
-    if(!spread) throw new ApiError(404, "Spread not found");
+    // Find book and spread
+    const [book, spread] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId)
+    ]);
 
     // Validate
-    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized update text and text bg color");
+    if(!book) throw new ApiError(404, "Book not found");
+    if(!spread) throw new ApiError(404, "Spread not found"); 
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to update text and text bg color");
     if(book.status !== "draft") throw new ApiError(403, "Text color and text bg color cannot be updated while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Text color and text bg color cannot be updated while the book is not in draft stage 2");
 
@@ -183,10 +183,10 @@ const updateSpreadSublayout = asyncHandler(async (request, response) => {
     spread.textColor = textColor;
     spread.textBgColor = textBgColor;
     spread.subLayoutDirection = subLayoutDirection;
-    await book.save();
+    await spread.save();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { textColor, textBgColor }, "Spread has been updated"));
+    return response.status(200).json(new ApiResponse(200, { textColor, textBgColor, subLayoutDirection }, "Spread has been updated"));
 });
 
 module.exports = { createIllustration, uploadManualIllustration, 
