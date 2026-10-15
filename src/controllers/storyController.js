@@ -151,111 +151,15 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         // Match
         { $match: { _id: convertToMongoId(bookId) } },
 
-        // Add fields
+        // Lookup spreads
         {
-            $addFields: {
-                storyContent: {
-                    $cond: [
-                        { $eq: ["$mode", "CUSTOM"] },
-                        "$txtContent",
-                        "$aiContent"
-                    ]
-                }
-            }
-        },
-
-        // Add story parts
-        {
-            $addFields: {
-                storyParts: {
-                    $cond: [
-                        { $eq: ["$mode", "AI"] },
-
-                        // AI story content
-                        {
-                            $split: [
-                                { $ifNull: ["$storyContent", ""] },
-                                "spread break"
-                            ]
-                        },
-
-                        // Custom story content
-                        {
-                            $reduce: {
-                                input: { $ifNull: ["$spreads", []] },
-                                initialValue: {
-                                    offset: 0,
-                                    parts: []
-                                },
-                                in: {
-                                    offset: {
-                                        $add: [
-                                            "$$value.offset",
-                                            { $max: [0, { $ifNull: ["$$this.characterLimit", 0] }] }
-                                        ]
-                                    },
-                                    parts: {
-                                        $concatArrays: [
-                                            "$$value.parts",
-                                            [
-                                                {
-                                                    $substrCP: [
-                                                        { $ifNull: ["$storyContent", ""] },
-                                                        "$$value.offset",
-                                                        { $max: [0, { $ifNull: ["$$this.characterLimit", 0] }] }
-                                                    ]
-                                                }
-                                            ]
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
-        },
-
-        // Extract custom story parts
-        {
-            $addFields: {
-                storyParts: {
-                    $cond: [
-                        { $eq: ["$mode", "CUSTOM"] },
-                        "$storyParts.parts",
-                        "$storyParts"
-                    ]
-                }
-            }
-        },
-
-        // Map spreads with content
-        {
-            $addFields: {
-                spreads: {
-                    $map: {
-                        input: {
-                            $range: [
-                                0,
-                                { $size: { $ifNull: ["$spreads", []] } }
-                            ]
-                        },
-                        as: "index",
-                        in: {
-                            $mergeObjects: [
-                                { $arrayElemAt: ["$spreads", "$$index"] },
-                                {
-                                    content: {
-                                        $ifNull: [
-                                            { $arrayElemAt: ["$storyParts", "$$index"] },
-                                            ""
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
+            $lookup: {
+                from: "spreads",
+                localField: "_id",
+                foreignField: "bookId",
+                as: "spreads",
+                pipeline: [{ $project: { mainLayoutName: 1, subLayoutDirection: 1, content: 1, 
+                textSize: 1, characterLimit: 1, textColor: 1, textBgColor: 1 } }]
             }
         },
 
@@ -292,7 +196,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         spreads: book.spreads || [],
         spreadSize: book.spreadSize,
         frontImage: book.frontImage,
-        backImage: book.backImage
+        backImage: book.backImage,
     };
 
     // Response
