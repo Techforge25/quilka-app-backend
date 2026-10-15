@@ -7,6 +7,13 @@ const createBookValidator = joi.object({
     // Book creation mode
     mode: joi.string().trim().required().valid("CUSTOM", "AI").label("Mode"),
 
+    // Prompt key for AI mode
+    prompt: joi.when("mode", {
+        is: "AI",
+        then: joi.string().trim().required().max(1000),
+        otherwise: joi.forbidden()
+    }).label("Prompt"),
+
     // Basic info
     title: joi.string().trim().min(3).max(60).required().label("Title"),
     authorName: joi.string().trim().min(3).max(20).required().label("Author name"),
