@@ -89,23 +89,42 @@ const promptGuideForCustomStoryRefinement = ({ title, ageGroup, language, previo
 
 // Prompt guide for illustration
 const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRatio }) => {
+    // const data = `
+    //     A children’s book illustration in ${illustrationStyle} style depicting the scene:
+    //     ${content}
+
+    //     Dimensions & Canvas Specifications:
+    //     - Target Dimensions: Exactly ${size} (width x height in px).
+    //     - Aspect Ratio: ${aspectRatio} orientation.
+    //     - Framing: Full-bleed, edge-to-edge illustration structured to fit a ${size} container with zero outer padding or white space.
+    //     - Composition Safe-Zone: Center key subjects with balanced breathing room around the edges to ensure no elements are clipped when rendered.
+
+    //     Visual Art Style:
+    //     - ${illustrationStyle} with rich detailing, coherent textures, and an expressive storybook aesthetic.
+
+    //     Strict Constraints:
+    //     - Completely borderless, full-bleed, edge-to-edge canvas.
+    //     - Absolutely NO text, NO dialogue, NO typography, NO sound effect lettering, and NO speech bubbles. Pure visual illustration only.`;
+
     const data = `
-        A children’s book illustration in ${illustrationStyle} style depicting the scene:
-        ${content}
+    A flat, borderless, full-bleed 2D children’s book page illustration in ${illustrationStyle} style depicting the scene:
+    ${content}
 
-        Dimensions & Canvas Specifications:
-        - Target Dimensions: Exactly ${size} (width x height in px).
-        - Aspect Ratio: ${aspectRatio} orientation.
-        - Framing: Full-bleed, edge-to-edge illustration structured to fit a ${size} container with zero outer padding or white space.
-        - Composition Safe-Zone: Center key subjects with balanced breathing room around the edges to ensure no elements are clipped when rendered.
+    Dimensions & Canvas Specifications:
+    - Target Dimensions: Exactly ${size} (width x height in px).
+    - Aspect Ratio: ${aspectRatio} orientation.
+    - 100% Edge-to-Edge Viewport: Full-bleed 2D illustration structured to completely fill a ${size} container from edge to edge with zero outer padding, zero margins, and zero white space.
+    - Composition Safe-Zone: Keep primary characters and key focal points centered with balanced breathing room so nothing important is clipped at the edges.
 
-        Visual Art Style:
-        - ${illustrationStyle} with rich detailing, coherent textures, and an expressive storybook aesthetic.
+    Visual Art Style:
+    - ${illustrationStyle} with rich detailing, coherent storybook textures, consistent lighting warmth, and an expressive picture-book finish.
 
-        Strict Constraints:
-        - Completely borderless, full-bleed, edge-to-edge canvas.
-        - Absolutely NO text, NO dialogue, NO typography, NO sound effect lettering, and NO speech bubbles. Pure visual illustration only.`;
-        return data;
+    Strict Constraints & Negative Directives:
+    - Completely borderless, flat 2D full-bleed canvas touching all 4 raw edges of the image frame.
+    - NO 3D book page mockups, NO page curl effects, NO central book spine shadows, and NO background surfaces.
+    - Pure visual illustration only: Absolutely NO text, NO page numbers, NO dialogue, NO typography, NO watermarks, and NO speech bubbles.    
+    `;
+    return data;
 };
 
 // Prompt for front image

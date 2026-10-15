@@ -30,6 +30,9 @@ const createIllustration = asyncHandler(async (request, response) => {
     const spread = book.spreads.id(spreadId);
     if(!spread) throw new ApiError(404, "Spread not found");
 
+    // Get previous image url
+    const previousImageURL = book.spreads.find((spread) => spread?.illustrationURL !== null);
+
     // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to create illustration for this book");
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation with AI cannot be proceeded while the book is not in draft state");
@@ -44,7 +47,7 @@ const createIllustration = asyncHandler(async (request, response) => {
     });
 
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image");
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousImageURL);
 
     // Extract generated image buffer and token consumption count
     const { imageBuffer, totalTokenCount } = illustrationResponse;
