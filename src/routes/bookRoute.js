@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
-const { createBookInCustom, createBookInAI, updateBook, fetchMyBooks, 
+const { createBookInCustom, createBookInAI, fetchMyBooks, 
 viewBook, viewBookContent, createFrontAndCoverImages, publishBook, 
 fetchFrontAndBackImages } = require("../controllers/bookController");
 const { rateLimit } = require("../middlewares/rateLimit");
@@ -16,10 +16,8 @@ bookRouter.route("/")
 .post(createBookInCustom, createBookInAI)
 .get(fetchMyBooks);
 
-// View book / Update book
-bookRouter.route("/:bookId")
-.get(viewBook)
-.put(updateBook);
+// View book
+bookRouter.route("/:bookId").get(viewBook);
 
 // View book content
 bookRouter.route("/:bookId/content").get(viewBookContent);
