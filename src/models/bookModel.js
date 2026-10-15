@@ -11,6 +11,7 @@ const bookSchema = new Schema({
     mode: { type: String, trim: true, required: true, enum: ["CUSTOM", "AI"] },
     status: { type: String, trim: true, required: true, enum: ["pending", "draft", "published"], default: "pending" },
     draftStage: { type: Number, default: 0 },
+    prompt: { type: String, trim: true, default: null },
 
     // Basic info
     title: { type: String, trim: true, required: true, index: true },
