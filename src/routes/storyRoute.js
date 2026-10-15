@@ -15,9 +15,10 @@ storyRouter.use(authentication);
 storyRouter.route("/:bookId").post(rateLimit(1, 1), generateWithAi, regenerateStoryText);
 
 // View story content / Update story
-storyRouter.route("/:bookId")
-.get(viewStoryContent)
-.patch(updateStory);
+storyRouter.route("/:bookId").get(viewStoryContent);
+
+// Update spread content (CUSTOM FLOW)
+storyRouter.route("/:bookId/spread/:spreadId").patch(updateStory);
 
 // Refine custom story with AI
 storyRouter.route("/:bookId/refine").patch(rateLimit(1, 1), refineCustomStoryWithAI);

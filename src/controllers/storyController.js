@@ -364,33 +364,36 @@ const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
 const updateStory = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Sanitize book ID
-    const { bookId } = request.params;
+    // Sanitize IDs
+    const { bookId, spreadId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Book ID");
     
-    // Find book
-    const book = await Book.findById(bookId);
+    // Find book and spread
+    const [book, spread] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId)
+    ]);
+
+    // Validate
     if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to update this book story");
     if(book.status !== "draft") throw new ApiError(403, "To update story, book must be in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "To update story, book must be in draft stage 1");
-    if(book.mode !== "CUSTOM") throw new ApiError(400, "To update story, the book mode must be 'CUSTOM'");
-
-    // Total story characters
-    const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);    
+    if(book.mode !== "CUSTOM") throw new ApiError(400, "To update story, the book mode must be in 'CUSTOM' mode");
 
     // Sanitize payload
     const updateStoryValidator = joi.object({
-        storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content"),
+        spreadContent: joi.string().min(3).max(spread.characterLimit).required().label("Story content"),
     });
-    const { storyContent } = validatePayload(updateStoryValidator, request.body) || {};
+    const { spreadContent } = validatePayload(updateStoryValidator, request.body) || {};
 
     // Save to db
-    book.txtContent = storyContent;
-    await book.save();
+    spread.content = spreadContent;
+    await spread.save();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, storyContent, "Story has been updated"));
+    return response.status(200).json(new ApiResponse(200, spreadContent, "Story has been updated"));
 });
 
 // Update story with spread text size (AI & CUSTOM)
