@@ -377,6 +377,7 @@ const updateStory = asyncHandler(async (request, response) => {
 
     // Validate
     if(!book) throw new ApiError(404, "Book not found");
+    if(!spread) throw new ApiError(404, "Spread not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to update this book story");
     if(book.status !== "draft") throw new ApiError(403, "To update story, book must be in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "To update story, book must be in draft stage 1");
@@ -384,7 +385,7 @@ const updateStory = asyncHandler(async (request, response) => {
 
     // Sanitize payload
     const updateStoryValidator = joi.object({
-        spreadContent: joi.string().min(3).max(spread.characterLimit).required().label("Story content"),
+        spreadContent: joi.string().min(3).max(spread.characterLimit).required().label("Spread content"),
     });
     const { spreadContent } = validatePayload(updateStoryValidator, request.body) || {};
 
@@ -405,12 +406,12 @@ const updateStoryWithSpreadTextSize = asyncHandler(async (request, response) => 
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
     if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
 
-    // Find book
-    const book = await Book.findById(bookId);
+    // Find book and spread
+    const [book, spread] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId)
+    ]);
     if(!book) throw new ApiError(404, "Book not found");
-
-    // Find spread
-    const spread = book.spreads.id(spreadId);
     if(!spread) throw new ApiError(404, "Spread not found");
 
     // Validate
@@ -418,45 +419,20 @@ const updateStoryWithSpreadTextSize = asyncHandler(async (request, response) => 
     if(book.status !== "draft") throw new ApiError(403, "You cannot update book content while it is not in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "You cannot update book content while it is not in draft stage 1");
 
-    // Total story characters
-    const totalStoryCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
-
     // Sanitize payload
     const updateStoryValidator = joi.object({
-        storyContent: joi.string().min(3).max(totalStoryCharacters).required().label("Story content"),
+        spreadContent: joi.string().min(3).max(spread.characterLimit).required().label("Spread content"),
         textSize: joi.string().trim().required().valid(...allowedTextSizes).label("Text size")
     });
-    const { storyContent, textSize } = validatePayload(updateStoryValidator, request.body) || {};
-
-    // Divide spreads
-    const dataInSpreads = storyContent.split("spread break");
-    if(!dataInSpreads.length) throw new ApiError(400, "Story content is missing");
-    
-    // Validate character limit for each spread
-    dataInSpreads.forEach((content, index) => {
-        if(content.length > book.spreads[index].characterLimit)
-        {
-            throw new ApiError(400, `Character limit exceeded for Spread ${index + 1}`);
-        }
-    });
+    const { spreadContent, textSize } = validatePayload(updateStoryValidator, request.body) || {};
 
     // Save to db
-    if(book.mode === "CUSTOM")
-    {
-        book.txtContent = storyContent;
-    }
-    else
-    {
-        book.aiContent = storyContent;
-    }
+    spread.content = spreadContent;
     spread.textSize = textSize;
-    await book.save();
-
-    // Dynamic response
-    const responseData = book.mode === "CUSTOM" ? book.txtContent : book.aiContent;
+    await spread.save();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, responseData, "Story has been updated"));
+    return response.status(200).json(new ApiResponse(200, spreadContent, "Story has been updated"));
 });
 
 // Finalize text phase
