@@ -443,15 +443,21 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
+    // Find book and spreads
+    const [book, spreads] = await Promise.all([
+        Book.findById(bookId),
+        Spread.find({ bookId })
+    ]);
 
     // Validate
+    if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to mark this book for draft stage 2");
     if(book.status !== "draft") throw new ApiError(403, "Story text can only be finalized in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "Stroy text can only be finalized in draft stage 1");
-    if(!book.txtContent && !book.aiContent) throw new ApiError(400, "Please create some text for your story, before making it to draft stage 2");
+
+    // Prevent finalizing befor filling all spreads
+    const remainingSpreads = spreads.filter(spread => !spread.content || spread.content === null);
+    if(remainingSpreads.length) throw new ApiError(400, `Please add text content to your remaining ${remainingSpreads.length} spreads`);
 
     // Save to db
     book.draftStage = 2;
