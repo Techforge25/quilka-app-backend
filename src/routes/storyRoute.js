@@ -12,8 +12,7 @@ const storyRouter = Router();
 storyRouter.use(authentication);
 
 // Generate & Regenerate story text with AI
-// storyRouter.route("/:bookId").post(rateLimit(1, 1), generateWithAi, regenerateStoryText);
-storyRouter.route("/:bookId").post(generateWithAi, regenerateStoryText);
+storyRouter.route("/:bookId").post(rateLimit(1, 1), generateWithAi, regenerateStoryText);
 
 // View story content / Update story
 storyRouter.route("/:bookId")
