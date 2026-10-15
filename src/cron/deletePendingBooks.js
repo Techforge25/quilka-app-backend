@@ -1,8 +1,10 @@
 const cron = require("node-cron");
 const Book = require("../models/bookModel");
+const Spread = require("../models/spreadModel");
+const ApiError = require("../utils/ApiError");
 
-// Runs twice daily at 12:00 AM and 12:00 PM
-const timer = "0 0,12 * * *";
+// Runs every 2 hours
+const timer = "0 */2 * * *";
 
 // Auto exprire subscription
 cron.schedule(timer, async () => {
@@ -12,6 +14,19 @@ cron.schedule(timer, async () => {
     const oneDayAgo = new Date();
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
-    // Delete after one day
-    await Book.deleteMany({ status: "pending", createdAt: { $lte: oneDayAgo } });
+    try
+    {
+        // Find pending books
+        const books = await Book.find({ status: "pending", createdAt: { $lte: oneDayAgo } }).select("_id");
+        for(const book of books)
+        {
+            const { _id: bookId } = book;
+            await Book.findByIdAndDelete(bookId);
+            await Spread.deleteMany({ bookId });
+        }
+    }
+    catch(error)
+    {
+        throw new ApiError(400, error.message);
+    }
 });
