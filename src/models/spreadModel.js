@@ -5,12 +5,12 @@ const { allowedTextSizes } = require("../constants");
 // Schema
 const spreadSchema = new Schema({
     // Reference
-    bookId: { type: Schema.Types.ObjectId, ref: "Book" },
+    bookId: { type: Schema.Types.ObjectId, ref: "Book", required: true },
 
     // Basic info
     mainLayoutName: { type: String, trim: true, required: true }, // Classic story book
     subLayoutDirection: { type: String, trim: true, required: true }, // Right-content, Left-content
-    content: { type: String, trim: true, required: true },
+    content: { type: String, trim: true, default: null },
 
     // Illustration
     illustrationURL: { type: String, trim: true, default: null },
