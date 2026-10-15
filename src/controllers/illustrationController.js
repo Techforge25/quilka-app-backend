@@ -43,7 +43,8 @@ const createIllustration = asyncHandler(async (request, response) => {
         illustrationStyle: book.illustrationStyle,
         content,
         size: spread.illustrationSize.size,
-        aspectRatio: spread.illustrationSize.aspectRatio
+        aspectRatio: spread.illustrationSize.aspectRatio,
+        previousImageURL:previousImageURL?.illustrationURL
     });
 
     // Generate illustration

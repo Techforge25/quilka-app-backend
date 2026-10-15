@@ -262,6 +262,10 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     const book = await Book.findById(bookId);
     if(!book) throw new ApiError(404, "Book not found");
 
+    // Get previous image url
+    const previousImageURL = book.spreads.find((spread) => spread?.illustrationURL !== null);
+
+
     // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate front and cover images for this book");
     if(book.status !== "draft") throw new ApiError(400, "Front and cover images can only be generated in draft state");
@@ -272,7 +276,8 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
         bookTitle: book.title,
         content: book.mode === "CUSTOM" ? book.txtContent : book.aiContent,
         size: book.spreadSize,
-        illustrationStyle: book.illustrationStyle
+        illustrationStyle: book.illustrationStyle,
+        previousImageURL:previousImageURL?.illustrationURL
     });
 
     // Prompt for cover image
@@ -280,11 +285,12 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
         authorName: book.authorName,
         content: book.mode === "CUSTOM" ? book.txtContent : book.aiContent,
         size: book.spreadSize,
-        illustrationStyle: book.illustrationStyle
+        illustrationStyle: book.illustrationStyle,
+        previousImageURL:previousImageURL?.illustrationURL
     });
 
     // LLM Response
-    const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image");
+    const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image",previousImageURL?.illustrationURL);
 
     // Extract
     const { frontImageBuffer, coverImageBuffer, totalTokenCount } = llmResponse;

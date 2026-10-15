@@ -12,7 +12,7 @@ const promptGuideForTextGeneration = ({ title, ageGroup, language, prompt, total
         });
 
         const data = `
-        Please read carefully! And do follow all instructions! Create an age-appropriate children’s storybook based on the following requirements. Story Requirements: Story Title: ${title}. Age Group: ${ageGroup}. Language: ${language}. Story Idea: ${prompt} Total Character Length must be less than: ${totalCharacters} characters. Every page has following character limits ${spreadWiseCharacterLimit}. Instructions: Do not add escape sequence. This is very important catch. Create an attractive and memorable title for the story if one is not provided. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages.Keep the text on each page within the specified character-length range. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Each page should naturally continue from the previous page. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. Generated output should not include story title and page names eg: Page:1 or Page:2, just separate the pages with a seperator with exact same string spread break. I am not using inverted commas on spread break just to simplify it for you. Just remember the exact word that is spread break`;
+        Please read carefully! And do follow all instructions! Create an age-appropriate children’s storybook based on the following requirements. Story Requirements: Story Title: ${title}. Age Group: ${ageGroup}. Language: ${language}. Story Idea: ${prompt} Total Character Length must be always less than: ${totalCharacters} characters MOST IMPORTANT!!. Every page has following character limits ${spreadWiseCharacterLimit} WHICH SHOULD NEVER EXCEEDE THE LIMIT MOST IMPORTANT!!. Instructions: Do not add escape sequence. This is very important catch. Create an attractive and memorable title for the story if one is not provided. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages.Keep the text on each page within the specified character-length range. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Each page should naturally continue from the previous page. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. Generated output should not include story title and page names eg: Page:1 or Page:2, just separate the pages with a seperator with exact same string spread break. I am not using inverted commas on spread break just to simplify it for you. Just remember the exact word that is spread break`;
         return data;
     }
     catch(error)
@@ -79,7 +79,7 @@ const promptGuideForCustomStoryRefinement = ({ title, ageGroup, language, previo
 };
 
 // Prompt guide for illustration
-const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRatio }) => {
+const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRatio, previousImageURL }) => {
     // const data = `
     //     A children’s book illustration in ${illustrationStyle} style depicting the scene:
     //     ${content}
@@ -97,36 +97,69 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
     //     - Completely borderless, full-bleed, edge-to-edge canvas.
     //     - Absolutely NO text, NO dialogue, NO typography, NO sound effect lettering, and NO speech bubbles. Pure visual illustration only.`;
 
+    // const data = `
+    // A flat, borderless, full-bleed 2D children’s book page illustration in ${illustrationStyle} style depicting the scene:
+    // ${content}
+
+    // Dimensions & Canvas Specifications:
+    // - Target Dimensions: Exactly ${size} (width x height in px).
+    // - Aspect Ratio: ${aspectRatio} orientation.
+    // - 100% Edge-to-Edge Viewport: Full-bleed 2D illustration structured to completely fill a ${size} container from edge to edge with zero outer padding, zero margins, and zero white space.
+    // - Composition Safe-Zone: Keep primary characters and key focal points centered with balanced breathing room so nothing important is clipped at the edges.
+
+    // Visual Art Style:
+    // - ${illustrationStyle} with rich detailing, coherent storybook textures, consistent lighting warmth, and an expressive picture-book finish.
+
+    // Strict Constraints & Negative Directives:
+    // - Completely borderless, flat 2D full-bleed canvas touching all 4 raw edges of the image frame.
+    // - NO 3D book page mockups, NO page curl effects, NO central book spine shadows, and NO background surfaces.
+    // - Pure visual illustration only: Absolutely NO text, NO page numbers, NO dialogue, NO typography, NO watermarks, and NO speech bubbles.    
+    // `;
+
     const data = `
     A flat, borderless, full-bleed 2D children’s book page illustration in ${illustrationStyle} style depicting the scene:
-    ${content}
+${content}
 
-    Dimensions & Canvas Specifications:
-    - Target Dimensions: Exactly ${size} (width x height in px).
-    - Aspect Ratio: ${aspectRatio} orientation.
-    - 100% Edge-to-Edge Viewport: Full-bleed 2D illustration structured to completely fill a ${size} container from edge to edge with zero outer padding, zero margins, and zero white space.
-    - Composition Safe-Zone: Keep primary characters and key focal points centered with balanced breathing room so nothing important is clipped at the edges.
+Character Continuity & Visual DNA:
+${
+previousImageURL
+    ? `- REFERENCE IMAGE LOCK (URL: ${previousImageURL}): A previously generated illustration is provided as the ground-truth visual reference.
+- STRICT CHARACTER CONSISTENCY: Extract and preserve the exact Character Visual DNA from the reference image. Maintain 100% identical facial features, hair color and hairstyle, skin tone, body proportions, age, and exact clothing/outfit details.
+- Do NOT redesign or alter the character's appearance. Simply place the exact same character into the new pose, expression, and environment described in the scene.`
+    : `- INITIAL CHARACTER CREATION: No previous reference image exists for this page. Establish a cohesive, memorable, and appealing original character design that fits the ${illustrationStyle} aesthetic and scene description.`
+}
 
-    Visual Art Style:
-    - ${illustrationStyle} with rich detailing, coherent storybook textures, consistent lighting warmth, and an expressive picture-book finish.
+Dimensions & Canvas Specifications:
+- Target Dimensions: Exactly ${size} (width x height in px).
+- Aspect Ratio: ${aspectRatio} orientation.
+- 100% Edge-to-Edge Viewport: Full-bleed 2D illustration structured to completely fill a ${size} container from edge to edge with zero outer padding, zero margins, and zero white space.
+- Composition Safe-Zone: Keep primary characters and key focal points centered with balanced breathing room so nothing important is clipped at the edges.
 
-    Strict Constraints & Negative Directives:
-    - Completely borderless, flat 2D full-bleed canvas touching all 4 raw edges of the image frame.
-    - NO 3D book page mockups, NO page curl effects, NO central book spine shadows, and NO background surfaces.
-    - Pure visual illustration only: Absolutely NO text, NO page numbers, NO dialogue, NO typography, NO watermarks, and NO speech bubbles.    
+Visual Art Style:
+- ${illustrationStyle} with rich detailing, coherent storybook textures, consistent lighting warmth, and an expressive picture-book finish.
+
+Strict Constraints & Negative Directives:
+- Completely borderless, flat 2D full-bleed canvas touching all 4 raw edges of the image frame.
+- NO 3D book page mockups, NO page curl effects, NO central book spine shadows, and NO background surfaces.
+- Pure visual illustration only: Absolutely NO text, NO page numbers, NO dialogue, NO typography, NO watermarks, and NO speech bubbles.
     `;
     return data;
 };
 
 // Prompt for front image
-const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size }) => {
+const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size, previousImageURL }) => {
     const data = `A flat, borderless, full-bleed 2D digital illustration of a single-page children's picture book FRONT COVER in ${illustrationStyle} style for the book titled "${bookTitle}".
 
     Canvas Size & Single-Page Orientation Logic:
     - Full Spread Reference Size: ${size}.
-    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
+    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width and height of ${size} in px respectively MOST IMPORTANT!!!.
     - This represents ONE single closed cover page (half the width of the full spread ${size}), rendered in a strict vertical/single-page orientation.
     - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from top-to-bottom and left-to-right. Zero outer margins, zero padding, and zero background space outside the cover.
+
+    Character Continuity & Visual DNA:
+    - REFERENCE IMAGE LOCK (URL: ${previousImageURL}): A previously generated illustration is provided as the ground-truth visual reference.
+    - STRICT CHARACTER CONSISTENCY: Extract and preserve the exact Character Visual DNA from the reference image. Maintain 100% identical facial features, hair color and hairstyle, skin tone, body proportions, age, and exact clothing/outfit details.
+    - Do NOT redesign or alter the character's appearance. Simply place the exact same character into the new pose, expression, and environment described in the scene.
 
     Front Cover Typography & Layout:
     - Prominent Book Title: Render the exact text "${bookTitle}" prominently at the top-to-center area.
@@ -142,21 +175,27 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size 
 
     Strict Constraints & Negative Directives:
     - Render ONLY the exact specified title "${bookTitle}". Absolutely NO random gibberish letters, NO placeholder text, and NO speech bubbles.
+    - The image SHOULD NOT REPEAT within a canvas and should be a complete filled.
     - FLAT 2D ARTWORK ONLY: Do NOT generate a 3D book mockup, do NOT show a book sitting on a table or background, do NOT draw a book spine, and do NOT add white borders or frames. The artwork itself must touch all 4 edges of the generated image.`;
     return data;  
 };
 
 // Prompt for cover image
-const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size }) => {
+const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size, previousImageURL }) => {
     const data = `
     A flat, borderless, full-bleed 2D digital illustration of a single-page children's picture book BACK COVER in ${illustrationStyle} style matching the story world of:
     ${content}
 
     Canvas Size & Single-Page Orientation Logic:
     - Full Spread Reference Size: ${size}.
-    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
+    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width and height of ${size} in px respectively MOST IMPORTANT!!!.
     - This represents ONE single back cover page ( strictly half the width of the full spread ${size}), rendered as a single-page layout.
     - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from edge to edge. Zero outer margins, zero padding, and zero background space outside the cover.
+
+    Character Continuity & Visual DNA:
+    - REFERENCE IMAGE LOCK (URL: ${previousImageURL}): A previously generated illustration is provided as the ground-truth visual reference.
+    - STRICT CHARACTER CONSISTENCY: Extract and preserve the exact Character Visual DNA from the reference image. Maintain 100% identical facial features, hair color and hairstyle, skin tone, body proportions, age, and exact clothing/outfit details.
+    - Do NOT redesign or alter the character's appearance. Simply place the exact same character into the new pose, expression, and environment described in the scene.
 
     Back Cover Layout & Graphic Design Elements:
     - Story Blurb Block: Neatly framed, legible story summary text in the center area for the book: ${content}.
@@ -173,6 +212,7 @@ const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size
     Strict Constraints & Negative Directives:
     - Render ONLY the specified blurb text and "Written by ${authorName}".
     - Absolutely NO unreadable gibberish, NO messy placeholder scribbles, and NO speech bubbles.
+    - The image SHOULD NOT REPEAT within a canvas and should be a complete filled.
     - FLAT 2D ARTWORK ONLY: Do NOT generate a 3D book mockup, do NOT show a book sitting on a background or surface, do NOT draw a book spine, and do NOT add white borders or frames. The illustration must touch all 4 raw edges of the generated image.`;
     return data;
 };
