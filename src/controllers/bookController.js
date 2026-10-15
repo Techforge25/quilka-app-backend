@@ -168,6 +168,7 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: {
+                mode: 1,
                 title: 1,
                 authorName: 1,
                 frontImage: 1,
