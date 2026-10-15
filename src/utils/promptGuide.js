@@ -110,27 +110,29 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
 
 // Prompt for front image
 const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size }) => {
-    const data = `
-    A complete, professional children's picture book FRONT COVER design in ${illustrationStyle} style for the book titled "${bookTitle}".
+    const data = `A flat, borderless, full-bleed 2D digital illustration of a single-page children's picture book FRONT COVER in ${illustrationStyle} style for the book titled "${bookTitle}".
+
+    Canvas Size & Single-Page Orientation Logic:
+    - Full Spread Reference Size: ${size}.
+    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
+    - This represents ONE single closed cover page (half the width of the full spread ${size}), rendered in a strict vertical/single-page orientation.
+    - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from top-to-bottom and left-to-right. Zero outer margins, zero padding, and zero background space outside the cover.
+
     Front Cover Typography & Layout:
-    - Prominent Book Title: Render the title text "${bookTitle}" prominently at the top-to-center area.
-    - Typography Style: Bold, charming, whimsical storybook title lettering with playful curves, subtle dimensional depth, and vibrant colors that pop against the background.
+    - Prominent Book Title: Render the exact text "${bookTitle}" prominently at the top-to-center area.
+    - Typography Style: Bold, charming, whimsical storybook title lettering with playful curves, subtle dimensional depth, and vibrant colors that pop cleanly against the artwork.
 
     Hero Cover Illustration & Subject:
     ${content}
 
     Cover Art Direction & Composition:
-    - Commercial children's book cover aesthetic: Eye-catching poster layout with a strong central hero focal point designed to stand out on a bookstore display.
-    - Dynamic interaction: The characters and environment should frame and complement the title text naturally.
-    - Canvas Specifications: Exactly ${size} (width divided by 2 x height in px), full-bleed, edge-to-edge vertical portrait format.
+    - Commercial children's book cover aesthetic: Eye-catching poster layout with a strong central hero focal point filling the single-page width.
+    - Dynamic interaction: The characters and environment naturally frame the title text while extending all the way out to the raw edges of the image file.
+    - Visual Style: ${illustrationStyle} with rich storybook textures, radiant lighting, clean depth, and a polished finish.
 
-    Visual Style:
-    - ${illustrationStyle} with rich storybook textures, radiant lighting, clean depth, and polished finish.
-
-    Strict Constraints:
-    - Render ONLY the exact specified title ${bookTitle}. Absolutely NO random gibberish letters, NO messy placeholder text, and NO speech bubbles.
-    - Completely borderless, full-bleed, edge-to-edge canvas of exct provided size.    
-    `;
+    Strict Constraints & Negative Directives:
+    - Render ONLY the exact specified title "${bookTitle}". Absolutely NO random gibberish letters, NO placeholder text, and NO speech bubbles.
+    - FLAT 2D ARTWORK ONLY: Do NOT generate a 3D book mockup, do NOT show a book sitting on a table or background, do NOT draw a book spine, and do NOT add white borders or frames. The artwork itself must touch all 4 edges of the generated image.`;
     return data;  
 };
 
