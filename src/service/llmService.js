@@ -39,12 +39,12 @@ class LLMService
     }
 
     // Generate story illustration
-    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImageURL = null)
+    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImageURL = "https://res.cloudinary.com/ndlremz2/image/upload/v1792069150/white-image.jpg")
     {
         try
         {
             // Get reference image
-            const base64Image = referenceImageURL ? await getReferenceImage(referenceImageURL) : null;
+            const base64Image = await getReferenceImage(referenceImageURL);
 
             // Generate illustration
             const illustrationResponse = await this.ai.models.generateContent({
@@ -56,23 +56,7 @@ class LLMService
                 config: { responseModalities: ["IMAGE"] },
                 thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
             });
-            if(!illustrationResponse) throw new ApiError(500, "Failed to generate story illustration");
-
-            // // Fetch reference image
-            // const base64Image = await getReferenceImage(referenceImageURL);
-
-            // // Generate illustration
-            // const illustrationResponse = await this.ai.models.generateContent({
-            //     model: aiModel,
-            //     contents: [
-            //         { text: dynamicPrompt },
-            //         {
-            //             inlineData: { mimeType: "image/jpg", data: base64Image }
-            //         }
-            //     ],
-            //     config: { responseModalities: ["IMAGE"] }
-            // });
-            // if(!illustrationResponse) throw new ApiError(500, "Failed to generate illustration with custom prompt");            
+            if(!illustrationResponse) throw new ApiError(500, "Failed to generate story illustration");          
             
             // Find generated image
             const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
