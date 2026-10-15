@@ -121,58 +121,60 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
 
 // Prompt for front image
 const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size }) => {
-    const data = `
-    A complete, professional children's picture book FRONT COVER design in ${illustrationStyle} style for the book titled "${bookTitle}".
+    const data = `A flat, borderless, full-bleed 2D digital illustration of a single-page children's picture book FRONT COVER in ${illustrationStyle} style for the book titled "${bookTitle}".
+
+    Canvas Size & Single-Page Orientation Logic:
+    - Full Spread Reference Size: ${size}.
+    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
+    - This represents ONE single closed cover page (half the width of the full spread ${size}), rendered in a strict vertical/single-page orientation.
+    - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from top-to-bottom and left-to-right. Zero outer margins, zero padding, and zero background space outside the cover.
+
     Front Cover Typography & Layout:
-    - Prominent Book Title: Render the title text "${bookTitle}" prominently at the top-to-center area.
-    - Typography Style: Bold, charming, whimsical storybook title lettering with playful curves, subtle dimensional depth, and vibrant colors that pop against the background.
+    - Prominent Book Title: Render the exact text "${bookTitle}" prominently at the top-to-center area.
+    - Typography Style: Bold, charming, whimsical storybook title lettering with playful curves, subtle dimensional depth, and vibrant colors that pop cleanly against the artwork.
 
     Hero Cover Illustration & Subject:
     ${content}
 
     Cover Art Direction & Composition:
-    - Commercial children's book cover aesthetic: Eye-catching poster layout with a strong central hero focal point designed to stand out on a bookstore display.
-    - Dynamic interaction: The characters and environment should frame and complement the title text naturally.
-    - Canvas Specifications: Exactly ${size} (width divided by 2 x height in px), full-bleed, edge-to-edge vertical portrait format.
+    - Commercial children's book cover aesthetic: Eye-catching poster layout with a strong central hero focal point filling the single-page width.
+    - Dynamic interaction: The characters and environment naturally frame the title text while extending all the way out to the raw edges of the image file.
+    - Visual Style: ${illustrationStyle} with rich storybook textures, radiant lighting, clean depth, and a polished finish.
 
-    Visual Style:
-    - ${illustrationStyle} with rich storybook textures, radiant lighting, clean depth, and polished finish.
-
-    Strict Constraints:
-    - Render ONLY the exact specified title ${bookTitle}. Absolutely NO random gibberish letters, NO messy placeholder text, and NO speech bubbles.
-    - Completely borderless, full-bleed, edge-to-edge canvas of exct provided size.    
-    `;
+    Strict Constraints & Negative Directives:
+    - Render ONLY the exact specified title "${bookTitle}". Absolutely NO random gibberish letters, NO placeholder text, and NO speech bubbles.
+    - FLAT 2D ARTWORK ONLY: Do NOT generate a 3D book mockup, do NOT show a book sitting on a table or background, do NOT draw a book spine, and do NOT add white borders or frames. The artwork itself must touch all 4 edges of the generated image.`;
     return data;  
 };
 
 // Prompt for cover image
 const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size }) => {
     const data = `
-    A complete, professional children's picture book BACK COVER design in ${illustrationStyle} style matching the story world of:
+    A flat, borderless, full-bleed 2D digital illustration of a single-page children's picture book BACK COVER in ${illustrationStyle} style matching the story world of:
     ${content}
 
-    Back Cover Layout & Graphic Design Elements:
+    Canvas Size & Single-Page Orientation Logic:
+    - Full Spread Reference Size: ${size}.
+    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
+    - This represents ONE single back cover page ( strictly half the width of the full spread ${size}), rendered as a single-page layout.
+    - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from edge to edge. Zero outer margins, zero padding, and zero background space outside the cover.
 
-    - Story Blurb Block: Neatly framed, legible story summary text in the middle for the book ${content}.
-    - Author Credit: Neatly displayed credit at the bottom: "Written by ${authorName}".
-    - Commercial Publishing Details: Include a small, clean rectangular white barcode/ISBN box neatly aligned in the bottom corner to give an authentic commercial book finish.
+    Back Cover Layout & Graphic Design Elements:
+    - Story Blurb Block: Neatly framed, legible story summary text in the center area for the book: ${content}.
+    - Author Credit: Neatly displayed credit near the bottom: "Written by ${authorName}".
+    - Commercial Publishing Details: Include a small, clean rectangular white barcode/ISBN box neatly aligned in the bottom corner.
 
     Background Illustration & Spot Art:
-    - A cohesive, gentle environment illustration from the story world (${content}) framing the text gracefully.
-    - The illustration should use soft, readable contrast so all cover typography remains crisp and clear.
-
-    Canvas & Print Specifications:
-    - Target Dimensions: Exactly ${size} (width divided by 2 x height in px), vertical portrait orientation.
-    - Full-bleed, edge-to-edge layout with balanced margins.
+    - A cohesive, gentle environment illustration from the story world (${content}) extending across the entire canvas to all four edges while framing the central text gracefully.
+    - Soft, readable contrast behind the text area so all cover typography remains crisp and clear.
 
     Visual Art Style:
     - ${illustrationStyle} with identical color palette, lighting warmth, and paper textures as the front cover.
 
-    Strict Constraints:
-    - Render ONLY the specified text, the blurb, and "Written by ${authorName}").
+    Strict Constraints & Negative Directives:
+    - Render ONLY the specified blurb text and "Written by ${authorName}".
     - Absolutely NO unreadable gibberish, NO messy placeholder scribbles, and NO speech bubbles.
-    - Completely borderless, full-bleed, edge-to-edge canvas of exct provided size.  
-    `;
+    - FLAT 2D ARTWORK ONLY: Do NOT generate a 3D book mockup, do NOT show a book sitting on a background or surface, do NOT draw a book spine, and do NOT add white borders or frames. The illustration must touch all 4 raw edges of the generated image.`;
     return data;
 };
 
