@@ -162,7 +162,7 @@ const viewBook = asyncHandler(async (request, response) => {
                     spreads: "$spreadsCount",
                     pages: { $multiply: ["$spreadsCount", 2] },
                 },
-                price: 26.99 // Hard coded 
+                price: { $multiply: ["$spreadsCount", 2] }
             }
         },
 
