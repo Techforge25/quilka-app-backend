@@ -53,16 +53,23 @@ const promptGuideForTextRegeneration = ({ title, ageGroup, language, previousSto
 };
 
 // Prompt guide for custom story refinement
-const promptGuideForCustomStoryRefinement = ({ title, ageGroup, language, previousStory, instruction, totalCharacters }) => {
+const promptGuideForCustomStoryRefinement = ({ title, ageGroup, language, previousStory, instruction, totalCharacters, spreads }) => {
     try
     {
+        const spreadWiseCharacterLimit = spreads.map((spread, index) => {
+            index++;
+            const output = `Page ${index}: Character limit ${spread.characterLimit}`;
+            
+            return output;
+        });
+
         const data = `Please read carefully! And do follow all instructions! I have created an age-appropriate children’s storybook based on the following requirements. Story Requirements: Story Title: ${title}. Age Group: ${ageGroup}. Language: ${language}. I just need a refinement of this story: ${previousStory}. 
         
         - Please refine it with this instruction: "${instruction}".
         
         - Total Character Length must be less than: ${totalCharacters} characters.
 
-        Instructions: Do not add escape sequence. This is very important catch. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. 
+        Every page has following character limits ${spreadWiseCharacterLimit}. Instructions: Do not add escape sequence. This is very important catch. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. 
         
         VERY IMPORTANT INSTRUCTION:
         Generated output should not include story title and page names eg: Page:1 or Page:2, just separate the pages with a seperator with exact same string spread break. I am not using inverted commas on spread break just to simplify it for you. Just remember the exact word that is spread break
