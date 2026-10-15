@@ -47,7 +47,7 @@ const createIllustration = asyncHandler(async (request, response) => {
     });
 
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousImageURL);
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousImageURL?.illustrationURL);
 
     // Extract generated image buffer and token consumption count
     const { imageBuffer, totalTokenCount } = illustrationResponse;
