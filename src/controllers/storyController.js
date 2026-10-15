@@ -90,7 +90,7 @@ const generateWithAi = asyncHandler(async (request, response, next) => {
     };
 
     // Response
-    return response.status(201).json(new ApiResponse(201, payload, "AI story has been generated and saved successfully"));
+    return response.status(201).json(new ApiResponse(201, payload, "AI story has been generated"));
 });
 
 // Regenerate story text with AI
@@ -100,39 +100,45 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
     const { bookId } = request.params;
     const book = request.book;
 
-    // Find regenerations
+    // Find regenerations and spreads
     const [regeneration, spreads] = await Promise.all([
         Regeneration.findOne({ userId, bookId }),
         Spread.find({ bookId })
-    ]); 
+    ]);
 
     // Validate
     if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
     if(regeneration.limit <= 0) throw new ApiError(403, "You have reached your story regeneration limit. Please buy more!");
 
-    // Extract total spread characters
-    const totalSpreadCharacters = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
-
-    // Extract story content
-    const storyContent = spreads.map(spread => spread.content).join(" ");
+    // Extract total story characters limit
+    const totalStoryCharactersLimit = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
 
     // Get dynamic prompt for text based generation
-    const dynamicPrompt = promptGuideForTextRegeneration({
-        title: book.title,
+    const dynamicPrompt = promptGuideForTextRegeneration({ 
         ageGroup: book.ageGroup,
         language: book.language,
         prompt: book.prompt,
-        previousStory: storyContent,
-        totalCharacters: totalSpreadCharacters,
-        spreads: spreads
+        title: book.title,
+        totalCharacters: totalStoryCharactersLimit,
+        spreads,
+        previousStory: spreads.map(spread => spread.content?.trim())
     });
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
     const { aiContent } = output;
 
-    // Validate AI content length with total spread characters
-    if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
+    // Split AI generated content into spreads
+    const spreadContents = aiContent.split("spread break").map(content => content.trim());
+
+    // Validate each spread content
+    spreadContents.forEach((content, index) => {
+        const spreadNo = index + 1;
+        const characterLimit = spreads[index].characterLimit;
+
+        if(!content || content.length < 3) throw new ApiError(400, `AI generated insufficient content for Spread ${spreadNo}`);
+        if(content.length > characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
+    });
 
     // Create db session
     const dbSession = await startSession();
@@ -141,22 +147,35 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
         // Start transaction
         dbSession.startTransaction();
 
-        // Update AI content
-        await Book.updateOne(
-            { _id: bookId, userId }, 
-            { $set: { aiContent } }, 
-            { session: dbSession }
-        ),
+        // Prepare bulk operations
+        const bulkOperations = spreads.map((spread, index) => ({
+            updateOne: {
+                filter: { _id: spread._id, bookId },
+                update: { $set: { content: spreadContents[index] } }
+            }
+        }));
+
+        // Save generated content to spreads
+        await Spread.bulkWrite(bulkOperations, { session: dbSession });
 
         // Update regeneration limit
         await Regeneration.updateOne(
             { userId, bookId, limit: { $gt: 0 } },
             { $inc: { limit: -1 } },
             { session: dbSession }
-        )
-
+        );
+        
         // Commit transaction
-        await dbSession.commitTransaction();
+        await dbSession.commitTransaction();        
+
+        // Payload
+        const payload = {
+            bookId: book._id,
+            spreads: spreads.map((spread, index) => ({ spreadId: spread._id, content: spreadContents[index] }))
+        };
+
+        // Response
+        return response.status(201).json(new ApiResponse(201, payload, "AI story has been regenerated"));
     }
     catch(error)
     {
@@ -167,9 +186,6 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
     {
         dbSession.endSession();
     }
-
-    // Response
-    return  response.status(201).json(new ApiResponse(201, aiContent, "Content has been regenerated"));
 });
 
 // View story content
