@@ -103,7 +103,7 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
     // Find regenerations and spreads
     const [regeneration, spreads] = await Promise.all([
         Regeneration.findOne({ userId, bookId }),
-        Spread.find({ bookId })
+        Spread.find({ bookId }).sort({ _id: 1 })
     ]);
 
     // Validate
@@ -113,7 +113,7 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
     // Extract total story characters limit
     const totalStoryCharactersLimit = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
 
-    // Get dynamic prompt for text based generation
+    // Get dynamic prompt for text regeneration
     const dynamicPrompt = promptGuideForTextRegeneration({ 
         ageGroup: book.ageGroup,
         language: book.language,
@@ -264,9 +264,10 @@ const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { instruction } = validatePayload(customStoryRefinementValidator, request.body) || {};
 
-    // Find book and regeneration
-    const [book, regeneration] = await Promise.all([
+    // Find book, spreads and regeneration
+    const [book, spreads, regeneration] = await Promise.all([
         Book.findById(bookId),
+        Spread.find({ bookId }).sort({ _id: 1 }),
         Regeneration.findOne({ userId, bookId })
     ]);
 
@@ -276,32 +277,41 @@ const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
     if(book.status !== "draft") throw new ApiError(403, "You cannot refine story content while the book is not in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "You cannot refine story content while the book is not in draft stage 1");
     if(book.mode !== "CUSTOM") throw new ApiError(400, "Story refinement is only available for books created in CUSTOM mode");
-    if(!book.txtContent) throw new ApiError(400, "Text content for previous story is missing");
 
     // Validate regeneration
     if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
-    if(regeneration.limit <= 0) throw new ApiError(403, "You have reached your story regeneration limit. Please buy more!");    
+    if(regeneration.limit <= 0) throw new ApiError(403, "You have reached your story regeneration limit. Please buy more!");
 
-    // Extract total spread characters
-    const totalSpreadCharacters = book.spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);    
+    // Extract total story characters limit
+    const totalStoryCharactersLimit = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
 
     // Get dynamic prompt for custom story refinement
-    const dynamicPrompt = promptGuideForCustomStoryRefinement({
+    const dynamicPrompt = promptGuideForCustomStoryRefinement({ 
         title: book.title,
         ageGroup: book.ageGroup,
         language: book.language,
-        totalCharacters: totalSpreadCharacters,
-        previousStory: book.txtContent,
-        instruction
+        totalCharacters: totalStoryCharactersLimit,
+        previousStory: spreads.map(spread => spread.content?.trim()),
+        instruction,
+        spreads
     });
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
     const { aiContent } = output;
 
-    // Validate AI content length with total spread characters
-    if(aiContent.length > totalSpreadCharacters) throw new ApiError(403, "AI generated story exceeded limit");
-    
+    // Split AI generated content into spreads
+    const spreadContents = aiContent.split("spread break").map(content => content.trim());
+
+    // Validate each spread content
+    spreadContents.forEach((content, index) => {
+        const spreadNo = index + 1;
+        const characterLimit = spreads[index].characterLimit;
+
+        if(!content || content.length < 3) throw new ApiError(400, `AI generated insufficient content for Spread ${spreadNo}`);
+        if(content.length > characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
+    });
+
     // Create db session
     const dbSession = await startSession();
     try
@@ -309,22 +319,35 @@ const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
         // Start transaction
         dbSession.startTransaction();
 
-        // Update custom story refinement
-        await Book.updateOne(
-            { _id: bookId, userId, mode: "CUSTOM" },
-            { $set: { txtContent: aiContent } },
-            { session: dbSession }
-        );
+        // Prepare bulk operations
+        const bulkOperations = spreads.map((spread, index) => ({
+            updateOne: {
+                filter: { _id: spread._id, bookId },
+                update: { $set: { content: spreadContents[index] } }
+            }
+        }));
+
+        // Save generated content to spreads
+        await Spread.bulkWrite(bulkOperations, { session: dbSession });
 
         // Update regeneration limit
         await Regeneration.updateOne(
-            { bookId, userId, limit: { $gt: 0 } },
+            { userId, bookId, limit: { $gt: 0 } },
             { $inc: { limit: -1 } },
             { session: dbSession }
         );
-
+        
         // Commit transaction
-        await dbSession.commitTransaction();
+        await dbSession.commitTransaction();        
+
+        // Payload
+        const payload = {
+            bookId: book._id,
+            spreads: spreads.map((spread, index) => ({ spreadId: spread._id, content: spreadContents[index] }))
+        };
+
+        // Response
+        return response.status(201).json(new ApiResponse(201, payload, "Custom story has been refined with AI"));
     }
     catch(error)
     {
@@ -335,9 +358,6 @@ const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
     {
         dbSession.endSession();
     }
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, { story: aiContent }, "Your custom story has been refined with AI"));
 });
 
 // Update story (CUSTOM FLOW)
