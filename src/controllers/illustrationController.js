@@ -23,10 +23,11 @@ const createIllustration = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { content } = validatePayload(createIllustrationValidator, request.body) || {};
 
-    // Find book and spread
-    const [book, spread] = await Promise.all([
+    // Find book, spread and reference images urls  
+    const [book, spread, referenceImages] = await Promise.all([
         Book.findById(bookId),
-        Spread.findById(spreadId)
+        Spread.findById(spreadId),
+        Spread.find({ bookId }).select("-_id illustrationURL")
     ]);
 
     // Validate
@@ -44,8 +45,11 @@ const createIllustration = asyncHandler(async (request, response) => {
         aspectRatio: spread.illustrationSize.aspectRatio
     });
 
+    // Get previous images if exists
+    const previousReferenceImages = referenceImages.filter(ref => ref.illustrationURL);  
+
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image");
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
 
     // Extract generated image buffer and token consumption count
     const { imageBuffer, totalTokenCount } = illustrationResponse;

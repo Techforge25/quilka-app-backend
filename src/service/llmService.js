@@ -39,18 +39,33 @@ class LLMService
     }
 
     // Generate story illustration
-    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image")
+    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
     {
         try
         {
+            // Initialize contents with text
+            const contents = [{ text: dynamicPrompt }];
+            if(referenceImagesURLs.length)
+            {
+                // Get multi-reference images URLs
+                for(const referenceImageURL of referenceImagesURLs)
+                {
+                    // Fetch reference image
+                    const base64Image = await getReferenceImage(referenceImageURL);
+                    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
+
+                    // Append image url
+                    contents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                }
+            }
+
             // Generate illustration
             const illustrationResponse = await this.ai.models.generateContent({
-                contents: dynamicPrompt,
                 model: aiModel,
+                contents,
                 config: { responseModalities: ["IMAGE"] },
                 thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
             });
-            if(!illustrationResponse) throw new ApiError(500, "Failed to generate story illustration");
             
             // Find generated image
             const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
