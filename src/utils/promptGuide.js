@@ -12,7 +12,9 @@ const promptGuideForTextGeneration = ({ title, ageGroup, language, prompt, total
         });
 
         const data = `
-        Please read carefully! And do follow all instructions! Create an age-appropriate children’s storybook based on the following requirements. Story Requirements: Story Title: ${title}. Age Group: ${ageGroup}. Language: ${language}. Story Idea: ${prompt} Total Character Length must be less than: ${totalCharacters} characters. 
+        Please read carefully! And do follow all instructions! Create an age-appropriate children’s storybook based on the following requirements. Story Requirements: Story Title: ${title}. Age Group: ${ageGroup}. Language: ${language}. Story Idea: ${prompt}. 
+        
+        - Total Character Length must be less than: ${totalCharacters} characters. 
         
         Every page has following character limits ${spreadWiseCharacterLimit}. Each page should not exceed its respective characters limit. If page has 100 characters limit then keep the story of that page close to 92 to 97. Don't exceed and dont keep too much space between total characters of text of the page and character limit of that page.
 
