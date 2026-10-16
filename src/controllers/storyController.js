@@ -23,22 +23,25 @@ const generateWithAi = asyncHandler(async (request, response, next) => {
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
-    // Find book
-    const book = await Book.findById(bookId);
+    // Find book and spreads
+    const [book, spreads] = await Promise.all([
+        Book.findById(bookId),
+        Spread.find({ bookId }).select("content characterLimit").sort({ _id: 1 })
+    ]);
+
+    // Validate
     if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to access this book.");
     if(book.status !== "draft") throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "The story generation with AI cannot be proceeded while the book is not in draft stage 1");
     if(book.mode !== "AI") throw new ApiError(400, "To generate story with AI, the book 'mode' must be an AI");
 
-    // Find spreads
-    const spreads = await Spread.find({ bookId }).select("content characterLimit").sort({ _id: 1 });
-
     // Determine first time generation or regeneration
     const isFirstTime = spreads.every(spread => spread.content === null);
     if(!isFirstTime)
     {
         request.book = book;
+        request.spreads = spreads;
         return next();
     }
 
@@ -98,13 +101,10 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
     // Get metadata
     const userId = request.user._id;
     const { bookId } = request.params;
-    const book = request.book;
+    const { book, spreads } = request;
 
-    // Find regenerations and spreads
-    const [regeneration, spreads] = await Promise.all([
-        Regeneration.findOne({ userId, bookId }),
-        Spread.find({ bookId }).sort({ _id: 1 })
-    ]);
+    // Find regenerations
+    const regeneration = await Regeneration.findOne({ userId, bookId });
 
     // Validate
     if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
@@ -121,7 +121,7 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
         title: book.title,
         totalCharacters: totalStoryCharactersLimit,
         spreads,
-        previousStory: spreads.map(spread => spread.content?.trim())
+        previousStory: spreads.map(spread => spread.content?.trim()).join(" ")
     });
 
     // Generate story
@@ -291,7 +291,7 @@ const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
         ageGroup: book.ageGroup,
         language: book.language,
         totalCharacters: totalStoryCharactersLimit,
-        previousStory: spreads.map(spread => spread.content?.trim()),
+        previousStory: spreads.map(spread => spread.content?.trim()).join(" "),
         instruction,
         spreads
     });
