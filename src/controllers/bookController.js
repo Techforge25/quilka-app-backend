@@ -293,7 +293,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     // Find book and spreads
     const [book, spreads] = await Promise.all([
         Book.findById(bookId),
-        Spread.find({ bookId }).select("content")
+        Spread.find({ bookId }).select("-_id content illustrationURL")
     ]);
 
     // Validate
@@ -304,6 +304,9 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
 
     // Story content
     const storyContent = spreads.map(spread => spread.content.trim()).join(" ");
+
+    // Get previous images if exists
+    const previousReferenceImages = spreads.filter(spread => spread.illustrationURL).map(url => url.illustrationURL);    
 
     // Prompt for front image
     const frontPrompt = promptGuideForFrontImage({
@@ -322,9 +325,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     });
 
     // LLM Response
-    const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image");
-
-    // Extract
+    const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image", previousReferenceImages);
     const { frontImageBuffer, coverImageBuffer } = llmResponse;
 
     // Validate
