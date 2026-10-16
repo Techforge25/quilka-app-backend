@@ -125,15 +125,33 @@ class LLMService
     }
 
     // Generate front and cover images
-    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image")
+    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
     {
         try
         {
+            // Initialize front and cover contents with text
+            const frontImageContents = [{ text: frontPrompt }];
+            const coverImageContents = [{ text: coverPrompt }];
+            if(referenceImagesURLs.length)
+            {
+                // Get multi-reference images URLs
+                for(const referenceImageURL of referenceImagesURLs)
+                {
+                    // Fetch reference image
+                    const base64Image = await getReferenceImage(referenceImageURL);
+                    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
+
+                    // Append image url
+                    frontImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                    coverImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                }
+            }
+
             // Generate parallel
             const [frontResponse, coverResponse] = await Promise.all([
                 // Front
                 this.ai.models.generateContent({
-                    contents: frontPrompt,
+                    contents: frontImageContents,
                     model: aiModel,
                     config: { responseModalities: ["IMAGE"] },
                     thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
@@ -141,7 +159,7 @@ class LLMService
 
                 // Cover
                 this.ai.models.generateContent({
-                    contents: coverPrompt,
+                    contents: coverImageContents,
                     model: aiModel,
                     config: { responseModalities: ["IMAGE"] },
                     thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
