@@ -238,10 +238,9 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 localField: "_id",
                 foreignField: "bookId",
                 as: "spreads",
-                pipeline: [{ $project: { content: 1, characterLimit: 1 } }]
+                pipeline: [{ $project: { content: 1, characterLimit: 1, illustrationLimit: 1 } }]
             }
         },
-
 
         // Add fields to calculate characters, book length
         {
@@ -267,7 +266,7 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 totalIllustrations: 1,
                 status: 1,
                 draftStage: 1,
-                spreads: 1
+                spreads: { content: 1, characterLimit: 1 }
             }
         }
     ]);
