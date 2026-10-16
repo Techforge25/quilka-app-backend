@@ -103,7 +103,7 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
 };
 
 // Prompt for front image
-const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size, previousImageURL }) => {
+const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size }) => {
     const data = `A flat, borderless, full-bleed 2D digital illustration of a single-page children's picture book FRONT COVER in ${illustrationStyle} style for the book titled "${bookTitle}".
 
     Canvas Size & Single-Page Orientation Logic:
@@ -111,11 +111,6 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size,
     - Target Output Dimensions: Calculate the exact canvas ratio by taking the width and height of ${size} in px respectively MOST IMPORTANT!!!.
     - This represents ONE single closed cover page (half the width of the full spread ${size}), rendered in a strict vertical/single-page orientation.
     - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from top-to-bottom and left-to-right. Zero outer margins, zero padding, and zero background space outside the cover.
-
-    Character Continuity & Visual DNA:
-    - REFERENCE IMAGE LOCK (URL: ${previousImageURL}): A previously generated illustration is provided as the ground-truth visual reference.
-    - STRICT CHARACTER CONSISTENCY: Extract and preserve the exact Character Visual DNA from the reference image. Maintain 100% identical facial features, hair color and hairstyle, skin tone, body proportions, age, and exact clothing/outfit details.
-    - Do NOT redesign or alter the character's appearance. Simply place the exact same character into the new pose, expression, and environment described in the scene.
 
     Front Cover Typography & Layout:
     - Prominent Book Title: Render the exact text "${bookTitle}" prominently at the top-to-center area.
@@ -137,7 +132,7 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size,
 };
 
 // Prompt for cover image
-const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size, previousImageURL }) => {
+const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size }) => {
     const data = `
     A flat, borderless, full-bleed 2D digital illustration of a single-page children's picture book BACK COVER in ${illustrationStyle} style matching the story world of:
     ${content}
@@ -147,11 +142,6 @@ const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size
     - Target Output Dimensions: Calculate the exact canvas ratio by taking the width and height of ${size} in px respectively MOST IMPORTANT!!!.
     - This represents ONE single back cover page ( strictly half the width of the full spread ${size}), rendered as a single-page layout.
     - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from edge to edge. Zero outer margins, zero padding, and zero background space outside the cover.
-
-    Character Continuity & Visual DNA:
-    - REFERENCE IMAGE LOCK (URL: ${previousImageURL}): A previously generated illustration is provided as the ground-truth visual reference.
-    - STRICT CHARACTER CONSISTENCY: Extract and preserve the exact Character Visual DNA from the reference image. Maintain 100% identical facial features, hair color and hairstyle, skin tone, body proportions, age, and exact clothing/outfit details.
-    - Do NOT redesign or alter the character's appearance. Simply place the exact same character into the new pose, expression, and environment described in the scene.
 
     Back Cover Layout & Graphic Design Elements:
     - Story Blurb Block: Neatly framed, legible story summary text in the center area for the book: ${content}.

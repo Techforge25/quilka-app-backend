@@ -38,37 +38,66 @@ class LLMService
         }
     }
 
-    // Generate story illustration
-    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImageURL = "https://res.cloudinary.com/ndlremz2/image/upload/v1792069150/white-image.jpg")
+    // Generate front and cover images
+    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
     {
         try
         {
-            // Get reference image
-            const base64Image = await getReferenceImage(referenceImageURL);
+            // Initialize front and cover contents with text
+            const frontImageContents = [{ text: frontPrompt }];
+            const coverImageContents = [{ text: coverPrompt }];
+            if(referenceImagesURLs.length)
+            {
+                // Get multi-reference images URLs
+                for(const referenceImageURL of referenceImagesURLs)
+                {
+                    // Fetch reference image
+                    const base64Image = await getReferenceImage(referenceImageURL);
+                    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
 
-            // Generate illustration
-            const illustrationResponse = await this.ai.models.generateContent({
-                contents: [
-                    { text: dynamicPrompt },
-                    { inlineData: { mimeType: "image/jpg", data: base64Image } }
-                ],
-                model: aiModel,
-                config: { responseModalities: ["IMAGE"] },
-                thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
-            });
-            if(!illustrationResponse) throw new ApiError(500, "Failed to generate story illustration");          
-            
-            // Find generated image
-            const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
-            if(!imagePart?.inlineData?.data) throw new ApiError(500, "Inline data is missing");
+                    // Append image url
+                    frontImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                    coverImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                }
+            }
 
-            // Convert base64 image to buffer
-            const imageBuffer = Buffer.from(imagePart.inlineData.data, "base64");
-            if(!imageBuffer) throw new ApiError(500, "Failed to convert base64 image to buffer");
+            // Generate parallel
+            const [frontResponse, coverResponse] = await Promise.all([
+                // Front
+                this.ai.models.generateContent({
+                    contents: frontImageContents,
+                    model: aiModel,
+                    config: { responseModalities: ["IMAGE"] },
+                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                }),
+
+                // Cover
+                this.ai.models.generateContent({
+                    contents: coverImageContents,
+                    model: aiModel,
+                    config: { responseModalities: ["IMAGE"] },
+                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                }),
+            ]);
+            if(!frontResponse) throw new ApiError(500, "Failed to generate front image");
+            if(!coverResponse) throw new ApiError(500, "Failed to generate cover image");
+
+            // Find generated images
+            const frontImagePart = frontResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
+            const coverImagePart = coverResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
+            if(!frontImagePart?.inlineData?.data) throw new ApiError(500, "Inline data of front image is missing");
+            if(!coverImagePart?.inlineData?.data) throw new ApiError(500, "Inline data of cover image is missing");
+
+            // Convert base64 images to buffer
+            const frontImageBuffer = Buffer.from(frontImagePart.inlineData.data, "base64");
+            const coverImageBuffer = Buffer.from(coverImagePart.inlineData.data, "base64");
+            if(!frontImageBuffer) throw new ApiError(500, "Failed to convert base64 front image to buffer");
+            if(!coverImageBuffer) throw new ApiError(500, "Failed to convert base64 cover image to buffer");
 
             // Extract token counts
-            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
-            return { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+            const { totalTokenCount: frontTotalTokenCount } = frontResponse.usageMetadata;
+            const { totalTokenCount: coverTotalTokenCount } = coverResponse.usageMetadata;
+            return { frontImageBuffer, coverImageBuffer, totalTokenCount: frontTotalTokenCount + coverTotalTokenCount };
         }
         catch(error)
         {
