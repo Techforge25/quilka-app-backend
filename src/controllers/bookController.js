@@ -30,6 +30,7 @@ const createBookInCustom = asyncHandler(async (request, response, next) => {
     spreads.forEach((spread, index) => {
         const spreadNo = index + 1;
         if(!spread.content) throw new ApiError(400, `Spread ${spreadNo} content is missing`);
+        if(!spread.content.length < 3) throw new ApiError(400, `Content length must not be less than 3 for Spread ${spreadNo}`);
         if(spread.content.length > spread.characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
     });
 
