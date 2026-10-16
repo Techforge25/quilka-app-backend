@@ -209,7 +209,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
                 foreignField: "bookId",
                 as: "spreads",
                 pipeline: [{ $project: { mainLayoutName: 1, subLayoutDirection: 1, content: 1, 
-                textSize: 1, characterLimit: 1, textColor: 1, textBgColor: 1 } }]
+                illustrationURL: 1, textSize: 1, characterLimit: 1, textColor: 1, textBgColor: 1 } }]
             }
         },
 
