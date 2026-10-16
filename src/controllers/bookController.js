@@ -290,19 +290,25 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
+    // Find book and spreads
+    const [book, spreads] = await Promise.all([
+        Book.findById(bookId),
+        Spread.find({ bookId }).select("content")
+    ]);
 
     // Validate
+    if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate front and cover images for this book");
     if(book.status !== "draft") throw new ApiError(400, "Front and cover images can only be generated in draft state");
     if(book.draftStage !== 3) throw new ApiError(403, "Book should be in draft stage 3 before generating front and cover images");
 
+    // Story content
+    const storyContent = spreads.map(spread => spread.content.trim()).join(" ");
+
     // Prompt for front image
     const frontPrompt = promptGuideForFrontImage({
         bookTitle: book.title,
-        content: book.mode === "CUSTOM" ? book.txtContent : book.aiContent,
+        content: storyContent,
         size: book.spreadSize,
         illustrationStyle: book.illustrationStyle
     });
@@ -310,7 +316,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     // Prompt for cover image
     const coverPrompt = promptGuideForCoverImage({
         authorName: book.authorName,
-        content: book.mode === "CUSTOM" ? book.txtContent : book.aiContent,
+        content: storyContent,
         size: book.spreadSize,
         illustrationStyle: book.illustrationStyle
     });
@@ -319,12 +325,11 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image");
 
     // Extract
-    const { frontImageBuffer, coverImageBuffer, totalTokenCount } = llmResponse;
+    const { frontImageBuffer, coverImageBuffer } = llmResponse;
 
     // Validate
     if(!frontImageBuffer) throw new ApiError(500, "Failed to generate front image");
     if(!coverImageBuffer) throw new ApiError(500, "Failed to generate cover image");
-    console.log("Total token consumption", totalTokenCount);
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
