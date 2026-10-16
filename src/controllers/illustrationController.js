@@ -46,14 +46,13 @@ const createIllustration = asyncHandler(async (request, response) => {
     });
 
     // Get previous images if exists
-    const previousReferenceImages = referenceImages.filter(ref => ref.illustrationURL);  
+    const previousReferenceImages = referenceImages.filter(ref => ref.illustrationURL).map(url => url.illustrationURL);
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
 
-    // Extract generated image buffer and token consumption count
-    const { imageBuffer, totalTokenCount } = illustrationResponse;
-    console.log("Total Token", totalTokenCount);
+    // Extract generated image buffer
+    const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -139,9 +138,8 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
     // Generate illustration
     const illustrationResponse = await llm.generateIllustrationWithCustomPrompt(prompt, referenceImageURL, "gemini-3.1-flash-image");
 
-    // Extract generated image buffer and token consumption count
-    const { imageBuffer, totalTokenCount } = illustrationResponse;
-    console.log("Total Token", totalTokenCount);
+    // Extract generated image buffer
+    const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
