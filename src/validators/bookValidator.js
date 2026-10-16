@@ -28,7 +28,7 @@ const createBookValidator = joi.object({
     language: joi.string().trim().required().valid(...allowedLanguages).label("Language"),
 
     // Spreads config
-    spreads: joi.array().items(joi.object({
+    spreads: joi.array().min(1).items(joi.object({
         mainLayoutName: joi.string().trim().required().min(3).max(50).label("Main layout name"),
         subLayoutDirection: joi.string().trim().required().min(3).max(50).label("Sub layout direction"),
         content: joi.string().trim().min(3).allow("", null).default(null).label("Spread content"),
