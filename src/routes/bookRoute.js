@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
-const { createBook, updateBook, fetchMyBooks, viewBook, viewBookContent, 
-createFrontAndCoverImages, publishBook, fetchFrontAndBackImages } = require("../controllers/bookController");
+const { createBookInCustom, createBookInAI, fetchMyBooks, 
+viewBook, viewBookContent, createFrontAndCoverImages, publishBook, 
+fetchFrontAndBackImages } = require("../controllers/bookController");
 const { rateLimit } = require("../middlewares/rateLimit");
 
 // Router instance
@@ -10,15 +11,13 @@ const bookRouter = Router();
 // Inject middleware
 bookRouter.use(authentication);
 
-// Create book / Fetch my books
+// Create book in custom & AI / Fetch my books
 bookRouter.route("/")
-.post(createBook)
+.post(createBookInCustom, createBookInAI)
 .get(fetchMyBooks);
 
-// View book / Update book
-bookRouter.route("/:bookId")
-.get(viewBook)
-.put(updateBook);
+// View book
+bookRouter.route("/:bookId").get(viewBook);
 
 // View book content
 bookRouter.route("/:bookId/content").get(viewBookContent);
