@@ -10,23 +10,29 @@ const { emptyList } = require("../constants");
 const llm = require("../service/llmService");
 const { promptGuideForCoverImage, promptGuideForFrontImage } = require("../utils/promptGuide");
 const { uploadToCloudinary } = require("../utils/cloudinary");
+const Spread = require("../models/spreadModel");
 
-// Create book
-const createBook = asyncHandler(async (request, response) => {
+// Create book in custom
+const createBookInCustom = asyncHandler(async (request, response, next) => {
     const userId = request.user._id;
 
     // Get validated payload
-    const { mode, title, authorName, spreadsCount, txtContent, prompt, 
-    ageGroup, bookSize, spreadSize, textStyle,  illustrationStyle, 
-    language, spreads } = validatePayload(createBookValidator, request.body) || {};
+    const { mode, title, authorName, spreadsCount, ageGroup, bookSize, spreadSize, 
+    textStyle, illustrationStyle, language, spreads } = validatePayload(createBookValidator, request.body) || {};
 
-    // Validate custom mode
-    if(mode === "CUSTOM")
+    // Pass to AI
+    if(mode === "AI")
     {
-        // Extract total spread characters and validate
-        const totalSpreadCharacters = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
-        if(txtContent.length > totalSpreadCharacters) throw new ApiError(403, "Please increase spread limit");
+        return next();
     }
+
+    // Validate spreads config (Content must not be empty)
+    spreads.forEach((spread, index) => {
+        const spreadNo = index + 1;
+        if(!spread.content) throw new ApiError(400, `Spread ${spreadNo} content is missing`);
+        if(!spread.content.length < 3) throw new ApiError(400, `Content length must not be less than 3 for Spread ${spreadNo}`);
+        if(spread.content.length > spread.characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
+    });
 
     // Create book
     const book = await Book.create({ 
@@ -34,54 +40,67 @@ const createBook = asyncHandler(async (request, response) => {
         mode, 
         title, 
         authorName, 
-        spreadsCount, 
-        txtContent,
-        prompt,
+        spreadsCount,
         ageGroup, 
         bookSize, 
         spreadSize,
         textStyle,
         illustrationStyle,
         language, 
-        spreads
     });
     if(!book) throw new ApiError(500, "Failed to create book");
 
+    // Map Book ID
+    const spreadConfig = spreads.map((spread) => ({ ...spread, bookId: book._id }));
+
+    // Create spreads
+    const spread = await Spread.insertMany(spreadConfig);
+    if(!spread) throw new ApiError(400, "Failed to create spreads");
+
     // Response
-    return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created"));
+    return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created in Custom Mode!"));
 });
 
-// Update book
-const updateBook = asyncHandler(async (request, response) => {
+// Create book in AI
+const createBookInAI = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Sanitize book ID
-    const { bookId } = request.params;
-    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-
     // Get validated payload
-    const { mode, title, authorName, spreadsCount, txtContent, prompt, 
-    ageGroup, bookSize, spreadSize, textStyle,  illustrationStyle, 
-    language, spreads } = validatePayload(createBookValidator, request.body) || {};    
+    const { mode, title, authorName, prompt, spreadsCount, ageGroup, bookSize, spreadSize, 
+    textStyle, illustrationStyle, language, spreads } = validatePayload(createBookValidator, request.body) || {};
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
-
-    // Validate
-    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to re-create this book");
-    if(book.status !== "pending") throw new ApiError(400, "Book must be in pending state to update book details");
-    
-    // Update in db
-    Object.assign(book, { 
-        mode, title, authorName, spreadsCount, txtContent, prompt, 
-        ageGroup, bookSize, spreadSize, textStyle, illustrationStyle,
-        language, spreads
+    // Validate spreads config (Content must be empty)
+    spreads.forEach((spread, index) => {
+        const spreadNo = index + 1;
+        if(spread.content !== null) throw new ApiError(400, `Spread ${spreadNo} content must be null in AI Mode`);
     });
-    await book.save();
+
+    // Create book
+    const book = await Book.create({
+        userId, 
+        mode, 
+        title, 
+        authorName, 
+        prompt,
+        spreadsCount,
+        ageGroup, 
+        bookSize, 
+        spreadSize,
+        textStyle,
+        illustrationStyle,
+        language,
+    });
+    if(!book) throw new ApiError(500, "Failed to create book");
+
+    // Map Book ID
+    const spreadConfig = spreads.map((spread) => ({ ...spread, bookId: book._id }));
+
+    // Create spreads
+    const spread = await Spread.insertMany(spreadConfig);
+    if(!spread) throw new ApiError(400, "Failed to create spreads");    
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { bookId: book._id }, "Book details have been updated"));
+    return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created in AI Mode!"));
 });
 
 // Fetch my books
@@ -148,6 +167,16 @@ const viewBook = asyncHandler(async (request, response) => {
         // Match
         { $match: { _id: convertToMongoId(bookId) } },
 
+        // Lookup spreads
+        {
+            $lookup: {
+                from: "spreads",
+                localField: "_id",
+                foreignField: "bookId",
+                as: "spreads"
+            }
+        },
+
         // Add fields to calculate characters, illustrations and book length
         {
             $addFields: {
@@ -157,7 +186,7 @@ const viewBook = asyncHandler(async (request, response) => {
                     spreads: "$spreadsCount",
                     pages: { $multiply: ["$spreadsCount", 2] },
                 },
-                price: 26.99 // Hard coded 
+                price: { $multiply: ["$spreadsCount", 2] }
             }
         },
 
@@ -203,6 +232,17 @@ const viewBookContent = asyncHandler(async (request, response) => {
         // Match
         { $match: { _id: convertToMongoId(bookId) } },
 
+        // Lookup spreads
+        {
+            $lookup: {
+                from: "spreads",
+                localField: "_id",
+                foreignField: "bookId",
+                as: "spreads",
+                pipeline: [{ $project: { content: 1, characterLimit: 1, illustrationLimit: 1 } }]
+            }
+        },
+
         // Add fields to calculate characters, book length
         {
             $addFields: {
@@ -211,13 +251,6 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 bookLength: {
                     spreads: "$spreadsCount",
                     pages: { $multiply: ["$spreadsCount", 2] },
-                },
-                storyContent: {
-                    $cond: [
-                        { $eq: ["$mode", "CUSTOM"] },
-                        "$txtContent",
-                        "$aiContent"
-                    ]
                 }
             }
         },
@@ -232,9 +265,9 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 bookLength: 1,
                 totalCharacters: 1,
                 totalIllustrations: 1,
-                storyContent: 1,
                 status: 1,
-                draftStage: 1
+                draftStage: 1,
+                spreads: { content: 1, characterLimit: 1 }
             }
         }
     ]);
@@ -258,22 +291,28 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
-
-    // Get previous images
-    const previousImages = book.spreads.filter((spread) => spread.illustrationURL).map(url => url.illustrationURL);
+    // Find book and spreads
+    const [book, spreads] = await Promise.all([
+        Book.findById(bookId),
+        Spread.find({ bookId }).select("-_id content illustrationURL")
+    ]);
 
     // Validate
+    if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate front and cover images for this book");
     if(book.status !== "draft") throw new ApiError(400, "Front and cover images can only be generated in draft state");
     if(book.draftStage !== 3) throw new ApiError(403, "Book should be in draft stage 3 before generating front and cover images");
 
+    // Story content
+    const storyContent = spreads.map(spread => spread.content.trim()).join(" ");
+
+    // Get previous images if exists
+    const previousReferenceImages = spreads.filter(spread => spread.illustrationURL).map(url => url.illustrationURL);    
+
     // Prompt for front image
     const frontPrompt = promptGuideForFrontImage({
         bookTitle: book.title,
-        content: book.mode === "CUSTOM" ? book.txtContent : book.aiContent,
+        content: storyContent,
         size: book.spreadSize,
         illustrationStyle: book.illustrationStyle
     });
@@ -281,13 +320,13 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     // Prompt for cover image
     const coverPrompt = promptGuideForCoverImage({
         authorName: book.authorName,
-        content: book.mode === "CUSTOM" ? book.txtContent : book.aiContent,
+        content: storyContent,
         size: book.spreadSize,
         illustrationStyle: book.illustrationStyle
     });
 
     // LLM Response
-    const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image", previousImages);
+    const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image", previousReferenceImages);
     const { frontImageBuffer, coverImageBuffer } = llmResponse;
 
     // Validate
@@ -368,5 +407,5 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Front and back images have been fetched"));
 });
 
-module.exports = { createBook, updateBook, fetchMyBooks, viewBook, viewBookContent, 
+module.exports = { createBookInCustom, createBookInAI, fetchMyBooks, viewBook, viewBookContent, 
 createFrontAndCoverImages, publishBook, fetchFrontAndBackImages };
