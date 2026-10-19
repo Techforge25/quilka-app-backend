@@ -38,14 +38,13 @@ class LLMService
         }
     }
 
-    // Generate front and cover images
-    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
+    // Generate story illustration
+    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
     {
         try
         {
-            // Initialize front and cover contents with text
-            const frontImageContents = [{ text: frontPrompt }];
-            const coverImageContents = [{ text: coverPrompt }];
+            // Initialize contents with text
+            const contents = [{ text: dynamicPrompt }];
             if(referenceImagesURLs.length)
             {
                 // Get multi-reference images URLs
@@ -56,48 +55,29 @@ class LLMService
                     if(!base64Image) throw new ApiError(500, "Failed to process reference image");
 
                     // Append image url
-                    frontImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
-                    coverImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                    contents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
                 }
             }
 
-            // Generate parallel
-            const [frontResponse, coverResponse] = await Promise.all([
-                // Front
-                this.ai.models.generateContent({
-                    contents: frontImageContents,
-                    model: aiModel,
-                    config: { responseModalities: ["IMAGE"] },
-                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
-                }),
+            // Generate illustration
+            const illustrationResponse = await this.ai.models.generateContent({
+                model: aiModel,
+                contents,
+                config: { responseModalities: ["IMAGE"] },
+                thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+            });
+            
+            // Find generated image
+            const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
+            if(!imagePart?.inlineData?.data) throw new ApiError(500, "Inline data is missing");
 
-                // Cover
-                this.ai.models.generateContent({
-                    contents: coverImageContents,
-                    model: aiModel,
-                    config: { responseModalities: ["IMAGE"] },
-                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
-                }),
-            ]);
-            if(!frontResponse) throw new ApiError(500, "Failed to generate front image");
-            if(!coverResponse) throw new ApiError(500, "Failed to generate cover image");
-
-            // Find generated images
-            const frontImagePart = frontResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
-            const coverImagePart = coverResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
-            if(!frontImagePart?.inlineData?.data) throw new ApiError(500, "Inline data of front image is missing");
-            if(!coverImagePart?.inlineData?.data) throw new ApiError(500, "Inline data of cover image is missing");
-
-            // Convert base64 images to buffer
-            const frontImageBuffer = Buffer.from(frontImagePart.inlineData.data, "base64");
-            const coverImageBuffer = Buffer.from(coverImagePart.inlineData.data, "base64");
-            if(!frontImageBuffer) throw new ApiError(500, "Failed to convert base64 front image to buffer");
-            if(!coverImageBuffer) throw new ApiError(500, "Failed to convert base64 cover image to buffer");
+            // Convert base64 image to buffer
+            const imageBuffer = Buffer.from(imagePart.inlineData.data, "base64");
+            if(!imageBuffer) throw new ApiError(500, "Failed to convert base64 image to buffer");
 
             // Extract token counts
-            const { totalTokenCount: frontTotalTokenCount } = frontResponse.usageMetadata;
-            const { totalTokenCount: coverTotalTokenCount } = coverResponse.usageMetadata;
-            return { frontImageBuffer, coverImageBuffer, totalTokenCount: frontTotalTokenCount + coverTotalTokenCount };
+            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
+            return { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
         }
         catch(error)
         {
@@ -145,15 +125,33 @@ class LLMService
     }
 
     // Generate front and cover images
-    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image")
+    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
     {
         try
         {
+            // Initialize front and cover contents with text
+            const frontImageContents = [{ text: frontPrompt }];
+            const coverImageContents = [{ text: coverPrompt }];
+            if(referenceImagesURLs.length)
+            {
+                // Get multi-reference images URLs
+                for(const referenceImageURL of referenceImagesURLs)
+                {
+                    // Fetch reference image
+                    const base64Image = await getReferenceImage(referenceImageURL);
+                    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
+
+                    // Append image url
+                    frontImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                    coverImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                }
+            }
+
             // Generate parallel
             const [frontResponse, coverResponse] = await Promise.all([
                 // Front
                 this.ai.models.generateContent({
-                    contents: frontPrompt,
+                    contents: frontImageContents,
                     model: aiModel,
                     config: { responseModalities: ["IMAGE"] },
                     thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
@@ -161,7 +159,7 @@ class LLMService
 
                 // Cover
                 this.ai.models.generateContent({
-                    contents: coverPrompt,
+                    contents: coverImageContents,
                     model: aiModel,
                     config: { responseModalities: ["IMAGE"] },
                     thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
