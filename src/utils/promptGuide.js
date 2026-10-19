@@ -12,7 +12,22 @@ const promptGuideForTextGeneration = ({ title, ageGroup, language, prompt, total
         });
 
         const data = `
-        Please read carefully! And do follow all instructions! Create an age-appropriate children’s storybook based on the following requirements. Story Requirements: Story Title: ${title}. Age Group: ${ageGroup}. Language: ${language}. Story Idea: ${prompt} Total Character Length must be always less than: ${totalCharacters} characters MOST IMPORTANT!!. Every page has following character limits ${spreadWiseCharacterLimit} WHICH SHOULD NEVER EXCEEDE THE LIMIT MOST IMPORTANT!!. Instructions: Do not add escape sequence. This is very important catch. Create an attractive and memorable title for the story if one is not provided. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages.Keep the text on each page within the specified character-length range. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Each page should naturally continue from the previous page. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. Generated output should not include story title and page names eg: Page:1 or Page:2, just separate the pages with a seperator with exact same string spread break. I am not using inverted commas on spread break just to simplify it for you. Just remember the exact word that is spread break`;
+        Please read carefully! And do follow all instructions! Create an age-appropriate children’s storybook based on the following requirements. Story Requirements: Story Title: ${title}. Age Group: ${ageGroup}. Language: ${language}. Story Idea: ${prompt}. 
+        
+        - Total Character Length must be less than: ${totalCharacters} characters. 
+        
+        Every page has following character limits ${spreadWiseCharacterLimit}. Each page should not exceed its respective characters limit. If page have 100 characters limit, then keep the story of that page close to 92 to 97 characters. Don't exceed and dont keep too much space between total characters of text of the page and character limit of that page.
+
+        Instructions: Do not add escape sequence. This is very important catch. Create an attractive and memorable title for the story if one is not provided. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages.Keep the text on each page within the specified character-length range. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Each page should naturally continue from the previous page. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. Generated output should not include story title and page names eg: Page:1 or Page:2, just separate the pages with a seperator with exact same string spread break. I am not using inverted commas on spread break just to simplify it for you. Just remember the exact word that is spread break
+        
+        CRITICAL CHARACTER LIMIT RULES — HIGHEST PRIORITY:
+        1. The absolute maximum number of story characters is ${totalCharacters}.
+        2. The combined character count of ALL generated story pages MUST NEVER exceed ${totalCharacters}.
+        3. Count EVERY character, including letters, spaces, punctuation, numbers, and symbols.
+        4. This story contains total ${spreads.length} pages.
+        5. Character limits for each page: ${spreadWiseCharacterLimit}.
+        6. If page have 100 characters limit, then keep the story of that page close to 92 to 97 characters.
+        `;
         return data;
     }
     catch(error)
@@ -35,15 +50,18 @@ const promptGuideForTextRegeneration = ({ title, ageGroup, language, previousSto
 
         const data = `Please read carefully! And do follow all instructions! Create an age-appropriate children’s storybook based on the following requirements. Story Requirements: Story Title: ${title}. Age Group: ${ageGroup}. Language: ${language}. Previously, you generated this story ${previousStory}. So now, please regenerate it with my new idea. New Story Idea: ${prompt}.
         
-        - Total Character Length must be less than: ${totalCharacters} characters MOST IMPORTANT.
+        - Total Character Length must be less than: ${totalCharacters} characters.
 
-        Every page has following character limits ${spreadWiseCharacterLimit} accordingly DO NOT EXCEEDE THE CHARATER LIMIT. Instructions: Do not add escape sequence. This is very important catch. Create an attractive and memorable title for the story if one is not provided. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages.Keep the text on each page within the specified character-length range. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Each page should naturally continue from the previous page. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. Generated output should not include story title and page names eg: Page:1 or Page:2, just separate the pages with a seperator with exact same string spread break. I am not using inverted commas on spread break just to simplify it for you. Just remember the exact word that is spread break
-        
+        Every page has following character limits ${spreadWiseCharacterLimit}. Instructions: Do not add escape sequence. This is very important catch. Create an attractive and memorable title for the story if one is not provided. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages.Keep the text on each page within the specified character-length range. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Each page should naturally continue from the previous page. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. Generated output should not include story title and page names eg: Page:1 or Page:2, just separate the pages with a seperator with exact same string spread break. I am not using inverted commas on spread break just to simplify it for you. Just remember the exact word that is spread break
 
         CRITICAL CHARACTER LIMIT RULES — HIGHEST PRIORITY:
         1. The absolute maximum number of story characters is ${totalCharacters}.
         2. The combined character count of ALL generated story pages MUST NEVER exceed ${totalCharacters}.
-        3. Count EVERY character, including letters, spaces, punctuation, numbers, and symbols.`;
+        3. Count EVERY character, including letters, spaces, punctuation, numbers, and symbols.
+        4. This story contains total ${spreads.length} pages.
+        5. Character limits for each page: ${spreadWiseCharacterLimit}.
+        6. If page have 100 characters limit, then keep the story of that page close to 92 to 97 characters.        
+        `;
         return data;
     }
     catch(error)
@@ -54,16 +72,27 @@ const promptGuideForTextRegeneration = ({ title, ageGroup, language, previousSto
 };
 
 // Prompt guide for custom story refinement
-const promptGuideForCustomStoryRefinement = ({ title, ageGroup, language, previousStory, instruction, totalCharacters }) => {
+const promptGuideForCustomStoryRefinement = ({ title, ageGroup, language, previousStory, instruction, totalCharacters, spreads }) => {
     try
     {
+        const spreadWiseCharacterLimit = spreads.map((spread, index) => {
+            index++;
+            const output = `Page ${index}: Character limit ${spread.characterLimit}`;
+            
+            return output;
+        });
+
         const data = `Please read carefully! And do follow all instructions! I have created an age-appropriate children’s storybook based on the following requirements. Story Requirements: Story Title: ${title}. Age Group: ${ageGroup}. Language: ${language}. I just need a refinement of this story: ${previousStory}. 
         
         - Please refine it with this instruction: "${instruction}".
         
         - Total Character Length must be less than: ${totalCharacters} characters.
 
-        Instructions: Do not add escape sequence. This is very important catch. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. Generated output should not include story title and page names eg: Page: 1 or Page: 2
+        Every page has following character limits ${spreadWiseCharacterLimit}. Instructions: Do not add escape sequence. This is very important catch. Write the story specifically for the selected age group. Use simple, clear, and age-appropriate vocabulary. Keep sentences short and easy to understand, especially for younger children. Divide the complete story naturally into pages. Keep the complete story as close as possible to the requested total character length. Count character length including spaces and punctuation. Do not cut sentences abruptly just to meet the character limit. Maintain consistent characters, settings, events, and story details throughout the book. Give the story a clear beginning, middle, and satisfying ending. Use repetition, playful sounds, simple dialogue, and descriptive words when appropriate for the selected age group. Keep the story warm, imaginative, engaging, and suitable for reading aloud. Avoid violent, frightening, inappropriate, or overly complicated themes. The spread limits should be generated exactly to the provided limit. Where appropriate, include a simple positive lesson such as kindness, friendship, sharing, courage, curiosity, creativity, or caring for nature. 
+        
+        VERY IMPORTANT INSTRUCTION:
+        Generated output should not include story title and page names eg: Page:1 or Page:2, just separate the pages with a seperator with exact same string spread break. I am not using inverted commas on spread break just to simplify it for you. Just remember the exact word that is spread break
+        - I will use javascript built-in method split('spread break') so please don't forget to add spread break
 
         CRITICAL CHARACTER LIMIT RULES — HIGHEST PRIORITY:
         1. The absolute maximum number of story characters is ${totalCharacters}.
@@ -81,25 +110,22 @@ const promptGuideForCustomStoryRefinement = ({ title, ageGroup, language, previo
 // Prompt guide for illustration
 const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRatio }) => {
     const data = `
-        A flat, borderless, full-bleed 2D children’s book page illustration in ${illustrationStyle} style depicting the scene:
+        A children’s book illustration in ${illustrationStyle} style depicting the scene:
         ${content}
 
         Dimensions & Canvas Specifications:
         - Target Dimensions: Exactly ${size} (width x height in px).
         - Aspect Ratio: ${aspectRatio} orientation.
-        - 100% Edge-to-Edge Viewport: Full-bleed 2D illustration structured to completely fill a ${size} container from edge to edge with zero outer padding, zero margins, and zero white space.
-        - Composition Safe-Zone: Keep primary characters and key focal points centered with balanced breathing room so nothing important is clipped at the edges.
+        - Framing: Full-bleed, edge-to-edge illustration structured to fit a ${size} container with zero outer padding or white space.
+        - Composition Safe-Zone: Center key subjects with balanced breathing room around the edges to ensure no elements are clipped when rendered.
 
         Visual Art Style:
-        - ${illustrationStyle} with rich detailing, coherent storybook textures, consistent lighting warmth, and an expressive picture-book finish.
+        - ${illustrationStyle} with rich detailing, coherent textures, and an expressive storybook aesthetic.
 
-        Strict Constraints & Negative Directives:
-        - Completely borderless, flat 2D full-bleed canvas touching all 4 raw edges of the image frame.
-        - NO 3D book page mockups, NO page curl effects, NO central book spine shadows, and NO background surfaces.
-        - Pure visual illustration only: Absolutely NO text, NO page numbers, NO dialogue, NO typography, NO watermarks, and NO speech bubbles.
-    `;
-
-    return data;
+        Strict Constraints:
+        - Completely borderless, full-bleed, edge-to-edge canvas.
+        - Absolutely NO text, NO dialogue, NO typography, NO sound effect lettering, and NO speech bubbles. Pure visual illustration only.`;
+        return data;
 };
 
 // Prompt for front image
@@ -108,7 +134,7 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size 
 
     Canvas Size & Single-Page Orientation Logic:
     - Full Spread Reference Size: ${size}.
-    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width and height of ${size} in px respectively MOST IMPORTANT!!!.
+    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
     - This represents ONE single closed cover page (half the width of the full spread ${size}), rendered in a strict vertical/single-page orientation.
     - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from top-to-bottom and left-to-right. Zero outer margins, zero padding, and zero background space outside the cover.
 
@@ -126,7 +152,6 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size 
 
     Strict Constraints & Negative Directives:
     - Render ONLY the exact specified title "${bookTitle}". Absolutely NO random gibberish letters, NO placeholder text, and NO speech bubbles.
-    - The image SHOULD NOT REPEAT within a canvas and should be a complete filled.
     - FLAT 2D ARTWORK ONLY: Do NOT generate a 3D book mockup, do NOT show a book sitting on a table or background, do NOT draw a book spine, and do NOT add white borders or frames. The artwork itself must touch all 4 edges of the generated image.`;
     return data;  
 };
@@ -139,7 +164,7 @@ const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size
 
     Canvas Size & Single-Page Orientation Logic:
     - Full Spread Reference Size: ${size}.
-    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width and height of ${size} in px respectively MOST IMPORTANT!!!.
+    - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
     - This represents ONE single back cover page ( strictly half the width of the full spread ${size}), rendered as a single-page layout.
     - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from edge to edge. Zero outer margins, zero padding, and zero background space outside the cover.
 
@@ -158,7 +183,6 @@ const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size
     Strict Constraints & Negative Directives:
     - Render ONLY the specified blurb text and "Written by ${authorName}".
     - Absolutely NO unreadable gibberish, NO messy placeholder scribbles, and NO speech bubbles.
-    - The image SHOULD NOT REPEAT within a canvas and should be a complete filled.
     - FLAT 2D ARTWORK ONLY: Do NOT generate a 3D book mockup, do NOT show a book sitting on a background or surface, do NOT draw a book spine, and do NOT add white borders or frames. The illustration must touch all 4 raw edges of the generated image.`;
     return data;
 };
