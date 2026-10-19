@@ -11,7 +11,7 @@ const illustrationRouter = Router();
 illustrationRouter.use(authentication);
 
 // Create illustration
-illustrationRouter.route("/:bookId/spread/:spreadId").post(rateLimit(2, 1), createIllustration);
+illustrationRouter.route("/:bookId/spread/:spreadId").post(rateLimit(3, 1), createIllustration);
 
 // Upload manual illustration
 illustrationRouter.route("/:bookId/spread/:spreadId/upload").post(rateLimit(3, 1), uploadManualIllustration);
