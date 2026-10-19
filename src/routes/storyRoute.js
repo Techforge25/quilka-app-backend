@@ -11,20 +11,17 @@ const storyRouter = Router();
 // Inject middleware
 storyRouter.use(authentication);
 
-// Generate & Regenerate story text with AI
-storyRouter.route("/:bookId").post(rateLimit(1, 1), generateWithAi, regenerateStoryText);
-
-// View story content / Update story
-storyRouter.route("/:bookId").get(viewStoryContent);
-
-// Update spread content (CUSTOM FLOW)
-storyRouter.route("/:bookId/spread/:spreadId").patch(updateStory);
+// Generate & Regenerate story text with AI / View story content / Update story
+storyRouter.route("/:bookId")
+.post(rateLimit(1, 1), generateWithAi, regenerateStoryText)
+.get(viewStoryContent)
+.patch(updateStory);
 
 // Refine custom story with AI
 storyRouter.route("/:bookId/refine").patch(rateLimit(1, 1), refineCustomStoryWithAI);
 
 // Update story with spread text size (AI & CUSTOM)
-storyRouter.route("/:bookId/spread/:spreadId/v2").patch(rateLimit(10, 1), updateStoryWithSpreadTextSize);
+storyRouter.route("/:bookId/spread/:spreadId").patch(rateLimit(10, 1), updateStoryWithSpreadTextSize);
 
 // Finalize text phase
 storyRouter.route("/:bookId/finalizeTextStory").post(rateLimit(1, 1), finalizeTextPhase);

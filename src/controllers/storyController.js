@@ -12,7 +12,7 @@ const llm = require("../service/llmService");
 const { allowedTextSizes } = require("../constants");
 const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
-const { customStoryRefinementValidator } = require("../validators/storyValidator");
+const { customStoryRefinementValidator, updateStoryValidator } = require("../validators/storyValidator");
 const Spread = require("../models/spreadModel");
 
 // Generate story with AI
@@ -365,36 +365,44 @@ const updateStory = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Sanitize IDs
-    const { bookId, spreadId } = request.params;
+    const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-    if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Book ID");
-    
-    // Find book and spread
-    const [book, spread] = await Promise.all([
-        Book.findById(bookId),
-        Spread.findById(spreadId)
-    ]);
+
+    // Find book
+    const book = await Book.findById(bookId).select("userId status draftStage mode").lean();
 
     // Validate
     if(!book) throw new ApiError(404, "Book not found");
-    if(!spread) throw new ApiError(404, "Spread not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to update this book story");
     if(book.status !== "draft") throw new ApiError(403, "To update story, book must be in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "To update story, book must be in draft stage 1");
-    if(book.mode !== "CUSTOM") throw new ApiError(400, "To update story, the book mode must be in 'CUSTOM' mode");
+    if(book.mode !== "CUSTOM") throw new ApiError(400, "To update story, the book must be in 'CUSTOM' mode");
 
     // Sanitize payload
-    const updateStoryValidator = joi.object({
-        spreadContent: joi.string().min(3).max(spread.characterLimit).required().label("Spread content"),
-    });
-    const { spreadContent } = validatePayload(updateStoryValidator, request.body) || {};
+    const { spreads } = validatePayload(updateStoryValidator, request.body) || {};
 
-    // Save to db
-    spread.content = spreadContent;
-    await spread.save();
+    // Get spread IDs
+    const spreadIds = spreads.map((spread) => spread.spreadId);
+
+    // Find existing spreads
+    const existingSpreads = await Spread.find({ _id: { $in: spreadIds }, bookId }).select("_id").lean();
+
+    // Validate spread IDs
+    if(existingSpreads.length !== spreads.length) throw new ApiError(400, "One or more spreads are invalid or do not belong to this book");
+
+    // Prepare bulk operations
+    const operations = spreads.map((spread) => ({
+        updateOne: {
+            filter: { _id: spread.spreadId, bookId },
+            update: { $set: { content: spread.spreadContent } }
+        }
+    }));
+
+    // Update spreads
+    await Spread.bulkWrite(operations);
 
     // Response
-    return response.status(200).json(new ApiResponse(200, spreadContent, "Story has been updated"));
+    return response.status(200).json(new ApiResponse(200, spreads, "Story has been updated successfully"));
 });
 
 // Update story with spread text size (AI & CUSTOM)
