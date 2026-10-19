@@ -18,15 +18,20 @@ cron.schedule(timer, async () => {
     {
         // Find pending books
         const books = await Book.find({ status: "pending", createdAt: { $lte: oneDayAgo } }).select("_id");
-        for(const book of books)
-        {
-            const { _id: bookId } = book;
-            await Book.findByIdAndDelete(bookId);
-            await Spread.deleteMany({ bookId });
-        }
+        if(!books.length) return;
+
+        // Extract IDs
+        const bookIds = books.map(book => String(book._id));
+
+        // Delete books and connected spreads
+        await Book.deleteMany({ _id: { $in: bookIds } });
+        await Spread.deleteMany({ bookId: { $in: bookIds } });
+        console.log(`Deleted ${bookIds.length} expired pending books`);
+        return;
     }
     catch(error)
     {
+        console.log(`Failed to delete pending books ${error.message}`);
         throw new ApiError(400, error.message);
     }
 });
