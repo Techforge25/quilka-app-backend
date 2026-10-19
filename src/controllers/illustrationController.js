@@ -9,6 +9,7 @@ const Book = require("../models/bookModel");
 const validatePayload = require("../utils/validatePayload");
 const { createIllustrationValidator, updateSpreadSublayoutValidator, uploadManualIllustrationValidator, 
 generateWithCustomPromptValidator } = require("../validators/illustrationValidator");
+const Spread = require("../models/spreadModel");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response) => {
@@ -22,18 +23,16 @@ const createIllustration = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { content } = validatePayload(createIllustrationValidator, request.body) || {};
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
-
-    // Find spread
-    const spread = book.spreads.id(spreadId);
-    if(!spread) throw new ApiError(404, "Spread not found");
-
-    // Get previous image url
-    const previousImageURL = book.spreads.find((spread) => spread?.illustrationURL !== null);
+    // Find book, spread and reference images urls  
+    const [book, spread, referenceImages] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId),
+        Spread.find({ bookId }).select("-_id illustrationURL")
+    ]);
 
     // Validate
+    if(!book) throw new ApiError(404, "Book not found");
+    if(!spread) throw new ApiError(404, "Spread not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to create illustration for this book");
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation with AI cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be created in draft stage 2");
@@ -43,16 +42,17 @@ const createIllustration = asyncHandler(async (request, response) => {
         illustrationStyle: book.illustrationStyle,
         content,
         size: spread.illustrationSize.size,
-        aspectRatio: spread.illustrationSize.aspectRatio,
-        previousImageURL:previousImageURL?.illustrationURL
+        aspectRatio: spread.illustrationSize.aspectRatio
     });
 
-    // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousImageURL?.illustrationURL);
+    // Get previous images if exists
+    const previousReferenceImages = referenceImages.filter(ref => ref.illustrationURL).map(url => url.illustrationURL);
 
-    // Extract generated image buffer and token consumption count
-    const { imageBuffer, totalTokenCount } = illustrationResponse;
-    console.log("Total Token", totalTokenCount);
+    // Generate illustration
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
+
+    // Extract generated image buffer
+    const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -61,9 +61,9 @@ const createIllustration = asyncHandler(async (request, response) => {
     // Get secure URL
     const illustrationURL = uploadResult.secure_url;
 
-    // Save illustration to specific spread
+    // Save to db
     spread.illustrationURL = illustrationURL;
-    await book.save();
+    await spread.save();
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been created"));
@@ -81,22 +81,22 @@ const uploadManualIllustration = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { illustrationURL } = validatePayload(uploadManualIllustrationValidator, request.body) || {};
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
-
-    // Find spread
-    const spread = book.spreads.id(spreadId);
-    if(!spread) throw new ApiError(404, "Spread not found");
+    // Find book and spread
+    const [book, spread] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId)
+    ]);
 
     // Validate
+    if(!book) throw new ApiError(404, "Book not found");
+    if(!spread) throw new ApiError(404, "Spread not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to upload illustration for this book");
     if(book.status !== "draft") throw new ApiError(403, "The illustration uploading cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be uploaded in draft stage 2");
 
-    // Save illustration to specific spread
+    // Save to db
     spread.illustrationURL = illustrationURL;
-    await book.save();
+    await spread.save();
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been uploaded"));
@@ -114,15 +114,15 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { customPrompt, referenceImageURL } = validatePayload(generateWithCustomPromptValidator, request.body) || {};
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
-
-    // Find spread
-    const spread = book.spreads.id(spreadId);
-    if(!spread) throw new ApiError(404, "Spread not found");
+    // Find book and spread
+    const [book, spread] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId)
+    ]);
 
     // Validate
+    if(!book) throw new ApiError(404, "Book not found");
+    if(!spread) throw new ApiError(404, "Spread not found");    
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate illustration for this book");
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be generated in draft stage 2");
@@ -138,9 +138,8 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
     // Generate illustration
     const illustrationResponse = await llm.generateIllustrationWithCustomPrompt(prompt, referenceImageURL, "gemini-3.1-flash-image");
 
-    // Extract generated image buffer and token consumption count
-    const { imageBuffer, totalTokenCount } = illustrationResponse;
-    console.log("Total Token", totalTokenCount);
+    // Extract generated image buffer
+    const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -149,9 +148,9 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
     // Get secure URL
     const illustrationURL = uploadResult.secure_url;
 
-    // Save illustration to specific spread
+    // Save to db
     spread.illustrationURL = illustrationURL;
-    await book.save();
+    await spread.save();
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been generated with custom prompt"));
@@ -169,16 +168,16 @@ const updateSpreadSublayout = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { textColor, textBgColor, subLayoutDirection } = validatePayload(updateSpreadSublayoutValidator, request.body) || {};    
 
-    // Find book
-    const book = await Book.findById(bookId);
-    if(!book) throw new ApiError(404, "Book not found");
-
-    // Find spread
-    const spread = book.spreads.id(spreadId);
-    if(!spread) throw new ApiError(404, "Spread not found");
+    // Find book and spread
+    const [book, spread] = await Promise.all([
+        Book.findById(bookId),
+        Spread.findById(spreadId)
+    ]);
 
     // Validate
-    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized update text and text bg color");
+    if(!book) throw new ApiError(404, "Book not found");
+    if(!spread) throw new ApiError(404, "Spread not found"); 
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to update text and text bg color");
     if(book.status !== "draft") throw new ApiError(403, "Text color and text bg color cannot be updated while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Text color and text bg color cannot be updated while the book is not in draft stage 2");
 
@@ -186,10 +185,10 @@ const updateSpreadSublayout = asyncHandler(async (request, response) => {
     spread.textColor = textColor;
     spread.textBgColor = textBgColor;
     spread.subLayoutDirection = subLayoutDirection;
-    await book.save();
+    await spread.save();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { textColor, textBgColor }, "Spread has been updated"));
+    return response.status(200).json(new ApiResponse(200, { textColor, textBgColor, subLayoutDirection }, "Spread has been updated"));
 });
 
 module.exports = { createIllustration, uploadManualIllustration, 
