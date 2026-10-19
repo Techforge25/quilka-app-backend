@@ -34,6 +34,7 @@ const createIllustration = asyncHandler(async (request, response) => {
     if(!book) throw new ApiError(404, "Book not found");
     if(!spread) throw new ApiError(404, "Spread not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to create illustration for this book");
+    if(content.length > spread.characterLimit) throw new ApiError(400, `Content exceeds the maximum allowed length of ${spread.characterLimit} characters`);
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation with AI cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be created in draft stage 2");
 
