@@ -21,7 +21,7 @@ cron.schedule(timer, async () => {
         if(!books.length) return;
 
         // Extract IDs
-        const bookIds = books.map(book => String(book._id));
+        const bookIds = books.map(book => book._id);
 
         // Delete books and connected spreads
         await Book.deleteMany({ _id: { $in: bookIds } });
