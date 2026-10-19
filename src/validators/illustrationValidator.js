@@ -2,7 +2,7 @@ const joi = require("joi");
 
 // Create illustration validator
 const createIllustrationValidator = joi.object({
-    content: joi.string().trim().required().label("Content")
+    content: joi.string().trim().min(3).required().label("Content")
 });
 
 // Update spread sublayout validator
