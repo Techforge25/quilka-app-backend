@@ -7,24 +7,17 @@ const createBookValidator = joi.object({
     // Book creation mode
     mode: joi.string().trim().required().valid("CUSTOM", "AI").label("Mode"),
 
+    // Prompt key for AI mode
+    prompt: joi.when("mode", {
+        is: "AI",
+        then: joi.string().trim().required().max(1000),
+        otherwise: joi.forbidden()
+    }).label("Prompt"),
+
     // Basic info
     title: joi.string().trim().min(3).max(60).required().label("Title"),
     authorName: joi.string().trim().min(3).max(20).required().label("Author name"),
     spreadsCount: joi.number().integer().positive().min(1).required().label("Spreads count"),
-
-    // Txt content
-    txtContent: joi.string().min(100).required().when("mode", { 
-        is: "CUSTOM", 
-        then: joi.required(), 
-        otherwise: joi.forbidden() 
-    }).label("Txt content"),
-
-    // Prompt
-    prompt: joi.when("mode", {
-        is: "AI",
-        then: joi.string().trim().required(),
-        otherwise: joi.forbidden()
-    }).label("Prompt"),
 
     // Metadata
     ageGroup: joi.string().trim().required().min(3).max(30).label("Age group"),
@@ -35,9 +28,10 @@ const createBookValidator = joi.object({
     language: joi.string().trim().required().valid(...allowedLanguages).label("Language"),
 
     // Spreads config
-    spreads: joi.array().items(joi.object({
+    spreads: joi.array().min(1).items(joi.object({
         mainLayoutName: joi.string().trim().required().min(3).max(50).label("Main layout name"),
         subLayoutDirection: joi.string().trim().required().min(3).max(50).label("Sub layout direction"),
+        content: joi.string().trim().min(3).allow("", null).default(null).label("Spread content"),
         
         // Limit
         characterLimit: joi.number().integer().positive().min(50).required().label("Character limit"),
@@ -49,11 +43,9 @@ const createBookValidator = joi.object({
             aspectRatio: joi.string().trim().required().label("Aspect ratio")
         }).valid(...allowedIllustrationSizes).label("Illustration size"),
         textSize: joi.string().trim().required().valid(...allowedTextSizes).default("Small").label("Text size"),
-
-        // Illustration URL
-        illustrationURL: joi.string().trim().uri().optional().allow(null, "").default(null).label("Illustration url")
     })).custom((value, helpers) => {
-        if(value.length !== helpers.state.ancestors[0].spreadsCount) return helpers.error("any.invalid");
+        const { spreadsCount } = helpers.state.ancestors[0];
+        if(value.length !== spreadsCount) return helpers.error("any.invalid");
         return value;
     }).label("Spreads configuration")
 });
