@@ -26,7 +26,7 @@ const generateWithAi = asyncHandler(async (request, response, next) => {
     // Find book and spreads
     const [book, spreads] = await Promise.all([
         Book.findById(bookId),
-        Spread.find({ bookId }).select("content characterLimit").sort({ _id: 1 })
+        Spread.find({ bookId }).select("bookId content characterLimit").sort({ _id: 1 })
     ]);
 
     // Validate
