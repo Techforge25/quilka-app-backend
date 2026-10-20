@@ -93,9 +93,7 @@ class LLMService
                 model: aiModel,
                 contents: [
                     { text: dynamicPrompt },
-                    {
-                        inlineData: { mimeType: "image/jpg", data: base64Image }
-                    }
+                    { inlineData: { mimeType: "image/jpg", data: base64Image } }
                 ],
                 config: { responseModalities: ["IMAGE"] }
             });
@@ -120,25 +118,20 @@ class LLMService
     }
 
     // Generate front and cover images
-    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
+    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesChunks = [])
     {
         try
         {
             // Initialize front and cover contents with text
             const frontImageContents = [{ text: frontPrompt }];
             const coverImageContents = [{ text: coverPrompt }];
-            if(referenceImagesURLs.length)
+            if(referenceImagesChunks.length)
             {
-                // Get multi-reference images URLs
-                for(const referenceImageURL of referenceImagesURLs)
+                for(const referenceImage of referenceImagesChunks)
                 {
-                    // Fetch reference image
-                    const base64Image = await getReferenceImage(referenceImageURL);
-                    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
-
-                    // Append image url
-                    frontImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
-                    coverImageContents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                    // Append image chunks
+                    frontImageContents.push({ inlineData: { mimeType: "image/jpg", data: referenceImage } });
+                    coverImageContents.push({ inlineData: { mimeType: "image/jpg", data: referenceImage } });
                 }
             }
 
