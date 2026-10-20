@@ -253,8 +253,8 @@ const viewStoryContent = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Story content has been fetched"));
 });
 
-// Refine custom story with AI
-const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
+// Refine story with AI
+const refineStoryWithAI = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Sanitize book and spread ID
@@ -276,7 +276,6 @@ const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to refine story of this book");
     if(book.status !== "draft") throw new ApiError(403, "You cannot refine story content while the book is not in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "You cannot refine story content while the book is not in draft stage 1");
-    if(book.mode !== "CUSTOM") throw new ApiError(400, "Story refinement is only available for books created in CUSTOM mode");
 
     // Validate regeneration
     if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
@@ -539,4 +538,4 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
 });
 
 module.exports = { generateWithAi, regenerateStoryText, viewStoryContent, useNewStoryVersion, updateStory,
-refineCustomStoryWithAI, updateStoryWithSpreadTextSize, finalizeTextPhase, finalizeIllustrationPhase };
+refineStoryWithAI, updateStoryWithSpreadTextSize, finalizeTextPhase, finalizeIllustrationPhase };
