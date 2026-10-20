@@ -30,13 +30,13 @@ const typeDefs = `
         title: String!
         authorName: String!
         spreadsCount: Int!
-        storyContent: String!
         prompt: String
         ageGroup: String!
         bookSize: String!
         spreadSize: String!
         textStyle: String!
         illustrationStyle: String!
+        illustrationSize: IllustrationSize!
         language: String!
         frontImage: String
         backImage: String
@@ -44,6 +44,7 @@ const typeDefs = `
         bookLength: BookLength!
         totalCharacters: Int!
         totalIllustrations: Int!
+        price: Int!
     }
 
     type MyBook {
