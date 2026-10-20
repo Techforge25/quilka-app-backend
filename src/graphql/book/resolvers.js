@@ -2,6 +2,8 @@ const { isValidObjectId } = require("mongoose");
 const Book = require("../../models/bookModel");
 const convertToMongoId = require("../../utils/convertToMongoId");
 const { ApiError } = require("@google/genai");
+const ApiResponse = require("../../utils/ApiResponse");
+const { emptyList } = require("../../constants");
 
 const queries = {
     // View book
@@ -91,12 +93,31 @@ const queries = {
         // Base filter
         const baseFilter = {};
         if(search) baseFilter.title = { $regex: search, $options: "i" };
-        if(status && status.toLowerCase() !== "all") baseFilter.status = status;
+
+        // Status filter
+        if(status.toLowerCase() === "all")
+        {
+            baseFilter.status = { $in: ["draft", "published"] };
+        }
+        else
+        {
+            baseFilter.status = status;
+        }
 
         // Fetch
         const books = await Book.aggregatePaginate([
             // Match
             { $match: { userId, ...baseFilter } },
+
+            // Lookup spreads
+            {
+                $lookup: {
+                    from: "spreads",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "spreads"
+                }
+            },
 
             // Sort
             { $sort: { updatedAt: -1 } },
