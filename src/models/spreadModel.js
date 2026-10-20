@@ -5,7 +5,7 @@ const { allowedTextSizes } = require("../constants");
 // Schema
 const spreadSchema = new Schema({
     // Reference
-    bookId: { type: Schema.Types.ObjectId, ref: "Book", required: true },
+    bookId: { type: Schema.Types.ObjectId, ref: "Book", index: true, required: true },
 
     // Basic info
     mainLayoutName: { type: String, trim: true, required: true }, // Classic story book
