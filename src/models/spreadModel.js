@@ -19,10 +19,13 @@ const spreadSchema = new Schema({
         aspectRatio: { type: String, trim: true }
     },
 
+    // Reference image chunk
+    base64Image: { type: String, trim: true, defalut: null },
+
     // Sizes and limit
     textSize: { type: String, trim: true, enum: allowedTextSizes, default: "Small" },
     characterLimit: { type: Number },
-    illustrationLimit: { type: Number },    
+    illustrationLimit: { type: Number },
 
     // Colors
     textColor: { type: String, trim: true, default: "#211827" },
