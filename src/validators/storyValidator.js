@@ -1,15 +1,5 @@
 const joi = require("joi");
 
-// Allowed instructions
-const allowedInstructions = [
-    "Make It More Engaging", 
-    "Make Shorter", 
-    "Make Simpler", 
-    "Make More Magical", 
-    "Make More Fun", 
-    "Improve The Dialogue"
-];
-
 // Update story validator
 const updateStoryValidator = joi.object({
     spreads: joi.array().min(1).items(joi.object({
@@ -20,7 +10,7 @@ const updateStoryValidator = joi.object({
 
 // Custom story refinement with AI validator
 const customStoryRefinementValidator = joi.object({
-    instruction: joi.string().trim().required().valid(...allowedInstructions).label("Instruction")
+    instruction: joi.string().trim().required().label("Instruction")
 });
 
 module.exports = { customStoryRefinementValidator, updateStoryValidator };
