@@ -15,8 +15,21 @@ const queries = {
         const [book] = await Book.aggregate([
             // Match
             { $match: { _id: convertToMongoId(bookId) } },
+            
+            // Lookup spreads
+            {
+                $lookup: {
+                    from: "spreads",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "spreads",
+                    pipeline:[{ $project: { mainLayoutName: 1, subLayoutDirection: 1, 
+                    characterLimit: 1, illustrationLimit: 1, illustrationSize: 1, 
+                    textSize: 1, textColor: 1, textBgColor: 1, illustrationURL: 1, content: 1, } }]
+                }
+            },
 
-            // Add fields to calculate characters, book length
+            // Add fields to calculate characters, illustrations and book length
             {
                 $addFields: {
                     totalCharacters: { $sum: "$spreads.characterLimit" },
@@ -25,116 +38,9 @@ const queries = {
                         spreads: "$spreadsCount",
                         pages: { $multiply: ["$spreadsCount", 2] },
                     },
+                    price: { $multiply: ["$spreadsCount", 2] }
                 }
             },
-
-            // Add fields
-            {
-                $addFields: {
-                    storyContent: {
-                        $cond: [
-                            { $eq: ["$mode", "CUSTOM"] },
-                            "$txtContent",
-                            "$aiContent"
-                        ]
-                    }
-                }
-            },
-
-            // Add story parts
-            {
-                $addFields: {
-                    storyParts: {
-                        $cond: [
-                            { $eq: ["$mode", "AI"] },
-
-                            // AI story content
-                            {
-                                $split: [
-                                    { $ifNull: ["$storyContent", ""] },
-                                    "spread break"
-                                ]
-                            },
-
-                            // Custom story content
-                            {
-                                $reduce: {
-                                    input: { $ifNull: ["$spreads", []] },
-                                    initialValue: {
-                                        offset: 0,
-                                        parts: []
-                                    },
-                                    in: {
-                                        offset: {
-                                            $add: [
-                                                "$$value.offset",
-                                                { $max: [0, { $ifNull: ["$$this.characterLimit", 0] }] }
-                                            ]
-                                        },
-                                        parts: {
-                                            $concatArrays: [
-                                                "$$value.parts",
-                                                [
-                                                    {
-                                                        $substrCP: [
-                                                            { $ifNull: ["$storyContent", ""] },
-                                                            "$$value.offset",
-                                                            { $max: [0, { $ifNull: ["$$this.characterLimit", 0] }] }
-                                                        ]
-                                                    }
-                                                ]
-                                            ]
-                                        }
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            },
-
-            // Extract custom story parts
-            {
-                $addFields: {
-                    storyParts: {
-                        $cond: [
-                            { $eq: ["$mode", "CUSTOM"] },
-                            "$storyParts.parts",
-                            "$storyParts"
-                        ]
-                    }
-                }
-            },
-
-            // Map spreads with content
-            {
-                $addFields: {
-                    spreads: {
-                        $map: {
-                            input: {
-                                $range: [
-                                    0,
-                                    { $size: { $ifNull: ["$spreads", []] } }
-                                ]
-                            },
-                            as: "index",
-                            in: {
-                                $mergeObjects: [
-                                    { $arrayElemAt: ["$spreads", "$$index"] },
-                                    {
-                                        content: {
-                                            $ifNull: [
-                                                { $arrayElemAt: ["$storyParts", "$$index"] },
-                                                ""
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                }
-            },            
 
             // Projection
             {
@@ -149,7 +55,6 @@ const queries = {
                     frontImage: 1,
                     backImage: 1,
                     spreadsCount: 1,
-                    storyContent: 1,
                     prompt: 1,
                     ageGroup: 1,
                     bookSize: 1,
@@ -160,7 +65,8 @@ const queries = {
                     spreads: 1,
                     bookLength: 1,
                     totalCharacters: 1,
-                    totalIllustrations: 1
+                    totalIllustrations: 1,
+                    price: 1
                 }
             }
         ]);
