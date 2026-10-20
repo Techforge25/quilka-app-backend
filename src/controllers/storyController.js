@@ -12,7 +12,7 @@ const llm = require("../service/llmService");
 const { allowedTextSizes } = require("../constants");
 const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
-const { customStoryRefinementValidator, updateStoryValidator } = require("../validators/storyValidator");
+const { customStoryRefinementValidator, updateStoryValidator, newStoryValidator } = require("../validators/storyValidator");
 const Spread = require("../models/spreadModel");
 
 // Generate story with AI
@@ -312,52 +312,80 @@ const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
         if(content.length > characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
     });
 
-    // Create db session
-    const dbSession = await startSession();
-    try
-    {
-        // Start transaction
-        dbSession.startTransaction();
+    // Update regeneration limit
+    await Regeneration.updateOne(
+        { userId, bookId, limit: { $gt: 0 } },
+        { $inc: { limit: -1 } },
+    );
 
-        // Prepare bulk operations
-        const bulkOperations = spreads.map((spread, index) => ({
+    // Payload
+    const payload = {
+        originalVersion: spreads.map(spread => spread.content.trim()).join(" "),
+        newVersion: aiContent.split("spread break").join(" ")
+    };
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, payload, "Custom story has been refined with AI"));
+});
+
+ // Use new story version
+const useNewStoryVersion = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book and spread ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Sanitize payload
+    const { newStory } = validatePayload(newStoryValidator, request.body) || {};
+
+    // Find book and spreads
+    const [book, spreads] = await Promise.all([
+        Book.findById(bookId),
+        Spread.find({ bookId }).select("characterLimit").sort({ _id: 1 }).lean(),
+    ]);
+
+    // Validate book
+    if(!book) throw new ApiError(404, "Book not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to access this book");
+    if(book.status !== "draft") throw new ApiError(403, "You cannot use new story content while the book is not in draft state");
+    if(book.draftStage !== 1) throw new ApiError(403, "You cannot use new story content while the book is not in draft stage 1");
+    if(!spreads.length) throw new ApiError(404, "No spreads found for this book");
+
+    // Total story characters limit
+    const totalStoryCharactersLimit = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
+    if(newStory.length > totalStoryCharactersLimit) throw new ApiError(400, "Total story characters limit exceeded");
+
+    // Break with character limit
+    let startIndex = 0;
+    const operations = spreads.map((spread, index) => {
+        const spreadNo = index + 1;
+        const endIndex = startIndex + spread.characterLimit;
+        const content = newStory.slice(startIndex, endIndex);
+
+        // Validate each spread with its corresponding character limit
+        if(!content.length || content.length < 3) throw new ApiError(400, `AI generated insufficient content for spread ${spreadNo}`);
+        if(content.length > spreads[index].characterLimit) throw new ApiError(400, `Character limit exceeded for spread ${spreadNo}`);
+
+        // Renew starting index
+        startIndex = endIndex;
+
+        return {
             updateOne: {
                 filter: { _id: spread._id, bookId },
-                update: { $set: { content: spreadContents[index] } }
+                update: { $set: { content } }
             }
-        }));
-
-        // Save generated content to spreads
-        await Spread.bulkWrite(bulkOperations, { session: dbSession });
-
-        // Update regeneration limit
-        await Regeneration.updateOne(
-            { userId, bookId, limit: { $gt: 0 } },
-            { $inc: { limit: -1 } },
-            { session: dbSession }
-        );
-        
-        // Commit transaction
-        await dbSession.commitTransaction();        
-
-        // Payload
-        const payload = {
-            bookId: book._id,
-            spreads: spreads.map((spread, index) => ({ spreadId: spread._id, content: spreadContents[index] }))
         };
+    });
 
-        // Response
-        return response.status(201).json(new ApiResponse(201, payload, "Custom story has been refined with AI"));
-    }
-    catch(error)
-    {
-        await dbSession.abortTransaction();
-        throw new ApiError(500, error.message);
-    }
-    finally
-    {
-        dbSession.endSession();
-    }
+    // Update spreads
+    await Spread.bulkWrite(operations);
+
+    // Get updated story
+    const getUpdatedStory = await Spread.find({ bookId }).select("content").sort({ _id: 1 });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, getUpdatedStory, "New story version has been applied successfully"));
 });
 
 // Update story (CUSTOM FLOW)
@@ -510,5 +538,5 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));
 });
 
-module.exports = { generateWithAi, regenerateStoryText, viewStoryContent, updateStory,
+module.exports = { generateWithAi, regenerateStoryText, viewStoryContent, useNewStoryVersion, updateStory,
 refineCustomStoryWithAI, updateStoryWithSpreadTextSize, finalizeTextPhase, finalizeIllustrationPhase };
