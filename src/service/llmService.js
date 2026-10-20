@@ -39,23 +39,18 @@ class LLMService
     }
 
     // Generate story illustration
-    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
+    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesChunks = [])
     {
         try
         {
             // Initialize contents with text
             const contents = [{ text: dynamicPrompt }];
-            if(referenceImagesURLs.length)
+            if(referenceImagesChunks.length)
             {
-                // Get multi-reference images URLs
-                for(const referenceImageURL of referenceImagesURLs)
+                for(const referenceImage of referenceImagesChunks)
                 {
-                    // Fetch reference image
-                    const base64Image = await getReferenceImage(referenceImageURL);
-                    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
-
-                    // Append image url
-                    contents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                    // Append image chunk
+                    contents.push({ inlineData: { mimeType: "image/jpg", data: referenceImage } });
                 }
             }
 

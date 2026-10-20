@@ -10,6 +10,7 @@ const validatePayload = require("../utils/validatePayload");
 const { createIllustrationValidator, updateSpreadSublayoutValidator, uploadManualIllustrationValidator, 
 generateWithCustomPromptValidator } = require("../validators/illustrationValidator");
 const Spread = require("../models/spreadModel");
+const { getReferenceImage } = require("../utils/getReferenceImage");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response) => {
@@ -27,7 +28,7 @@ const createIllustration = asyncHandler(async (request, response) => {
     const [book, spread, referenceImages] = await Promise.all([
         Book.findById(bookId),
         Spread.findById(spreadId),
-        Spread.find({ bookId }).select("-_id illustrationURL")
+        Spread.find({ bookId }).select("-_id illustrationURL base64Image")
     ]);
 
     // Validate
@@ -47,7 +48,7 @@ const createIllustration = asyncHandler(async (request, response) => {
     });
 
     // Get previous images if exists
-    const previousReferenceImages = referenceImages.filter(ref => ref.illustrationURL).map(url => url.illustrationURL);
+    const previousReferenceImages = referenceImages.filter(ref => ref.base64Image).map(url => url.base64Image);
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
@@ -62,8 +63,13 @@ const createIllustration = asyncHandler(async (request, response) => {
     // Get secure URL
     const illustrationURL = uploadResult.secure_url;
 
+    // Fetch reference image
+    const base64Image = await getReferenceImage(illustrationURL);
+    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
+
     // Save to db
     spread.illustrationURL = illustrationURL;
+    spread.base64Image = base64Image;
     await spread.save();
 
     // Response
