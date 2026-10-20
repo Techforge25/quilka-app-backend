@@ -13,4 +13,9 @@ const customStoryRefinementValidator = joi.object({
     instruction: joi.string().trim().required().label("Instruction")
 });
 
-module.exports = { customStoryRefinementValidator, updateStoryValidator };
+// New story validator
+const newStoryValidator = joi.object({
+    newStory: joi.string().trim().required().label("New story")
+});
+
+module.exports = { customStoryRefinementValidator, updateStoryValidator, newStoryValidator };
