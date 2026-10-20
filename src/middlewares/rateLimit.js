@@ -26,7 +26,14 @@ const rateLimit = (totalAttempts = 10, minutes = 1, message = "Too many requests
         // Attempts
         const attempts = await redis.incr(key);
         if(attempts === 1) await redis.expire(key, 60 * minutes); // 1 minute
-        if(attempts > totalAttempts) throw new ApiError(429, message);
+        if(attempts > totalAttempts)
+        {
+            // Get ttl
+            const ttl = await redis.ttl(key);
+            const remainingMinutes = Math.ceil(ttl / 60);
+
+            throw new ApiError(429, `${message} Please try again after ${remainingMinutes} minutes`);
+        }
 
         return next();
     });
