@@ -294,7 +294,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     // Find book and spreads
     const [book, spreads] = await Promise.all([
         Book.findById(bookId),
-        Spread.find({ bookId }).select("-_id content illustrationURL")
+        Spread.find({ bookId }).select("-_id content illustrationURL base64Image")
     ]);
 
     // Validate
@@ -306,8 +306,8 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     // Story content
     const storyContent = spreads.map(spread => spread.content.trim()).join(" ");
 
-    // Get previous images if exists
-    const previousReferenceImages = spreads.filter(spread => spread.illustrationURL).map(url => url.illustrationURL);    
+    // Get previous images chunks as a reference
+    const previousReferenceImages = spreads.filter(spread => spread.base64Image).map(spread => spread.base64Image);    
 
     // Prompt for front image
     const frontPrompt = promptGuideForFrontImage({
