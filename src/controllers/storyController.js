@@ -267,7 +267,7 @@ const refineCustomStoryWithAI = asyncHandler(async (request, response) => {
     // Find book, spreads and regeneration
     const [book, spreads, regeneration] = await Promise.all([
         Book.findById(bookId),
-        Spread.find({ bookId }).sort({ _id: 1 }),
+        Spread.find({ bookId }).select("content characterLimit").sort({ _id: 1 }),
         Regeneration.findOne({ userId, bookId })
     ]);
 
@@ -445,7 +445,7 @@ const updateStoryWithSpreadTextSize = asyncHandler(async (request, response) => 
     // Find book and spread
     const [book, spread] = await Promise.all([
         Book.findById(bookId),
-        Spread.findById(spreadId)
+        Spread.findById(spreadId).select("content characterLimit textSize")
     ]);
     if(!book) throw new ApiError(404, "Book not found");
     if(!spread) throw new ApiError(404, "Spread not found");

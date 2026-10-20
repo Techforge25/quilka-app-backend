@@ -26,9 +26,9 @@ const createIllustration = asyncHandler(async (request, response) => {
 
     // Find book, spread and reference images urls  
     const [book, spread, referenceImages] = await Promise.all([
-        Book.findById(bookId),
-        Spread.findById(spreadId),
-        Spread.find({ bookId }).select("-_id illustrationURL base64Image")
+        Book.findById(bookId).select("userId status draftStage illustrationStyle").lean(),
+        Spread.findById(spreadId).select("characterLimit illustrationSize illustrationURL base64Image"),
+        Spread.find({ bookId }).select("-_id base64Image").lean()
     ]);
 
     // Validate
@@ -90,8 +90,8 @@ const uploadManualIllustration = asyncHandler(async (request, response) => {
 
     // Find book and spread
     const [book, spread] = await Promise.all([
-        Book.findById(bookId),
-        Spread.findById(spreadId)
+        Book.findById(bookId).select("userId status draftStage").lean(),
+        Spread.findById(spreadId).select("illustrationURL")
     ]);
 
     // Validate
@@ -123,8 +123,8 @@ const generateWithCustomPrompt = asyncHandler(async (request, response) => {
 
     // Find book and spread
     const [book, spread] = await Promise.all([
-        Book.findById(bookId),
-        Spread.findById(spreadId)
+        Book.findById(bookId).select("userId status draftStage illustrationStyle").lean(),
+        Spread.findById(spreadId).select("illustrationSize illustrationURL")
     ]);
 
     // Validate
@@ -177,8 +177,8 @@ const updateSpreadSublayout = asyncHandler(async (request, response) => {
 
     // Find book and spread
     const [book, spread] = await Promise.all([
-        Book.findById(bookId),
-        Spread.findById(spreadId)
+        Book.findById(bookId).select("userId status draftStage").lean(),
+        Spread.findById(spreadId).select("textColor textBgColor subLayoutDirection")
     ]);
 
     // Validate
