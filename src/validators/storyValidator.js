@@ -15,7 +15,10 @@ const customStoryRefinementValidator = joi.object({
 
 // New story validator
 const newStoryValidator = joi.object({
-    newStory: joi.string().trim().required().label("New story")
+    spreads: joi.array().min(1).items(joi.object({
+        spreadId: joi.string().trim().length(24).required().label("Spread ID"),
+        spreadContent: joi.string().trim().required().min(3).label("Spread content")        
+    })).label("Spreads")
 });
 
 module.exports = { customStoryRefinementValidator, updateStoryValidator, newStoryValidator };
