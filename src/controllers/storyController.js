@@ -108,7 +108,7 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
 
     // Validate
     if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
-    if(regeneration.limit <= 0) throw new ApiError(403, "You have reached your story regeneration limit. Please buy more!");
+    if(regeneration.limit <= 0) throw new ApiError(403, "You've reached your story regeneration limit. Please purchase more to continue");
 
     // Extract total story characters limit
     const totalStoryCharactersLimit = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
