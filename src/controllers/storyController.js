@@ -279,17 +279,14 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
 
     // Validate regeneration
     if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
-    if(regeneration.limit <= 0) throw new ApiError(403, "You have reached your story regeneration limit. Please buy more!");
-
-    // Extract total story characters limit
-    const totalStoryCharactersLimit = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
+    if(regeneration.limit <= 0) throw new ApiError(403, "You've reached your story regeneration limit. Please purchase more to continue");
 
     // Get dynamic prompt for custom story refinement
     const dynamicPrompt = promptGuideForCustomStoryRefinement({ 
         title: book.title,
         ageGroup: book.ageGroup,
         language: book.language,
-        totalCharacters: totalStoryCharactersLimit,
+        totalCharacters: spreads.reduce((acc, spread) => acc + spread.characterLimit, 0),
         previousStory: spreads.map(spread => spread.content?.trim()).join(" "),
         instruction,
         spreads
@@ -305,10 +302,9 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
     // Validate each spread content
     spreadContents.forEach((content, index) => {
         const spreadNo = index + 1;
-        const characterLimit = spreads[index].characterLimit;
 
         if(!content || content.length < 3) throw new ApiError(400, `AI generated insufficient content for Spread ${spreadNo}`);
-        if(content.length > characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
+        if(content.length > spreads[index].characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
     });
 
     // Update regeneration limit
@@ -320,7 +316,8 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
     // Payload
     const payload = {
         originalVersion: spreads.map(spread => spread.content.trim()).join(" "),
-        newVersion: aiContent.split("spread break").join(" ")
+        newVersion: aiContent.split("spread break").join(" "),
+        spreads: aiContent.split("spread break").map((c, index) => ({ spreadId: spreads[index]._id, spreadContent: c  }))
     };
 
     // Response
@@ -336,7 +333,7 @@ const useNewStoryVersion = asyncHandler(async (request, response) => {
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
     // Sanitize payload
-    const { newStory } = validatePayload(newStoryValidator, request.body) || {};
+    const { spreads: payloadSpreads } = validatePayload(newStoryValidator, request.body) || {};
 
     // Find book and spreads
     const [book, spreads] = await Promise.all([
@@ -351,40 +348,23 @@ const useNewStoryVersion = asyncHandler(async (request, response) => {
     if(book.draftStage !== 1) throw new ApiError(403, "You cannot use new story content while the book is not in draft stage 1");
     if(!spreads.length) throw new ApiError(404, "No spreads found for this book");
 
-    // Total story characters limit
-    const totalStoryCharactersLimit = spreads.reduce((acc, spread) => acc + spread.characterLimit, 0);
-    if(newStory.length > totalStoryCharactersLimit) throw new ApiError(400, "Total story characters limit exceeded");
-
     // Break with character limit
-    let startIndex = 0;
-    const operations = spreads.map((spread, index) => {
-        const spreadNo = index + 1;
-        const endIndex = startIndex + spread.characterLimit;
-        const content = newStory.slice(startIndex, endIndex);
-
-        // Validate each spread with its corresponding character limit
-        if(!content.length || content.length < 3) throw new ApiError(400, `AI generated insufficient content for spread ${spreadNo}`);
-        if(content.length > spreads[index].characterLimit) throw new ApiError(400, `Character limit exceeded for spread ${spreadNo}`);
-
-        // Renew starting index
-        startIndex = endIndex;
-
-        return {
-            updateOne: {
-                filter: { _id: spread._id, bookId },
-                update: { $set: { content } }
-            }
-        };
-    });
+    const operations = spreads.map((spread, index) => ({
+        updateOne: {
+            filter: { _id: payloadSpreads[index].spreadId, bookId },
+            update: { $set: { content: payloadSpreads[index].spreadContent } }
+        } 
+    }));
 
     // Update spreads
     await Spread.bulkWrite(operations);
 
     // Get updated story
     const getUpdatedStory = await Spread.find({ bookId }).select("content").sort({ _id: 1 });
+    const payload = getUpdatedStory.map(spread => ({ spreadId: spread._id, spreadContent: spread.content }));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, getUpdatedStory, "New story version has been applied successfully"));
+    return response.status(200).json(new ApiResponse(200, payload, "New story version has been applied successfully"));
 });
 
 // Update story (CUSTOM FLOW)
