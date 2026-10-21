@@ -284,7 +284,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
     const [book, spreads, regeneration] = await Promise.all([
         Book.findById(bookId),
         Spread.find({ bookId }).select("content characterLimit").sort({ _id: 1 }),
-        Regeneration.findOne({ bookId })
+        Regeneration.findOne({ userId, bookId })
     ]);
 
     // Validate book
