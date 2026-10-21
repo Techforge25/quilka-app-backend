@@ -289,7 +289,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
 
     // Validate book
     if(!book) throw new ApiError(404, "Book not found");
-    // if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to refine story of this book");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to refine story of this book");
     if(book.status !== "draft") throw new ApiError(403, "You cannot refine story content while the book is not in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "You cannot refine story content while the book is not in draft stage 1");
 
@@ -317,13 +317,11 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
+    if(spreadContents.length !== spreads.length) throw new ApiError(400, "AI-generated story content does not match the required number of spreads");
 
     // Validate each spread content
     spreadContents.forEach((content, index) => {
         const spreadNo = index + 1;
-
-        console.log("Index", index);
-        console.log("Test", spreads[index]);
         if(!content || content.length < 3) throw new ApiError(400, `AI generated insufficient content for Spread ${spreadNo}`);
         if(content.length > spreads[index].characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
     });
