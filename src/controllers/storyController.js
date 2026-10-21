@@ -214,6 +214,19 @@ const viewStoryContent = asyncHandler(async (request, response) => {
             }
         },
 
+        // Lookup regenerations
+        {
+            $lookup: {
+                from: "regenerations",
+                localField: "_id",
+                foreignField: "bookId",
+                as: "regeneration"
+            }
+        },
+
+        // Unwind
+        { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
+
         // Projection
         {
             $project: {
@@ -228,7 +241,8 @@ const viewStoryContent = asyncHandler(async (request, response) => {
                 spreadsCount: 1,
                 spreads: 1,
                 spreadSize: 1,
-                status: 1
+                status: 1,
+                regenerations: "$regeneration.limit"
             }
         }
     ]);
@@ -248,6 +262,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
         spreadSize: book.spreadSize,
         frontImage: book.frontImage,
         backImage: book.backImage,
+        regenerations: book.regenerations
     };
 
     // Response
