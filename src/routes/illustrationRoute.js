@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
-const { createIllustration, uploadManualIllustration, generateWithCustomPrompt,
-updateSpreadSublayout } = require("../controllers/illustrationController");
+const { createIllustration, regenerateIllustraton, uploadManualIllustration, 
+generateWithCustomPrompt, updateSpreadSublayout } = require("../controllers/illustrationController");
 const { rateLimit } = require("../middlewares/rateLimit");
 
 // Router instance
@@ -11,7 +11,7 @@ const illustrationRouter = Router();
 illustrationRouter.use(authentication);
 
 // Create illustration
-illustrationRouter.route("/:bookId/spread/:spreadId").post(rateLimit(3, 1), createIllustration);
+illustrationRouter.route("/:bookId/spread/:spreadId").post(rateLimit(3, 1), createIllustration, regenerateIllustraton);
 
 // Upload manual illustration
 illustrationRouter.route("/:bookId/spread/:spreadId/upload").post(rateLimit(3, 1), uploadManualIllustration);

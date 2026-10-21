@@ -7,13 +7,15 @@ const { uploadToCloudinary } = require("../utils/cloudinary");
 const llm = require("../service/llmService");
 const Book = require("../models/bookModel");
 const validatePayload = require("../utils/validatePayload");
-const { createIllustrationValidator, updateSpreadSublayoutValidator, uploadManualIllustrationValidator, 
+const { updateSpreadSublayoutValidator, uploadManualIllustrationValidator, 
 generateWithCustomPromptValidator } = require("../validators/illustrationValidator");
 const Spread = require("../models/spreadModel");
 const { getReferenceImage } = require("../utils/getReferenceImage");
+const Regeneration = require("../models/regenerationModel");
+const { startSession } = require("mongoose");
 
 // Create illustration
-const createIllustration = asyncHandler(async (request, response) => {
+const createIllustration = asyncHandler(async (request, response, next) => {
     const userId = request.user._id;
 
     // Sanitize Book and spread ID
@@ -21,13 +23,10 @@ const createIllustration = asyncHandler(async (request, response) => {
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
     if(!isValidObjectId(spreadId)) throw new ApiError(400, "Invalid Spread ID");
 
-    // Sanitize payload
-    const { content } = validatePayload(createIllustrationValidator, request.body) || {};
-
     // Find book, spread and reference images urls  
     const [book, spread, referenceImages] = await Promise.all([
         Book.findById(bookId).select("userId status draftStage illustrationStyle").lean(),
-        Spread.findById(spreadId).select("characterLimit illustrationSize illustrationURL base64Image"),
+        Spread.findById(spreadId).select("content characterLimit illustrationSize illustrationURL base64Image"),
         Spread.find({ bookId }).select("-_id base64Image").lean()
     ]);
 
@@ -35,14 +34,22 @@ const createIllustration = asyncHandler(async (request, response) => {
     if(!book) throw new ApiError(404, "Book not found");
     if(!spread) throw new ApiError(404, "Spread not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to create illustration for this book");
-    if(content.length > spread.characterLimit) throw new ApiError(400, `Content exceeds the maximum allowed length of ${spread.characterLimit} characters`);
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation with AI cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be created in draft stage 2");
+
+    // Pass to regeneration controller
+    if(spread.illustrationURL)
+    {
+        request.book = book;
+        request.spread = spread;
+        request.referenceImages = referenceImages;
+        return next();
+    }
 
     // Generate dynamic prompt
     const prompt = promptGuideForIllustration({
         illustrationStyle: book.illustrationStyle,
-        content,
+        content: spread.content,
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
@@ -74,6 +81,81 @@ const createIllustration = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been created"));
+});
+
+// Regenerate illustration
+const regenerateIllustraton = asyncHandler(async (request, response) => {
+    // Get metadata
+    const userId = request.user._id;
+    const { bookId } = request.params;
+    const { book, spread, referenceImages } = request;
+
+    // Find regenerations
+    const regeneration = await Regeneration.findOne({ userId, bookId });
+
+    // Validate
+    if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
+    if(regeneration.limit <= 0) throw new ApiError(403, "You've reached your regeneration limit. Please purchase more to continue");
+
+    // Generate dynamic prompt
+    const prompt = promptGuideForIllustration({
+        illustrationStyle: book.illustrationStyle,
+        content: spread.content,
+        size: spread.illustrationSize.size,
+        aspectRatio: spread.illustrationSize.aspectRatio
+    });
+
+    // Get previous images if exists
+    const previousReferenceImages = referenceImages.filter(ref => ref.base64Image).map(url => url.base64Image);
+
+    // Generate illustration
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
+
+    // Extract generated image buffer
+    const { imageBuffer } = illustrationResponse;
+
+    // Upload to cloudinary
+    const uploadResult = await uploadToCloudinary(imageBuffer);
+    if(!uploadResult) throw new ApiError(500, "Failed to upload to cloudinary");
+    
+    // Get secure URL
+    const illustrationURL = uploadResult.secure_url;
+
+    // Fetch reference image
+    const base64Image = await getReferenceImage(illustrationURL);
+    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
+
+    // Start transactional queries
+    const dbSession = await startSession();
+    try
+    {
+        dbSession.startTransaction();
+
+        // Save to db
+        spread.illustrationURL = illustrationURL;
+        spread.base64Image = base64Image;
+        await spread.save({ session: dbSession });
+        await Regeneration.updateOne(
+            { userId, bookId, limit: { $gt: 0 } },
+            { $inc: { limit: -1 } },
+            { session: dbSession }
+        );
+
+        // Commit transaction
+        await dbSession.commitTransaction();
+    }
+    catch(error)
+    {
+        await dbSession.abortTransaction();
+        throw new ApiError(500, error.message);
+    }
+    finally
+    {
+        dbSession.endSession();
+    }
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been regenerated"));
 });
 
 // Upload manual illustration
@@ -198,5 +280,5 @@ const updateSpreadSublayout = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { textColor, textBgColor, subLayoutDirection }, "Spread has been updated"));
 });
 
-module.exports = { createIllustration, uploadManualIllustration, 
+module.exports = { createIllustration, regenerateIllustraton, uploadManualIllustration, 
 updateSpreadSublayout, generateWithCustomPrompt };
