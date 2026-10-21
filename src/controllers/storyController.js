@@ -170,6 +170,7 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
 
         // Payload
         const payload = {
+            regenerations: regeneration.limit - 1,
             bookId: book._id,
             spreads: spreads.map((spread, index) => ({ spreadId: spread._id, content: spreadContents[index] }))
         };
@@ -315,6 +316,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
 
     // Payload
     const payload = {
+        regenerations: regeneration.limit - 1, 
         originalVersion: spreads.map(spread => spread.content.trim()).join(" "),
         newVersion: aiContent.split("spread break").join(" "),
         spreads: aiContent.split("spread break").map((c, index) => ({ spreadId: spreads[index]._id, spreadContent: c  }))

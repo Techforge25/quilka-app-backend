@@ -243,6 +243,19 @@ const viewBookContent = asyncHandler(async (request, response) => {
             }
         },
 
+        // Lookup regenerations
+        {
+            $lookup: {
+                from: "regenerations",
+                localField: "_id",
+                foreignField: "bookId",
+                as: "regeneration"
+            }
+        },
+        
+        // Unwind
+        { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
+
         // Add fields to calculate characters, book length
         {
             $addFields: {
@@ -251,7 +264,8 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 bookLength: {
                     spreads: "$spreadsCount",
                     pages: { $multiply: ["$spreadsCount", 2] },
-                }
+                },
+                regenerations: "$regeneration.limit"
             }
         },
 
@@ -267,7 +281,8 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 totalIllustrations: 1,
                 status: 1,
                 draftStage: 1,
-                spreads: { content: 1, characterLimit: 1 }
+                spreads: { content: 1, characterLimit: 1 },
+                regenerations: 1
             }
         }
     ]);
