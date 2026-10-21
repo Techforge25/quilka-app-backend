@@ -6,7 +6,8 @@ const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
 const { isValidObjectId } = require("mongoose");
-const { payForBookValidator } = require("../validators/paymentValidator");
+const { payForBookValidator, payForRegenerationValidator } = require("../validators/paymentValidator");
+const Package = require("../models/packageModel");
 
 // Pay for book
 const payForBook = asyncHandler(async (request, response) => {
@@ -52,4 +53,55 @@ const payForBook = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, bookId, "Payment has been completed"));
 });
 
-module.exports = { payForBook };
+// Pay for regenerations
+const payForRegeneration = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { bookId } = request.params;
+
+    // Sanitize payload
+    const { packageId, price, paymentGateway, transactionId } = validatePayload(payForRegenerationValidator, request.body) || {};    
+
+    // Sanitize IDs
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    if(!isValidObjectId(packageId)) throw new ApiError(400, "Invalid Package ID");
+
+    // Find book and package
+    const [book, package] = await Promise.all([
+        Book.findById(bookId).select("userId status draftStage"),
+        Package.findById(packageId).select("price credits").lean()
+    ]);
+
+    // Validate edge cases
+    if(!book) throw new ApiError(404, "Book not found");
+    if(!package) throw new ApiError(404, "Package not found");
+    if(price !== Number(package.price)) throw new ApiError(400, "Price mismatch!");  
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to purchase regenerations for this book");
+    if(book.status === "published") throw new ApiError(403, "Forbidden! You cannot purchase regenerations for published book");  
+
+    // Execute parallel
+    const [revenueGeneration, regeneration] = await Promise.all([
+        // Save to revenue generation
+        RevenueGeneration.create({
+            userId,
+            revenue: price,
+            sourceId: packageId,
+            sourceModel: "Regeneration",
+            paymentGateway,
+            transactionId,
+            status: "paid"
+        }),
+
+        // Update regenerations
+        Regeneration.findOneAndUpdate(
+            { userId, bookId },
+            { $inc: { limit: Number(package.credits) } }
+        )
+    ]);
+    if(!revenueGeneration) throw new ApiError(500, "Failed to save record in revenue generation");
+    if(!regeneration) throw new ApiError(500, "Failed to update regenerations");
+    
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Payment has been completed"));
+});
+
+module.exports = { payForBook, payForRegeneration };
