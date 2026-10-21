@@ -24,7 +24,7 @@ const getCache = async (key) => {
     try 
     {
         const data = await redis.get(key);
-        return JSON.parse(data);
+        return data ? JSON.parse(data) : null;
     } 
     catch(error) 
     {
