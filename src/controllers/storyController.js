@@ -284,17 +284,20 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
     const [book, spreads, regeneration] = await Promise.all([
         Book.findById(bookId),
         Spread.find({ bookId }).select("content characterLimit").sort({ _id: 1 }),
-        Regeneration.findOne({ userId, bookId })
+        Regeneration.findOne({ bookId })
     ]);
 
     // Validate book
     if(!book) throw new ApiError(404, "Book not found");
-    if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to refine story of this book");
+    // if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to refine story of this book");
     if(book.status !== "draft") throw new ApiError(403, "You cannot refine story content while the book is not in draft state");
     if(book.draftStage !== 1) throw new ApiError(403, "You cannot refine story content while the book is not in draft stage 1");
 
     // Validate regeneration
-    if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
+    if(!regeneration) {
+        console.log(regeneration);
+        throw new ApiError(404, "Regenerations not found for this book")
+    };
     if(regeneration.limit <= 0) throw new ApiError(403, "You've reached your story regeneration limit. Please purchase more to continue");
 
     // Get dynamic prompt for custom story refinement
@@ -319,6 +322,8 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
     spreadContents.forEach((content, index) => {
         const spreadNo = index + 1;
 
+        console.log("Index", index);
+        console.log("Test", spreads[index]);
         if(!content || content.length < 3) throw new ApiError(400, `AI generated insufficient content for Spread ${spreadNo}`);
         if(content.length > spreads[index].characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
     });
