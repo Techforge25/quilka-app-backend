@@ -7,7 +7,7 @@ const packageSchema = new Schema({
     credits: { type: Number, required: true },
     price: { type: Number, required: true },
     description: { type: String, trim: true },
-    extras: { type: String, trim: true }
+    extras: { type: String, trim: true, default: null }
 }, { timestamps: true });
 
 // Add pagination plugin
