@@ -1,10 +1,5 @@
 const joi = require("joi");
 
-// Create illustration validator
-const createIllustrationValidator = joi.object({
-    content: joi.string().trim().min(3).required().label("Content")
-});
-
 // Update spread sublayout validator
 const updateSpreadSublayoutValidator = joi.object({
     textColor: joi.string().trim().required().label("Text color"),
@@ -23,5 +18,4 @@ const generateWithCustomPromptValidator = joi.object({
     referenceImageURL: joi.string().trim().uri().required().label("Reference Image URL")
 });
 
-module.exports = { createIllustrationValidator, updateSpreadSublayoutValidator, 
-uploadManualIllustrationValidator, generateWithCustomPromptValidator };
+module.exports = { updateSpreadSublayoutValidator, uploadManualIllustrationValidator, generateWithCustomPromptValidator };
