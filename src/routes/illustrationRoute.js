@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createIllustration, regenerateIllustraton, uploadManualIllustration, 
-generateWithCustomPrompt, updateSpreadSublayout } = require("../controllers/illustrationController");
+generateWithCustomPrompt, regenerateWithCustomPrompt, updateSpreadSublayout } = require("../controllers/illustrationController");
 const { rateLimit } = require("../middlewares/rateLimit");
 
 // Router instance
@@ -10,14 +10,14 @@ const illustrationRouter = Router();
 // Inject middleware
 illustrationRouter.use(authentication);
 
-// Create illustration
+// Generate & regenerate illustration
 illustrationRouter.route("/:bookId/spread/:spreadId").post(rateLimit(3, 1), createIllustration, regenerateIllustraton);
 
 // Upload manual illustration
 illustrationRouter.route("/:bookId/spread/:spreadId/upload").post(rateLimit(3, 1), uploadManualIllustration);
 
-// Generate illustration with custom prompt
-illustrationRouter.route("/:bookId/spread/:spreadId/prompt").post(rateLimit(2, 1), generateWithCustomPrompt);
+// Generate & regenerate illustration with custom prompt
+illustrationRouter.route("/:bookId/spread/:spreadId/prompt").post(rateLimit(2, 1), generateWithCustomPrompt, regenerateWithCustomPrompt);
 
 // Update spread sublayout
 illustrationRouter.route("/:bookId/spread/:spreadId/sublayout").patch(rateLimit(10, 1), updateSpreadSublayout);
