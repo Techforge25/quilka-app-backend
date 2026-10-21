@@ -103,7 +103,7 @@ const createBookInAI = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created in AI Mode!"));
 });
 
-// Fetch my books
+ // Fetch my books
 const fetchMyBooks = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search = "", status = "all" } = request.query;
     const userId = convertToMongoId(request.user._id);
@@ -130,6 +130,37 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
         // Match
         { $match: { userId, ...baseFilter } },
 
+        // Lookup spreads
+        {
+            $lookup: {
+                from: "spreads",
+                localField: "_id",
+                foreignField: "bookId",
+                as: "spreads",
+                pipeline: [{ $project: { _id: 0, content: 1 } }]
+            }
+        },
+
+        // Add fields
+        {
+            $addFields: {
+                hasStoryGenerated: {
+                    $anyElementTrue: {
+                        $map: {
+                            input: "$spreads",
+                            as: "spread",
+                            in: {
+                                $and: [
+                                    { $ne: ["$$spread.content", null] },
+                                    { $ne: ["$$spread.content", ""] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
         // Sort
         { $sort: { updatedAt: -1 } },
 
@@ -144,7 +175,8 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
                     $multiply: ["$spreadsCount", 2]
                 },
                 status: 1,
-                draftStage: 1
+                draftStage: 1,
+                hasStoryGenerated: 1
             }
         }
     ], { page, limit });
