@@ -1,37 +1,221 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Support Request</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Quilka Stories - Support Message</title>
 </head>
-    <body style="margin: 0; padding: 0; background-color: #f5f5f5;">
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #333333; background-color: #ffffff;">
 
-            <h2 style="color: #240457; margin-bottom: 8px;">New Support Request</h2>
+<body style="margin:0; padding:0; width:100%; background-color:#F3F0F9; font-family:Arial, Helvetica, sans-serif; color:#514956; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
 
-            <p style="color: #666666; font-size: 14px;">
-                A new support request has been submitted. Please review the details below.
-            </p>
+  <!-- Email Wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; background-color:#F3F0F9; border-collapse:collapse;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
 
-            <hr style="border: none; border-top: 1px solid #eeeeee; margin: 24px 0;">
+        <!-- Main Email Card -->
+        <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:620px; background-color:#FFFFFF; border:1px solid #E8E2F0; border-collapse:separate; border-spacing:0; border-radius:16px;">
 
-            <p> <strong>From:</strong> 
-                {{email}}
-            </p>
-            <p> <strong>Category:</strong> 
-                {{category}}
-            </p>
-            <p> <strong>Subject:</strong>
-                {{subject}}
-            </p>
+          <!-- Top Accent -->
+          <tr>
+            <td height="5" style="height:5px; background-color:#5B4B9A; font-size:0; line-height:0; border-radius:15px 15px 0 0;">
+              &nbsp;
+            </td>
+          </tr>
 
-            <h3 style="color: #240457; margin-top: 28px;">Message</h3>
-            <div style="background-color: #f8f7fc; padding: 16px; border-radius: 8px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: break-word;">
-                {{body}}
-            </div>
-            <hr style="border: none; border-top: 1px solid #eeeeee; margin: 24px 0;">
-        </div>
-    </body>
+          <!-- Header: Logo on Top -->
+          <tr>
+            <td align="center" style="padding:25px 30px; border-bottom:1px solid #EEEAF4;">
+
+              <!-- Logo -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 12px; border-collapse:collapse;">
+                <tr>
+                  <td align="center">
+                    <img
+                      src="https://res.cloudinary.com/ndlremz2/image/upload/v1792656308/Quilka-logo.png"
+                      alt="Quilka Stories Logo"
+                      width="48"
+                      height="48"
+                      style="display:block; width:48px; height:48px; border:0; outline:none; text-decoration:none;"
+                    >
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Brand Name -->
+              <p style="margin:0; color:#5B4B9A; font-size:22px; line-height:1.4; font-weight:700; letter-spacing:-0.4px; text-align:center;">
+                Quilka Stories
+              </p>
+
+              <!-- Support Text -->
+              <p style="margin:4px 0 14px; color:#82798B; font-size:12px; line-height:1.5; text-align:center;">
+                Support &amp; Customer Care
+              </p>
+
+              <!-- Status Label -->
+              <span style="display:inline-block; padding:7px 10px; background-color:#F0ECFA; border:1px solid #E6DFF5; border-radius:20px; color:#5B4B9A; font-size:10px; line-height:1.4; font-weight:700; letter-spacing:0.4px; white-space:nowrap;">
+                NEW MESSAGE
+              </span>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding:30px;">
+
+              <p style="margin:0 0 8px; color:#5B4B9A; font-size:11px; line-height:1.5; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;">
+                Support Request Received
+              </p>
+
+              <h1 style="margin:0 0 12px; color:#211827; font-size:27px; line-height:1.35; font-weight:700; letter-spacing:-0.5px; overflow-wrap:anywhere; word-wrap:break-word;">
+                {{subject}}
+              </h1>
+
+              <p style="margin:0 0 25px; color:#514956; font-size:14px; line-height:1.8;">
+                A user has contacted the Quilka Stories team. Their request details and message are provided below.
+              </p>
+
+              <!-- Request Information -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; background-color:#FAF9FC; border:1px solid #EAE5F2; border-collapse:separate; border-spacing:0; border-radius:10px;">
+
+                <!-- Sender Email -->
+                <tr>
+                  <td style="padding:17px 18px 15px;">
+                    <p style="margin:0 0 6px; color:#82798B; font-size:11px; line-height:1.5; font-weight:700; letter-spacing:0.7px; text-transform:uppercase;">
+                      From
+                    </p>
+                    <p style="margin:0; color:#211827; font-size:14px; line-height:1.7; font-weight:600; overflow-wrap:anywhere; word-wrap:break-word;">
+                      {{email}}
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Divider -->
+                <tr>
+                  <td style="padding:0 18px;">
+                    <div style="height:1px; background-color:#EAE5F2; font-size:0; line-height:0;">
+                      &nbsp;
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Category -->
+                <tr>
+                  <td style="padding:15px 18px 17px;">
+                    <p style="margin:0 0 6px; color:#82798B; font-size:11px; line-height:1.5; font-weight:700; letter-spacing:0.7px; text-transform:uppercase;">
+                      Category
+                    </p>
+                    <p style="margin:0; color:#211827; font-size:14px; line-height:1.7; font-weight:600; overflow-wrap:anywhere; word-wrap:break-word;">
+                      {{category}}
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+
+              <!-- Message Section -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; margin-top:30px; border-collapse:collapse;">
+
+                <!-- Message Heading -->
+                <tr>
+                  <td style="padding-bottom:14px;">
+                    <p style="margin:0 0 5px; color:#211827; font-size:20px; line-height:1.4; font-weight:700;">
+                      Message details
+                    </p>
+                    <p style="margin:0; color:#82798B; font-size:13px; line-height:1.7;">
+                      Here is what the user shared with the support team.
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Message Body Box -->
+                <tr>
+                  <td style="padding:0;">
+
+                    <!-- Outer Border Container -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; background-color:#F8F6FC; border:1px solid #EAE5F2; border-collapse:separate; border-spacing:0; border-radius:10px;">
+                      <tr>
+                        <td style="padding:24px;">
+
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse;">
+                            <tr>
+
+                              <!-- Opening Quote -->
+                              <td valign="top" width="22" style="width:22px; padding:0 10px 0 0; color:#5B4B9A; font-size:24px; line-height:1.2; font-weight:700;">
+                                &ldquo;
+                              </td>
+
+                              <!-- User Message -->
+                              <td valign="top" style="padding-top:3px;">
+                                <p style="margin:0; color:#514956; font-size:15px; line-height:1.95; overflow-wrap:anywhere; word-wrap:break-word; white-space:pre-wrap;">
+                                    {{body}}
+                                </p>
+                              </td>
+
+                            </tr>
+                          </table>
+
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+
+              </table>
+
+              <!-- Closing Note -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; margin-top:24px; border-collapse:separate; border-spacing:0;">
+                <tr>
+                  <td style="padding:15px 17px; background-color:#F0ECFA; border:1px solid #EAE5F2; border-radius:10px;">
+                    <p style="margin:0; color:#514956; font-size:13px; line-height:1.8;">
+                      <strong style="color:#5B4B9A;">Next step:</strong>
+                      Review the request and respond to the user at the email address provided above.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:22px 20px; background-color:#FAF9FC; border-top:1px solid #EEEAF4;">
+
+              <p style="margin:0 0 6px; color:#5B4B9A; font-size:15px; line-height:1.5; font-weight:700;">
+                Quilka Stories
+              </p>
+
+              <p style="margin:0 0 10px; color:#82798B; font-size:12px; line-height:1.7;">
+                Creating magical stories, one page at a time.
+              </p>
+
+              <p style="margin:0; color:#A19AAA; font-size:11px; line-height:1.7;">
+                This is an automated support notification.
+              </p>
+
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Copyright -->
+        <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:620px; border-collapse:collapse;">
+          <tr>
+            <td align="center" style="padding:15px 10px 0;">
+              <p style="margin:0; color:#91899B; font-size:11px; line-height:1.6;">
+                &copy; Quilka Stories. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
 </html>
