@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createBookInCustom, createBookInAI, fetchMyBooks, 
 viewBook, viewBookContent, createFrontAndCoverImages, regenerateFrontAndCoverImages, 
-publishBook, fetchFrontAndBackImages } = require("../controllers/bookController");
+publishBook, fetchFrontAndBackImages, uploadManualFrontOrCoverImage } = require("../controllers/bookController");
 const { rateLimit } = require("../middlewares/rateLimit");
 
 // Router instance
@@ -30,5 +30,7 @@ bookRouter.route("/:bookId/frontAndCover")
 // Publish book
 bookRouter.route("/:bookId/publish").patch(authentication, publishBook);
 
+// Upload manual front or cover image
+bookRouter.route("/:bookId/manual/upload").post(authentication, uploadManualFrontOrCoverImage);
 
 module.exports = bookRouter;

@@ -3,7 +3,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
-const { createBookValidator } = require("../validators/bookValidator");
+const { createBookValidator, uploadManualFrontOrCoverImageValidator } = require("../validators/bookValidator");
 const { isValidObjectId, startSession } = require("mongoose");
 const convertToMongoId = require("../utils/convertToMongoId");
 const { emptyList } = require("../constants");
@@ -550,5 +550,35 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Front and back images have been fetched"));
 });
 
+// Upload manual front or cover image
+const uploadManualFrontOrCoverImage = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize book ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Sanitize payload
+    const { type, url } = validatePayload(uploadManualFrontOrCoverImageValidator, request.body) || {};    
+
+    // Find book
+    const book = await Book.findById(bookId);
+    if(!book) throw new ApiError(404, "Book not found");
+
+    // Validate
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to upload manual illustrations for this book");
+    if(book.status !== "draft") throw new ApiError(400, "Manual illustration uploads allowed only in draft state");
+    if(book.draftStage !== 3) throw new ApiError(403, "Book should be in draft stage 3 for uploading front and cover images");
+
+    // Save to db
+    if(type === "front") book.frontImage = url;
+    else book.backImage = url;
+    await book.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, `Book ${type} image has been uploaded`));
+});
+
 module.exports = { createBookInCustom, createBookInAI, fetchMyBooks, viewBook, viewBookContent, 
-createFrontAndCoverImages, regenerateFrontAndCoverImages, publishBook, fetchFrontAndBackImages };
+createFrontAndCoverImages, regenerateFrontAndCoverImages, publishBook, fetchFrontAndBackImages,
+uploadManualFrontOrCoverImage };

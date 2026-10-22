@@ -50,4 +50,10 @@ const createBookValidator = joi.object({
     }).label("Spreads configuration")
 });
 
-module.exports = { createBookValidator };
+// Upload manual front or cover image validator
+const uploadManualFrontOrCoverImageValidator = joi.object({
+    type: joi.string().trim().required().valid("front", "cover").label("Type"),
+    url: joi.string().trim().required().uri().label("URL")
+});
+
+module.exports = { createBookValidator, uploadManualFrontOrCoverImageValidator };
