@@ -68,13 +68,13 @@ const sendSupportEmail = asyncHandler(async (request, response) => {
     const { email, subject, category, body } = validatePayload(supportEmailValidator, request.body) || {};
 
     // Get attachment
-    const attachment = request.file;
+    const attachment = request.file; 
 
     // Add in queue
     await emailQueue.add("sendSupportEmail", { email, subject, category, body, attachment });
 
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "Support email has been sent"));
+    return response.status(200).json(new ApiResponse(200, null, "Your support request has been submitted successfully"));
 });
 
 module.exports = { viewPersonalInfo, updateInfo, updatePassword, sendSupportEmail };

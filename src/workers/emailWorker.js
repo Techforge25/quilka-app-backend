@@ -57,40 +57,23 @@ const worker = new Worker("emailQueue", async (job) => {
         {
             attachments.push({
                 filename: attachment.originalname,
-                content: attachment.buffer,
+                content: Buffer.from(attachment.buffer.data),
                 contentType: attachment.mimetype
             });
         }
 
-        // Prepare email body
-        const emailBody = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #333333;">
-                <h2 style="color: #240457; margin-bottom: 8px;">New Support Request</h2>
-                <p style="color: #666666; font-size: 14px;">A new support request has been submitted. Please review the details below.</p>
+        // Get HTML template
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/supportEmail.html"), "utf-8");
 
-                <hr style="border: none; border-top: 1px solid #eeeeee; margin: 24px 0;">
-
-                <p><strong>From:</strong> ${email}</p>
-                <p><strong>Category:</strong> ${category}</p>
-                <p><strong>Subject:</strong> ${subject}</p>
-
-                <h3 style="color: #240457; margin-top: 28px;">Message</h3>
-                <div style="background-color: #f8f7fc; padding: 16px; border-radius: 8px; line-height: 1.6; white-space: pre-wrap;">${body}</div>
-
-                <p style="font-size: 13px; color: #777777; margin-top: 24px;">
-                    ${attachment ? "An attachment has been included with this request." : "No attachment was provided."}
-                </p>
-
-                <hr style="border: none; border-top: 1px solid #eeeeee; margin: 24px 0;">
-
-                <p style="font-size: 12px; color: #999999;">
-                    This is an automated notification from the support system.
-                </p>
-            </div>
-        `;
+        // Replace placeholders
+        const filledHtml = html
+        .replaceAll('{{email}}', email)
+        .replaceAll('{{subject}}', subject)
+        .replaceAll('{{category}}', category)
+        .replaceAll('{{body}}', body);
 
         // Send email to admin
-        await sendEmail("fullstackdev556@gmail.com", subject, emailBody, attachments);
+        await sendEmail("fullstackdev556@gmail.com", subject, filledHtml, attachments);
     }     
 }, { connection: redisConfigOptions, concurrency: 5 });
 
