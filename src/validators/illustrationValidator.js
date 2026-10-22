@@ -15,7 +15,7 @@ const uploadManualIllustrationValidator = joi.object({
 // Generate illustration with custom prompt validator
 const generateWithCustomPromptValidator = joi.object({
     customPrompt: joi.string().trim().min(20).max(500).required().label("Custom Prompt"),
-    referenceImageURL: joi.string().trim().uri().required().label("Reference Image URL")
+    referenceImageURL: joi.string().trim().uri().optional().allow("", null).label("Reference Image URL")
 });
 
 module.exports = { updateSpreadSublayoutValidator, uploadManualIllustrationValidator, generateWithCustomPromptValidator };
