@@ -4,13 +4,14 @@ const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
 const { createBookValidator } = require("../validators/bookValidator");
-const { isValidObjectId } = require("mongoose");
+const { isValidObjectId, startSession } = require("mongoose");
 const convertToMongoId = require("../utils/convertToMongoId");
 const { emptyList } = require("../constants");
 const llm = require("../service/llmService");
 const { promptGuideForCoverImage, promptGuideForFrontImage } = require("../utils/promptGuide");
 const { uploadToCloudinary } = require("../utils/cloudinary");
 const Spread = require("../models/spreadModel");
+const Regeneration = require("../models/regenerationModel");
 
 // Create book in custom
 const createBookInCustom = asyncHandler(async (request, response, next) => {
@@ -331,7 +332,7 @@ const viewBookContent = asyncHandler(async (request, response) => {
 });
 
 // Create book front and cover images
-const createFrontAndCoverImages = asyncHandler(async (request, response) => {
+const createFrontAndCoverImages = asyncHandler(async (request, response, next) => {
     const userId = request.user._id;
 
     // Sanitize book ID
@@ -354,7 +355,14 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     const storyContent = spreads.map(spread => spread.content.trim()).join(" ");
 
     // Get previous images chunks as a reference
-    const previousReferenceImages = spreads.filter(spread => spread.base64Image).map(spread => spread.base64Image);    
+    const previousReferenceImages = spreads.filter(spread => spread.base64Image).map(spread => spread.base64Image);
+
+    // Pass control to regenerate front and cover image controller
+    if(book.frontImage || book.backImage)
+    {
+        request.payload = { userId, book, storyContent, previousReferenceImages };
+        return next();
+    }
 
     // Prompt for front image
     const frontPrompt = promptGuideForFrontImage({
@@ -398,7 +406,85 @@ const createFrontAndCoverImages = asyncHandler(async (request, response) => {
     await book.save();
     
     // Response
-    return response.status(201).json(new ApiResponse(201, { frontUrl, coverUrl }, "Book front & cover images have been created"));
+    return response.status(201).json(new ApiResponse(201, { frontUrl, coverUrl }, "Book front & cover images have been generated"));
+});
+
+// Regenerate front & cover images
+const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => {
+    // Get metadata
+    const userId = request.user._id;
+    const { bookId } = request.params;    
+    const { book, storyContent, previousReferenceImages } = request.payload;
+
+    // Find regenerations
+    const regeneration = await Regeneration.findOne({ userId, bookId });
+    if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
+    if(regeneration.limit <= 0) throw new ApiError(403, "You've reached your regeneration limit. Please purchase more to continue");    
+
+    // Prompt for front image
+    const frontPrompt = promptGuideForFrontImage({
+        bookTitle: book.title,
+        content: storyContent,
+        size: book.spreadSize,
+        illustrationStyle: book.illustrationStyle
+    });
+
+    // Prompt for cover image
+    const coverPrompt = promptGuideForCoverImage({
+        authorName: book.authorName,
+        content: storyContent,
+        size: book.spreadSize,
+        illustrationStyle: book.illustrationStyle
+    });
+
+    // LLM Response
+    const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image", previousReferenceImages);
+    const { frontImageBuffer, coverImageBuffer } = llmResponse;
+
+    // Validate
+    if(!frontImageBuffer) throw new ApiError(500, "Failed to generate front image");
+    if(!coverImageBuffer) throw new ApiError(500, "Failed to generate cover image");
+
+    // Upload to cloudinary from illustration pipeline
+    const [uploadFront, uploadCover] = await Promise.all([
+        uploadToCloudinary(frontImageBuffer),
+        uploadToCloudinary(coverImageBuffer)
+    ]);
+    if(!uploadFront) throw new ApiError(500, "Failed to upload front image to cloudinary");
+    if(!uploadCover) throw new ApiError(500, "Failed to upload cover image to cloudinary");
+
+    // Get URLs
+    const frontUrl = uploadFront.secure_url;
+    const coverUrl = uploadCover.secure_url;
+
+    // Save to db
+    book.frontImage = frontUrl;
+    book.backImage = coverUrl;    
+
+    // Start transactional queries
+    const dbSession = await startSession();
+    try
+    {
+        dbSession.startTransaction();
+        await book.save({ session: dbSession });
+        await Regeneration.updateOne(
+            { userId, bookId, limit: { $gt: 0 } },
+            { $inc: { limit: -1 } },
+            { session: dbSession }
+        );
+    }
+    catch(error)
+    {
+        await dbSession.abortTransaction();
+        throw new ApiError(500, error.message);
+    }
+    finally
+    {
+        dbSession.endSession();
+    }
+    
+    // Response
+    return response.status(201).json(new ApiResponse(201, { frontUrl, coverUrl }, "Book front & cover images have been regenerated"));    
 });
 
 // Publish book
@@ -455,4 +541,4 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createBookInCustom, createBookInAI, fetchMyBooks, viewBook, viewBookContent, 
-createFrontAndCoverImages, publishBook, fetchFrontAndBackImages };
+createFrontAndCoverImages, regenerateFrontAndCoverImages, publishBook, fetchFrontAndBackImages };
