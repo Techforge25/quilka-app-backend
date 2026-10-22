@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const ApiError = require("../utils/ApiError");
 const { GMAIL, GMAIL_APP_PASSWORD } = process.env;
 
 // Configure transporter
@@ -28,7 +29,7 @@ const sendEmail = async (to, subject, body, attachments = []) => {
     catch(error) 
     {
         console.log("Failed to send mail", error.message);
-        return null;
+        throw new ApiError(500, `Failed to send email: ${error.message}`);
     }
 }
 
