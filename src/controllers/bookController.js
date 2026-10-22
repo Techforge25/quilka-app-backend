@@ -12,6 +12,7 @@ const { promptGuideForCoverImage, promptGuideForFrontImage } = require("../utils
 const { uploadToCloudinary } = require("../utils/cloudinary");
 const Spread = require("../models/spreadModel");
 const Regeneration = require("../models/regenerationModel");
+const { regenerateIllustrationValidator } = require("../validators/illustrationValidator");
 
 // Create book in custom
 const createBookInCustom = asyncHandler(async (request, response, next) => {
@@ -360,7 +361,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
     // Pass control to regenerate front and cover image controller
     if(book.frontImage || book.backImage)
     {
-        request.payload = { userId, book, storyContent, previousReferenceImages };
+        request.payload = { book, storyContent, previousReferenceImages };
         return next();
     }
 
@@ -416,50 +417,59 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
     const { bookId } = request.params;    
     const { book, storyContent, previousReferenceImages } = request.payload;
 
+    // Sanitize payload
+    const { type, customPrompt, referenceImageURL } = validatePayload(regenerateIllustrationValidator, request.body) || {};
+
     // Find regenerations
     const regeneration = await Regeneration.findOne({ userId, bookId });
     if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
-    if(regeneration.limit <= 0) throw new ApiError(403, "You've reached your regeneration limit. Please purchase more to continue");    
+    if(regeneration.limit <= 0) throw new ApiError(403, "You've reached your regeneration limit. Please purchase more to continue");
 
-    // Prompt for front image
-    const frontPrompt = promptGuideForFrontImage({
-        bookTitle: book.title,
-        content: storyContent,
-        size: book.spreadSize,
-        illustrationStyle: book.illustrationStyle
-    });
-
-    // Prompt for cover image
-    const coverPrompt = promptGuideForCoverImage({
-        authorName: book.authorName,
-        content: storyContent,
-        size: book.spreadSize,
-        illustrationStyle: book.illustrationStyle
-    });
+    // Dynamic prompt
+    let dynamicPrompt = null;
+    if(type === "front")
+    {
+        // Prompt for front image
+        dynamicPrompt = promptGuideForFrontImage({
+            bookTitle: book.title,
+            content: customPrompt ? customPrompt : storyContent,
+            size: book.spreadSize,
+            illustrationStyle: book.illustrationStyle
+        });        
+    }
+    else
+    {
+        dynamicPrompt = promptGuideForCoverImage({
+            authorName: book.authorName,
+            content: customPrompt ? customPrompt : storyContent,
+            size: book.spreadSize,
+            illustrationStyle: book.illustrationStyle
+        });        
+    }
 
     // LLM Response
-    const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image", previousReferenceImages);
-    const { frontImageBuffer, coverImageBuffer } = llmResponse;
+    const llmResponse = await llm.regenerateIllustration(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
+    const { imageBuffer } = llmResponse;
 
     // Validate
-    if(!frontImageBuffer) throw new ApiError(500, "Failed to generate front image");
-    if(!coverImageBuffer) throw new ApiError(500, "Failed to generate cover image");
+    if(!imageBuffer) throw new ApiError(500, "Failed to generate image");
 
     // Upload to cloudinary from illustration pipeline
-    const [uploadFront, uploadCover] = await Promise.all([
-        uploadToCloudinary(frontImageBuffer),
-        uploadToCloudinary(coverImageBuffer)
-    ]);
-    if(!uploadFront) throw new ApiError(500, "Failed to upload front image to cloudinary");
-    if(!uploadCover) throw new ApiError(500, "Failed to upload cover image to cloudinary");
+    const uploadResult = await uploadToCloudinary(imageBuffer);
+    if(!uploadResult) throw new ApiError(500, "Failed to upload image to cloudinary");
 
-    // Get URLs
-    const frontUrl = uploadFront.secure_url;
-    const coverUrl = uploadCover.secure_url;
-
-    // Save to db
-    book.frontImage = frontUrl;
-    book.backImage = coverUrl;    
+    // Set dynamic keys for json payload
+    const payload = {};
+    if(type === "front")
+    {
+        payload.frontUrl = uploadResult.secure_url;
+        book.frontImage = uploadResult.secure_url;
+    }
+    else
+    {
+        payload.coverUrl = uploadResult.secure_url;
+        book.backImage = coverUrl;
+    }
 
     // Start transactional queries
     const dbSession = await startSession();
@@ -484,7 +494,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
     }
     
     // Response
-    return response.status(201).json(new ApiResponse(201, { frontUrl, coverUrl }, "Book front & cover images have been regenerated"));    
+    return response.status(201).json(new ApiResponse(201, payload, `Book ${type} image has been regenerated`)); 
 });
 
 // Publish book

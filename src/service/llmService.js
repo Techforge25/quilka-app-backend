@@ -181,7 +181,56 @@ class LLMService
         {
             throw new ApiError(500, error.message);
         }
-    }    
+    }
+
+    // Regenerate illustration
+    async regenerateIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesChunks = [], referenceImageURL = null)
+    {
+        try
+        {
+            // Initialize contents
+            const contents = [{ text: dynamicPrompt }];
+
+            // Fetch reference image if exist
+            if(referenceImageURL)
+            {
+                const base64Image = await getReferenceImage(referenceImageURL);
+                contents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+            }
+            else
+            {
+                for(const referenceImage of referenceImagesChunks)
+                {
+                    // Append image chunk
+                    contents.push({ inlineData: { mimeType: "image/jpg", data: referenceImage } });
+                }    
+            }
+
+            // Generate illustration
+            const illustrationResponse = await this.ai.models.generateContent({
+                model: aiModel,
+                contents,
+                config: { responseModalities: ["IMAGE"] }
+            });
+            if(!illustrationResponse) throw new ApiError(500, "Failed to generate illustration");
+            
+            // Find generated image
+            const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
+            if(!imagePart?.inlineData?.data) throw new ApiError(500, "Inline data is missing");
+
+            // Convert base64 image to buffer
+            const imageBuffer = Buffer.from(imagePart.inlineData.data, "base64");
+            if(!imageBuffer) throw new ApiError(500, "Failed to convert base64 image to buffer");
+
+            // Extract token counts
+            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
+            return { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };            
+        }
+        catch(error)
+        {
+            throw new ApiError(500, error.message);
+        }        
+    }
 }
 
 // Object
