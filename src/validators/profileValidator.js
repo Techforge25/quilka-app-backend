@@ -19,4 +19,13 @@ const updatePasswordValidator = joi.object({
     confirmPassword: joi.string().valid(joi.ref("newPassword")).required().label("Confirm Password")    
 });
 
-module.exports = { updateInfoValidator, updatePasswordValidator };
+// Support email validator
+const supportEmailValidator = joi.object({
+    email: joi.string().trim().required().email().lowercase().label("Email"),
+    subject: joi.string().trim().required().min(5).max(100).label("Subject"),
+    category: joi.string().trim().required().min(5).max(100).label("Category"),
+    body: joi.string().trim().required().min(50).max(5000).label("Body"),
+    attachment: joi.string().trim().optional().allow("", null).label("Attachement"),
+});
+
+module.exports = { updateInfoValidator, updatePasswordValidator, supportEmailValidator };
