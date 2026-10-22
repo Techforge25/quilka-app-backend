@@ -81,20 +81,24 @@ class LLMService
     }
 
     // Generate illustration with custom prompt
-    async generateIllustrationWithCustomPrompt(dynamicPrompt, referenceImageURL, aiModel = "gemini-3.1-flash-image")
+    async generateIllustrationWithCustomPrompt(dynamicPrompt, referenceImageURL = null, aiModel = "gemini-3.1-flash-image")
     {
         try
         {
-            // Fetch reference image
-            const base64Image = await getReferenceImage(referenceImageURL);
+            // Initialize contents
+            const contents = [{ text: dynamicPrompt }];
+
+            // Fetch reference image if exist
+            if(referenceImageURL)
+            {
+                const base64Image = await getReferenceImage(referenceImageURL);
+                contents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+            }
 
             // Generate illustration
             const illustrationResponse = await this.ai.models.generateContent({
                 model: aiModel,
-                contents: [
-                    { text: dynamicPrompt },
-                    { inlineData: { mimeType: "image/jpg", data: base64Image } }
-                ],
+                contents,
                 config: { responseModalities: ["IMAGE"] }
             });
             if(!illustrationResponse) throw new ApiError(500, "Failed to generate illustration with custom prompt");
