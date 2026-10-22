@@ -468,7 +468,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
     else
     {
         payload.coverUrl = uploadResult.secure_url;
-        book.backImage = coverUrl;
+        book.backImage = uploadResult.secure_url;
     }
 
     // Start transactional queries
@@ -482,6 +482,9 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
             { $inc: { limit: -1 } },
             { session: dbSession }
         );
+
+        // Commit transaction
+        await dbSession.commitTransaction();
     }
     catch(error)
     {
