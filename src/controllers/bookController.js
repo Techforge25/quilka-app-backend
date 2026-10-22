@@ -435,7 +435,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
             content: customPrompt ? customPrompt : storyContent,
             size: book.spreadSize,
             illustrationStyle: book.illustrationStyle
-        });        
+        });
     }
     else
     {
@@ -444,7 +444,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
             content: customPrompt ? customPrompt : storyContent,
             size: book.spreadSize,
             illustrationStyle: book.illustrationStyle
-        });        
+        });
     }
 
     // LLM Response
@@ -459,7 +459,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
     if(!uploadResult) throw new ApiError(500, "Failed to upload image to cloudinary");
 
     // Set dynamic keys for json payload
-    const payload = {};
+    const payload = { regenerations: regeneration.limit -1 };
     if(type === "front")
     {
         payload.frontUrl = uploadResult.secure_url;

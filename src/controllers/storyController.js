@@ -170,7 +170,7 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
 
         // Payload
         const payload = {
-            regenerations: regeneration.limit - 1,
+            regenerations: regeneration.limit -1,
             bookId: book._id,
             spreads: spreads.map((spread, index) => ({ spreadId: spread._id, content: spreadContents[index] }))
         };

@@ -154,8 +154,14 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
         dbSession.endSession();
     }
 
+    // Payload
+    const payload = {
+        illustration: illustrationURL, 
+        regenerations: regeneration.limit -1
+    };
+
     // Response
-    return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been regenerated"));
+    return response.status(201).json(new ApiResponse(201, payload, "Illustration has been regenerated"));
 });
 
 // Upload manual illustration
@@ -328,8 +334,14 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
         dbSession.endSession();
     }
 
+    // Payload
+    const payload = {
+        illustration: illustrationURL,
+        regenerations: regeneration.limit -1
+    };
+
     // Response
-    return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been regenerated with custom prompt"));
+    return response.status(201).json(new ApiResponse(201, payload, "Illustration has been regenerated with custom prompt"));
 });
 
 // Update spread sublayout
