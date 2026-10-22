@@ -3,7 +3,8 @@ const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
-const { updateInfoValidator, updatePasswordValidator } = require("../validators/profileValidator");
+const { updateInfoValidator, updatePasswordValidator, 
+supportEmailValidator } = require("../validators/profileValidator");
 
 // View personal info
 const viewPersonalInfo = asyncHandler(async (request, response) => {
@@ -59,4 +60,14 @@ const updatePassword = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Password has been updated"));
 });
 
-module.exports = { viewPersonalInfo, updateInfo, updatePassword };
+// Send support email
+const sendSupportEmail = asyncHandler(async (request, response) => {
+    // Sanitize payload
+    const { email, subject, category, body, attachment } = validatePayload(supportEmailValidator, request.body) || {};
+    console.log({ email, subject, category, body, attachment });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Support email has been sent"));
+});
+
+module.exports = { viewPersonalInfo, updateInfo, updatePassword, sendSupportEmail };
