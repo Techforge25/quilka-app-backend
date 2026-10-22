@@ -24,8 +24,7 @@ const supportEmailValidator = joi.object({
     email: joi.string().trim().required().email().lowercase().label("Email"),
     subject: joi.string().trim().required().min(5).max(100).label("Subject"),
     category: joi.string().trim().required().min(5).max(100).label("Category"),
-    body: joi.string().trim().required().min(50).max(5000).label("Body"),
-    attachment: joi.string().trim().optional().allow("", null).label("Attachement"),
+    body: joi.string().trim().required().min(50).max(5000).label("Body")
 });
 
 module.exports = { updateInfoValidator, updatePasswordValidator, supportEmailValidator };
