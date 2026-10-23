@@ -257,10 +257,8 @@ const googleLogin = asyncHandler(async (request, response) => {
     }
     if(user.status === "flagged") throw new ApiError(400, "Your account has been flagged. Please contact support for assistance.");
 
-    // Generate access
+    // Generate access token
     const accessToken = await generateAccessToken(user);
-
-    // Validate tokens
     if(!accessToken) throw new ApiError(400, "Failed to generate access token");
 
     // Redirect

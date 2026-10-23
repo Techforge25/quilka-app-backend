@@ -7,27 +7,28 @@ passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.GOOGLE_CALLBACK_URL,
-}, 
+},
+
 async (accessToken, refreshToken, profile, done) => {
-    try 
+    try
     {
         // Extract properties
         const gid = profile?.id;
         const email = profile?.emails?.[0]?.value;
 
         // If user already exist in database
-        const existingUser = await User.findOne({ $or:[{ gid:gid }, { email:email }] });
-        if(existingUser) return done(null, existingUser);
+        let user = await User.findOne({ $or: [{ gid }, { email }] });
+        if(user) return done(null, user);
     
         // Create new user
-        const createUser = await User.create({
-            gid:gid,
-            email:email,
-            passwordHash:`${Date.now()}-GoogleLogin`,
+        user = await User.create({
+            gid,
+            email,
+            password: `${Date.now()}-GoogleLogin`,
             googleAccount: true,
             status: 'active'
         });
-        return done(null, createUser);
+        return done(null, user);
     } 
     catch(error) 
     {
