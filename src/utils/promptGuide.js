@@ -176,6 +176,16 @@ const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size
     A flat, borderless, full-bleed 2D digital illustration of a single-page children's picture book BACK COVER in ${illustrationStyle} style matching the story world of:
     ${content}
 
+    Important Instructions:
+    - The provided content may be either a complete children's story or a custom illustration prompt supplied by the user.
+    - If the content is a complete story, understand its characters, setting, atmosphere, and overall theme. Create a visually appealing back cover illustration that reflects the story's world without reproducing a specific scene unnecessarily.
+    - If the content is a custom prompt, interpret it as the user's creative direction and generate the illustration accordingly.
+    - Do not treat instructions, descriptions, or prompt guidelines as text that must appear in the illustration.
+    - Do not include the words "Back Cover Illustration", "Hero Cover Illustration", or any instructional text in the artwork.
+    - Prefer an illustration without text. Only include a short, original, minimalist quote if it genuinely enhances the composition and is appropriate to the story.
+    - Maintain a cohesive visual style, consistent characters, and a child-friendly atmosphere.
+    - Ensure the artwork fills the entire canvas without borders, frames, margins, or mockup elements.
+
     Canvas Size & Single-Page Orientation Logic:
     - Full Spread Reference Size: ${size}.
     - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
