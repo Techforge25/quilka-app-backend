@@ -45,6 +45,7 @@ const payForBook = asyncHandler(async (request, response) => {
     book.status = "draft";
     book.draftStage = 1;
     await book.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Add 5 free regeneration to this book
     const regeneration = await Regeneration.create({ userId, bookId, limit: 5 });

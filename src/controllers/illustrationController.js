@@ -13,6 +13,7 @@ const Spread = require("../models/spreadModel");
 const { getReferenceImage } = require("../utils/getReferenceImage");
 const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
+const { deleteCacheByPattern } = require("../redis/redisHelpers");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response, next) => {
@@ -78,6 +79,7 @@ const createIllustration = asyncHandler(async (request, response, next) => {
     spread.illustrationURL = illustrationURL;
     spread.base64Image = base64Image;
     await spread.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been created"));
@@ -143,6 +145,7 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
 
         // Commit transaction
         await dbSession.commitTransaction();
+        await deleteCacheByPattern(`books:${bookId}*`);
     }
     catch(error)
     {
@@ -192,6 +195,7 @@ const uploadManualIllustration = asyncHandler(async (request, response) => {
     // Save to db
     spread.illustrationURL = illustrationURL;
     await spread.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been uploaded"));
@@ -260,6 +264,7 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     spread.illustrationURL = illustrationURL;
     spread.base64Image = base64Image;
     await spread.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been generated with custom prompt"));
@@ -323,6 +328,7 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
 
         // Commit transaction
         await dbSession.commitTransaction();
+        await deleteCacheByPattern(`books:${bookId}*`);
     }
     catch(error)
     {
@@ -374,6 +380,7 @@ const updateSpreadSublayout = asyncHandler(async (request, response) => {
     spread.textBgColor = textBgColor;
     spread.subLayoutDirection = subLayoutDirection;
     await spread.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, { textColor, textBgColor, subLayoutDirection }, "Spread has been updated"));
