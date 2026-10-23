@@ -17,11 +17,11 @@ cron.schedule(timer, async () => {
     try
     {
         // Find pending books
-        const books = await Book.find({ status: "pending", createdAt: { $lte: oneDayAgo } }).select("_id");
+        const books = await Book.find({ status: "pending", createdAt: { $lte: oneDayAgo } }).select("_id").lean();
         if(!books.length) return;
 
         // Extract IDs
-        const bookIds = books.map(book => book._id);
+        const bookIds = books.map(book => String(book._id));
 
         // Delete books and connected spreads
         await Book.deleteMany({ _id: { $in: bookIds } });
