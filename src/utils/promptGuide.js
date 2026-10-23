@@ -158,6 +158,7 @@ const promptGuideForFrontImage = ({ bookTitle, content, illustrationStyle, size 
 
     Hero Cover Illustration & Subject:
     ${content}
+    - Remember! Do not include the story's subject on the illustration. If text is necessary, use a short, original, minimalist quote that complements the artwork and the illustration scene just like a summarize visualization.
 
     Cover Art Direction & Composition:
     - Commercial children's book cover aesthetic: Eye-catching poster layout with a strong central hero focal point filling the single-page width.
