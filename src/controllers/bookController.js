@@ -526,6 +526,89 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
     return response.status(201).json(new ApiResponse(201, payload, `Book ${type} image has been regenerated`)); 
 });
 
+// Create front or cover image with custom prompt
+const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Sanitize payload
+    const { type, customPrompt, referenceImageURL } = validatePayload(regenerateIllustrationValidator, request.body) || {};
+
+    // Find book and spreads
+    const [book, spreads] = await Promise.all([
+        Book.findById(bookId),
+        Spread.find({ bookId }).select("-_id content illustrationURL base64Image")
+    ]);
+
+    // Validate
+    if(!book) throw new ApiError(404, "Book not found");
+    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate front and cover images for this book");
+    if(book.status !== "draft") throw new ApiError(400, "Front and cover images can only be generated in draft state");
+    if(book.draftStage !== 3) throw new ApiError(403, "Book should be in draft stage 3 before generating front and cover images");
+
+    // Story content
+    const storyContent = spreads.map(spread => spread.content.trim()).join(" ");
+
+    // Get previous images chunks as a reference
+    const previousReferenceImages = spreads.filter(spread => spread.base64Image).map(spread => spread.base64Image);
+
+    // Dynamic prompt
+    let dynamicPrompt = null;
+    if(type === "front")
+    {
+        // Prompt for front image
+        dynamicPrompt = promptGuideForFrontImage({
+            bookTitle: book.title,
+            content: customPrompt ? customPrompt : storyContent,
+            size: book.spreadSize,
+            illustrationStyle: book.illustrationStyle
+        });
+    }
+    else
+    {
+        dynamicPrompt = promptGuideForCoverImage({
+            authorName: book.authorName,
+            content: customPrompt ? customPrompt : storyContent,
+            size: book.spreadSize,
+            illustrationStyle: book.illustrationStyle
+        });
+    }
+
+    // LLM Response
+    const llmResponse = await llm.regenerateIllustration(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
+    const { imageBuffer } = llmResponse;
+
+    // Validate
+    if(!imageBuffer) throw new ApiError(500, "Failed to generate image");
+
+    // Upload to cloudinary from illustration pipeline
+    const uploadResult = await uploadToCloudinary(imageBuffer);
+    if(!uploadResult) throw new ApiError(500, "Failed to upload image to cloudinary");
+
+    // Set dynamic keys for json payload
+    const payload = {};
+    if(type === "front")
+    {
+        payload.frontUrl = uploadResult.secure_url;
+        book.frontImage = uploadResult.secure_url;
+    }
+    else
+    {
+        payload.coverUrl = uploadResult.secure_url;
+        book.backImage = uploadResult.secure_url;
+    }
+
+    // Save to db
+    await book.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
+    
+    // Response
+    return response.status(201).json(new ApiResponse(201, payload, `Book ${type} image has been generated`));     
+});
+
 // Publish book
 const publishBook = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -623,5 +706,5 @@ const uploadManualFrontOrCoverImage = asyncHandler(async (request, response) => 
 });
 
 module.exports = { createBookInCustom, createBookInAI, fetchMyBooks, viewBook, viewBookContent, 
-createFrontAndCoverImages, regenerateFrontAndCoverImages, publishBook, fetchFrontAndBackImages,
-uploadManualFrontOrCoverImage };
+createFrontAndCoverImages, regenerateFrontAndCoverImages, createFrontOrCoverImageWithCustomPrompt, 
+publishBook, fetchFrontAndBackImages, uploadManualFrontOrCoverImage };
