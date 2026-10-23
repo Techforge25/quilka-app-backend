@@ -27,14 +27,19 @@ class LLMService
 
             // Extract story text
             const aiContent = storyResponse.text;
+            if(!aiContent)
+            {
+                const { blockReason } = storyResponse.promptFeedback;
+                throw new ApiError(400, `LLM failed to generate story text. Block reason: ${blockReason}`);
+            }
 
             // Extract token counts
             const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = storyResponse.usageMetadata;
-            return { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };            
+            return { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };       
         }
         catch(error)
         {
-            throw new ApiError(500, error.message);
+            throw new ApiError(403, error.message);
         }
     }
 
