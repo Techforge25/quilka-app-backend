@@ -13,6 +13,7 @@ const { uploadToCloudinary } = require("../utils/cloudinary");
 const Spread = require("../models/spreadModel");
 const Regeneration = require("../models/regenerationModel");
 const { regenerateIllustrationValidator } = require("../validators/illustrationValidator");
+const { getCache, setCache, deleteCacheByPattern } = require("../redis/redisHelpers");
 
 // Create book in custom
 const createBookInCustom = asyncHandler(async (request, response, next) => {
@@ -127,61 +128,70 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
         baseFilter.status = status;
     }
 
-    // Fetch
-    const books = await Book.aggregatePaginate([
-        // Match
-        { $match: { userId, ...baseFilter } },
+    // Get from cache
+    const key = `books:fetchMyBooks:${userId}&page=${page}&limit=${limit}&search=${search}&status=${status}`;
+    let books = await getCache(key);
+    if(!books)
+    {
+        // Get from DB
+        books = await Book.aggregatePaginate([
+            // Match
+            { $match: { userId, ...baseFilter } },
 
-        // Lookup spreads
-        {
-            $lookup: {
-                from: "spreads",
-                localField: "_id",
-                foreignField: "bookId",
-                as: "spreads",
-                pipeline: [{ $project: { _id: 0, content: 1 } }]
-            }
-        },
+            // Lookup spreads
+            {
+                $lookup: {
+                    from: "spreads",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "spreads",
+                    pipeline: [{ $project: { _id: 0, content: 1 } }]
+                }
+            },
 
-        // Add fields
-        {
-            $addFields: {
-                hasStoryGenerated: {
-                    $anyElementTrue: {
-                        $map: {
-                            input: "$spreads",
-                            as: "spread",
-                            in: {
-                                $and: [
-                                    { $ne: ["$$spread.content", null] },
-                                    { $ne: ["$$spread.content", ""] }
-                                ]
+            // Add fields
+            {
+                $addFields: {
+                    hasStoryGenerated: {
+                        $anyElementTrue: {
+                            $map: {
+                                input: "$spreads",
+                                as: "spread",
+                                in: {
+                                    $and: [
+                                        { $ne: ["$$spread.content", null] },
+                                        { $ne: ["$$spread.content", ""] }
+                                    ]
+                                }
                             }
                         }
                     }
                 }
-            }
-        },
+            },
 
-        // Sort
-        { $sort: { updatedAt: -1 } },
+            // Sort
+            { $sort: { updatedAt: -1 } },
 
-        // Projection
-        {
-            $project: {
-                mode: 1,
-                title: 1,
-                authorName: 1,
-                frontImage: 1,
-                pages: {
-                    $multiply: ["$spreadsCount", 2]
-                },
-                status: 1,
-                draftStage: 1,
-                hasStoryGenerated: 1
+            // Projection
+            {
+                $project: {
+                    mode: 1,
+                    title: 1,
+                    authorName: 1,
+                    frontImage: 1,
+                    pages: {
+                        $multiply: ["$spreadsCount", 2]
+                    },
+                    status: 1,
+                    draftStage: 1,
+                    hasStoryGenerated: 1
+                }
             }
-        }
-    ], { page, limit });
+        ], { page, limit });
+        await setCache(key, books, 20);
+    }
+
+    // Validate
     if(!books.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No books found"));
 
     // Response
@@ -195,55 +205,62 @@ const viewBook = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    const key = `books:${bookId}&viewBook`;
 
-    // Fetch
-    const [book] = await Book.aggregate([
-        // Match
-        { $match: { _id: convertToMongoId(bookId) } },
+    // Get book from cache
+    let book = await getCache(key);
+    if(!book)
+    {
+        // Get from DB
+        [book] = await Book.aggregate([
+            // Match
+            { $match: { _id: convertToMongoId(bookId) } },
 
-        // Lookup spreads
-        {
-            $lookup: {
-                from: "spreads",
-                localField: "_id",
-                foreignField: "bookId",
-                as: "spreads"
+            // Lookup spreads
+            {
+                $lookup: {
+                    from: "spreads",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "spreads"
+                }
+            },
+
+            // Add fields to calculate characters, illustrations and book length
+            {
+                $addFields: {
+                    totalCharacters: { $sum: "$spreads.characterLimit" },
+                    totalIllustrations: { $sum: "$spreads.illustrationLimit" },
+                    bookLength: {
+                        spreads: "$spreadsCount",
+                        pages: { $multiply: ["$spreadsCount", 2] },
+                    },
+                    price: { $multiply: ["$spreadsCount", 2] }
+                }
+            },
+
+            // Projection
+            {
+                $project: {
+                    userId: 1,
+                    mode: 1,
+                    title: 1,
+                    authorName: 1,
+                    bookLength: 1,
+                    ageGroup: 1,
+                    illustrationStyle: 1,
+                    language: 1,
+                    totalCharacters: 1,
+                    totalIllustrations: 1,
+                    price: 1
+                }
             }
-        },
-
-        // Add fields to calculate characters, illustrations and book length
-        {
-            $addFields: {
-                totalCharacters: { $sum: "$spreads.characterLimit" },
-                totalIllustrations: { $sum: "$spreads.illustrationLimit" },
-                bookLength: {
-                    spreads: "$spreadsCount",
-                    pages: { $multiply: ["$spreadsCount", 2] },
-                },
-                price: { $multiply: ["$spreadsCount", 2] }
-            }
-        },
-
-        // Projection
-        {
-            $project: {
-                userId: 1,
-                mode: 1,
-                title: 1,
-                authorName: 1,
-                bookLength: 1,
-                ageGroup: 1,
-                illustrationStyle: 1,
-                language: 1,
-                totalCharacters: 1,
-                totalIllustrations: 1,
-                price: 1
-            }
-        }
-    ]);
+        ]);
+        if(!book) throw new ApiError(404, "Book not found");
+        await setCache(key, book, 20);        
+    }
 
     // Validate
-    if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to view this book");
 
     // Exclude property
@@ -260,69 +277,76 @@ const viewBookContent = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    const key = `books:${bookId}&viewBookContent`;
 
-    // Fetch
-    const [book] = await Book.aggregate([
-        // Match
-        { $match: { _id: convertToMongoId(bookId) } },
+    // Get from cache
+    let book = await getCache(key);
+    if(!book)
+    {
+        // Get from DB
+        [book] = await Book.aggregate([
+            // Match
+            { $match: { _id: convertToMongoId(bookId) } },
 
-        // Lookup spreads
-        {
-            $lookup: {
-                from: "spreads",
-                localField: "_id",
-                foreignField: "bookId",
-                as: "spreads",
-                pipeline: [{ $project: { content: 1, characterLimit: 1, illustrationLimit: 1 } }]
+            // Lookup spreads
+            {
+                $lookup: {
+                    from: "spreads",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "spreads",
+                    pipeline: [{ $project: { content: 1, characterLimit: 1, illustrationLimit: 1 } }]
+                }
+            },
+
+            // Lookup regenerations
+            {
+                $lookup: {
+                    from: "regenerations",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "regeneration"
+                }
+            },
+            
+            // Unwind
+            { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
+
+            // Add fields to calculate characters, book length
+            {
+                $addFields: {
+                    totalCharacters: { $sum: "$spreads.characterLimit" },
+                    totalIllustrations: { $sum: "$spreads.illustrationLimit" },
+                    bookLength: {
+                        spreads: "$spreadsCount",
+                        pages: { $multiply: ["$spreadsCount", 2] },
+                    },
+                    regenerations: "$regeneration.limit"
+                }
+            },
+
+            // Projection
+            {
+                $project: {
+                    userId: 1,
+                    authorName: 1,
+                    frontImage: 1,
+                    title: 1,
+                    bookLength: 1,
+                    totalCharacters: 1,
+                    totalIllustrations: 1,
+                    status: 1,
+                    draftStage: 1,
+                    spreads: { content: 1, characterLimit: 1 },
+                    regenerations: 1
+                }
             }
-        },
-
-        // Lookup regenerations
-        {
-            $lookup: {
-                from: "regenerations",
-                localField: "_id",
-                foreignField: "bookId",
-                as: "regeneration"
-            }
-        },
-        
-        // Unwind
-        { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
-
-        // Add fields to calculate characters, book length
-        {
-            $addFields: {
-                totalCharacters: { $sum: "$spreads.characterLimit" },
-                totalIllustrations: { $sum: "$spreads.illustrationLimit" },
-                bookLength: {
-                    spreads: "$spreadsCount",
-                    pages: { $multiply: ["$spreadsCount", 2] },
-                },
-                regenerations: "$regeneration.limit"
-            }
-        },
-
-        // Projection
-        {
-            $project: {
-                userId: 1,
-                authorName: 1,
-                frontImage: 1,
-                title: 1,
-                bookLength: 1,
-                totalCharacters: 1,
-                totalIllustrations: 1,
-                status: 1,
-                draftStage: 1,
-                spreads: { content: 1, characterLimit: 1 },
-                regenerations: 1
-            }
-        }
-    ]);
+        ]);
+        if(!book) throw new ApiError(404, "Book content not found");
+        await setCache(key, book, 20);
+    }
 
     // Validate
-    if(!book) throw new ApiError(404, "Book content not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to view this book content");
 
     // Exclude property
@@ -405,6 +429,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
     book.frontImage = frontUrl;
     book.backImage = coverUrl;
     await book.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
     
     // Response
     return response.status(201).json(new ApiResponse(201, { frontUrl, coverUrl }, "Book front & cover images have been generated"));
@@ -485,6 +510,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
 
         // Commit transaction
         await dbSession.commitTransaction();
+        await deleteCacheByPattern(`books:${bookId}*`);
     }
     catch(error)
     {
@@ -521,6 +547,7 @@ const publishBook = asyncHandler(async (request, response) => {
     book.draftStage = 4;
     book.status = "published";
     await book.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
     
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Book has been published"));
@@ -533,10 +560,22 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    const key = `books:${bookId}&fetchFrontAndBackImages`;
+
+    // Get from cache
+    let book = await getCache(key);
+    if(book)
+    {
+        if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to access this book");
+        if(book.status !== "draft") throw new ApiError(400, "Book must be in draft state to view front and back images");
+        if(book.draftStage !== 3) throw new ApiError(403, "Book must be in draft stage 3 to view front and back images");
+        return response.status(200).json(new ApiResponse(200, book, "Front and back images have been fetched!"));
+    }
 
     // Find book
-    const book = await Book.findById(bookId).select("userId status draftStage frontImage backImage");
+    book = await Book.findById(bookId).select("userId status draftStage frontImage backImage");
     if(!book) throw new ApiError(404, "Book not found");
+    await setCache(key, { frontImage: book.frontImage, backImage: book.backImage }, 20);
 
     // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to access this book");
@@ -577,6 +616,7 @@ const uploadManualFrontOrCoverImage = asyncHandler(async (request, response) => 
     if(type === "front") book.frontImage = url;
     else book.backImage = url;
     await book.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, `Book ${type} image has been uploaded`));

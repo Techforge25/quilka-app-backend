@@ -8,6 +8,7 @@ const validatePayload = require("../utils/validatePayload");
 const { isValidObjectId } = require("mongoose");
 const { payForBookValidator, payForRegenerationValidator } = require("../validators/paymentValidator");
 const Package = require("../models/packageModel");
+const { deleteCacheByPattern } = require("../redis/redisHelpers");
 
 // Pay for book
 const payForBook = asyncHandler(async (request, response) => {
@@ -99,6 +100,7 @@ const payForRegeneration = asyncHandler(async (request, response) => {
     ]);
     if(!revenueGeneration) throw new ApiError(500, "Failed to save record in revenue generation");
     if(!regeneration) throw new ApiError(500, "Failed to update regenerations");
+    await deleteCacheByPattern(`books:${bookId}*`);
     
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Payment has been completed"));

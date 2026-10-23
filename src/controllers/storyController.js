@@ -14,6 +14,7 @@ const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
 const { customStoryRefinementValidator, updateStoryValidator, newStoryValidator } = require("../validators/storyValidator");
 const Spread = require("../models/spreadModel");
+const { deleteCacheByPattern, getCache, setCache } = require("../redis/redisHelpers");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response, next) => {
@@ -85,6 +86,7 @@ const generateWithAi = asyncHandler(async (request, response, next) => {
     // Save generated content to spreads
     const result = await Spread.bulkWrite(bulkOperations);
     if(result.matchedCount !== spreads.length) throw new ApiError(500, "Failed to save AI generated story content");
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Payload
     const payload = {
@@ -166,7 +168,8 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
         );
         
         // Commit transaction
-        await dbSession.commitTransaction();        
+        await dbSession.commitTransaction();
+        await deleteCacheByPattern(`books:${bookId}*`);
 
         // Payload
         const payload = {
@@ -195,78 +198,77 @@ const viewStoryContent = asyncHandler(async (request, response) => {
 
     // Sanitize book ID
     const { bookId } = request.params;
-    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");   
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+    const key = `books:${bookId}&viewStoryContent`;
 
-    // Find book
-    const [book] = await Book.aggregate([
-        // Match
-        { $match: { _id: convertToMongoId(bookId) } },
+    // Get from cache
+    let book = await getCache(key);
+    if(!book)
+    {
+        // Get from DB
+        [book] = await Book.aggregate([
+            // Match
+            { $match: { _id: convertToMongoId(bookId) } },
 
-        // Lookup spreads
-        {
-            $lookup: {
-                from: "spreads",
-                localField: "_id",
-                foreignField: "bookId",
-                as: "spreads",
-                pipeline: [{ $project: { mainLayoutName: 1, subLayoutDirection: 1, content: 1, illustrationURL: 1, 
-                illustrationSize: 1, textSize: 1, characterLimit: 1, textColor: 1, textBgColor: 1 } }]
+            // Lookup spreads
+            {
+                $lookup: {
+                    from: "spreads",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "spreads",
+                    pipeline: [{ $project: { mainLayoutName: 1, subLayoutDirection: 1, content: 1, illustrationURL: 1, 
+                    illustrationSize: 1, textSize: 1, characterLimit: 1, textColor: 1, textBgColor: 1 } }]
+                }
+            },
+
+            // Lookup regenerations
+            {
+                $lookup: {
+                    from: "regenerations",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "regeneration"
+                }
+            },
+
+            // Unwind
+            { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
+
+            // Projection
+            {
+                $project: {
+                    _id: 0,
+                    bookId: "$_id",
+                    userId: 1,
+                    title: 1,
+                    frontImage: 1,
+                    backImage: 1,
+                    authorName: 1,
+                    illustrationStyle: 1,
+                    mode: 1,
+                    spreadsCount: 1,
+                    spreads: 1,
+                    spreadSize: 1,
+                    status: 1,
+                    regenerations: "$regeneration.limit"
+                }
             }
-        },
+        ]);
+        if(!book) throw new ApiError(404, "Book not found");
+        await setCache(key, book, 20);
+    }
 
-        // Lookup regenerations
-        {
-            $lookup: {
-                from: "regenerations",
-                localField: "_id",
-                foreignField: "bookId",
-                as: "regeneration"
-            }
-        },
-
-        // Unwind
-        { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
-
-        // Projection
-        {
-            $project: {
-                _id: 1,
-                userId: 1,
-                title: 1,
-                frontImage: 1,
-                backImage: 1,
-                authorName: 1,
-                illustrationStyle: 1,
-                mode: 1,
-                spreadsCount: 1,
-                spreads: 1,
-                spreadSize: 1,
-                status: 1,
-                regenerations: "$regeneration.limit"
-            }
-        }
-    ]);
-    if(!book) throw new ApiError(404, "Book not found");
+    // Validate
     if(book.status === "pending") throw new ApiError(403, "This story cannot be viewed while the book is in a pending state");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to view this story content");
 
-    // Payload
-    const payload = {
-        bookId: book._id,
-        title: book.title,
-        authorName: book.authorName,
-        illustrationStyle: book.illustrationStyle,
-        mode: book.mode,
-        spreadsCount: book.spreadsCount || 0,
-        spreads: book.spreads || [],
-        spreadSize: book.spreadSize,
-        frontImage: book.frontImage,
-        backImage: book.backImage,
-        regenerations: book.regenerations
-    };
+    // Exclude properties
+    delete book.userId;
+    delete book.status;
 
     // Response
-    return response.status(200).json(new ApiResponse(200, payload, "Story content has been fetched"));
+    return response.status(200).json(new ApiResponse(200, book, "Story content has been fetched"));
 });
 
 // Refine story with AI
@@ -294,10 +296,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
     if(book.draftStage !== 1) throw new ApiError(403, "You cannot refine story content while the book is not in draft stage 1");
 
     // Validate regeneration
-    if(!regeneration) {
-        console.log(regeneration);
-        throw new ApiError(404, "Regenerations not found for this book")
-    };
+    if(!regeneration) throw new ApiError(404, "Regenerations not found for this book");
     if(regeneration.limit <= 0) throw new ApiError(403, "You've reached your story regeneration limit. Please purchase more to continue");
 
     // Get dynamic prompt for custom story refinement
@@ -331,6 +330,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
         { userId, bookId, limit: { $gt: 0 } },
         { $inc: { limit: -1 } },
     );
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Payload
     const payload = {
@@ -378,6 +378,7 @@ const useNewStoryVersion = asyncHandler(async (request, response) => {
 
     // Update spreads
     await Spread.bulkWrite(operations);
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Get updated story
     const getUpdatedStory = await Spread.find({ bookId }).select("content").sort({ _id: 1 });
@@ -427,6 +428,7 @@ const updateStory = asyncHandler(async (request, response) => {
 
     // Update spreads
     await Spread.bulkWrite(operations);
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, spreads, "Story has been updated successfully"));
@@ -465,6 +467,7 @@ const updateStoryWithSpreadTextSize = asyncHandler(async (request, response) => 
     spread.content = spreadContent;
     spread.textSize = textSize;
     await spread.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, spreadContent, "Story has been updated"));
@@ -497,6 +500,7 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
     // Save to db
     book.draftStage = 2;
     await book.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Book has been marked for draft stage 2"));
@@ -532,6 +536,7 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     // Save to db
     book.draftStage = 3;
     await book.save();
+    await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));

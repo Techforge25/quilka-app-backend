@@ -5,16 +5,23 @@ const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
 const { updateInfoValidator, updatePasswordValidator, 
 supportEmailValidator } = require("../validators/profileValidator");
-const sendEmail = require("../service/email");
 const emailQueue = require("../queues/emailQueue");
+const { getCache, setCache, deleteCacheByPattern } = require("../redis/redisHelpers");
 
 // View personal info
 const viewPersonalInfo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const key = `users:${userId}&viewPersonalInfo`;
 
-    // Fetch
-    const user = await User.findById(userId).select("-_id fullName email").lean();
-    if(!user) throw new ApiError(404, "User not found");
+    // Get from cache
+    let user = await getCache(key);
+    if(!user)
+    {
+        // Get from DB
+        user = await User.findById(userId).select("-_id fullName email").lean();
+        if(!user) throw new ApiError(404, "User not found");
+        await setCache(key, user, 20);
+    }
 
     // Repsonse
     return response.status(200).json(new ApiResponse(200, user, "Personal info has been fetched"));
@@ -30,6 +37,7 @@ const updateInfo = asyncHandler(async (request, response) => {
     // Update
     const update = await User.findByIdAndUpdate(userId, { $set: { fullName } });
     if(!update) throw new ApiError(500, "Failed to update personal info");
+    await deleteCacheByPattern(`users:${userId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, fullName, "Personal info has been updated"));
