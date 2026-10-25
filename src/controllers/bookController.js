@@ -129,7 +129,7 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
     }
 
     // Get from cache
-    const key = `books:fetchMyBooks:${userId}&page=${page}&limit=${limit}&search=${search}&status=${status}`;
+    const key = `books:${userId}:page:${page}:limit:${limit}:search:${search.toLowerCase()}:status:${status}`;
     let books = await getCache(key);
     if(!books)
     {
@@ -188,7 +188,7 @@ const fetchMyBooks = asyncHandler(async (request, response) => {
                 }
             }
         ], { page, limit });
-        await setCache(key, books, 20);
+        await setCache(key, books, 1);
     }
 
     // Validate
