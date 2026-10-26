@@ -3,7 +3,7 @@ const { authentication } = require("../middlewares/auth");
 const { createBookInCustom, createBookInAI, fetchMyBooks, 
 viewBook, viewBookContent, createFrontAndCoverImages, regenerateFrontAndCoverImages, 
 publishBook, fetchFrontAndBackImages, uploadManualFrontOrCoverImage,
-createFrontOrCoverImageWithCustomPrompt } = require("../controllers/bookController");
+createFrontOrCoverImageWithCustomPrompt, regenerateFrontOrCoverImageWithCustomPrompt } = require("../controllers/bookController");
 const { rateLimit } = require("../middlewares/rateLimit");
 
 // Router instance
@@ -28,9 +28,9 @@ bookRouter.route("/:bookId/frontAndCover")
 .post(rateLimit(1, 1), createFrontAndCoverImages, regenerateFrontAndCoverImages)
 .get(fetchFrontAndBackImages);
 
-// Create front or cover image with custom prompt
+// Create / Regenerate front or cover image with custom prompt
 bookRouter.route("/:bookId/custom/frontOrCover")
-.post(createFrontOrCoverImageWithCustomPrompt);
+.post(createFrontOrCoverImageWithCustomPrompt, regenerateFrontOrCoverImageWithCustomPrompt);
 
 // Publish book
 bookRouter.route("/:bookId/publish").patch(authentication, publishBook);
