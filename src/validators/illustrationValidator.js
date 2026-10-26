@@ -19,11 +19,11 @@ const generateWithCustomPromptValidator = joi.object({
 });
 
 // Regenerate illustration validator with custom prompt (FRONT & COVER IMAGES ONLY)
-const regenerateIllustrationValidator = joi.object({
+const customPromptValidatorForFrontAndCover = joi.object({
     type: joi.string().trim().required().valid("front", "cover").label("Type"),
-    customPrompt: joi.string().trim().min(20).max(500).optional().allow("", null).default(null).label("Custom Prompt"),
+    customPrompt: joi.string().trim().required().min(20).max(500).label("Custom Prompt"),
     referenceImageURL: joi.string().trim().uri().optional().allow("", null).default(null).label("Reference Image URL")
 });
 
 module.exports = { updateSpreadSublayoutValidator, uploadManualIllustrationValidator, 
-generateWithCustomPromptValidator, regenerateIllustrationValidator };
+generateWithCustomPromptValidator, customPromptValidatorForFrontAndCover };
