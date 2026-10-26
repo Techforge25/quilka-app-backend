@@ -186,14 +186,14 @@ const promptGuideForCoverImage = ({ authorName, content, illustrationStyle, size
     - Maintain a cohesive visual style, consistent characters, and a child-friendly atmosphere.
     - Ensure the artwork fills the entire canvas without borders, frames, margins, or mockup elements.
 
-    Canvas Size & Single-Page Orientation Logic:
+    Canvas Size & Single-Page Orientation Logic (STRICT & HIGHEST PRIORITY):
     - Full Spread Reference Size: ${size}.
     - Target Output Dimensions: Calculate the exact canvas ratio by taking the width of (${size}) DIVIDED BY 2, keeping the exact height of (${size}).
     - This represents ONE single back cover page ( strictly half the width of the full spread ${size}), rendered as a single-page layout.
     - 100% Edge-to-Edge Viewport: The illustration must completely fill the entire output image frame from edge to edge. Zero outer margins, zero padding, and zero background space outside the cover.
 
     Back Cover Layout & Graphic Design Elements:
-    - Story Blurb Block: Neatly framed, legible story summary text in the center area for the book: ${content}.
+    - Story Blurb Block: Neatly framed, legible story summary text in the center area for the book: ${content}. Only if the content sounds like a story. If it sounds like a custom prompt supplied by the user then ignore. And write your own quotes as a summary based on the prompt.
     - Author Credit: Neatly displayed credit near the bottom: "Written by ${authorName}".
     - Commercial Publishing Details: Include a small, clean rectangular white barcode/ISBN box neatly aligned in the bottom corner.
 
