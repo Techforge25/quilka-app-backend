@@ -11,7 +11,7 @@ const { getCache, setCache, deleteCacheByPattern } = require("../redis/redisHelp
 // View personal info
 const viewPersonalInfo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
-    const key = `users:${userId}&viewPersonalInfo`;
+    const key = `users:${userId}:viewPersonalInfo`;
 
     // Get from cache
     let user = await getCache(key);
