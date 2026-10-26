@@ -215,7 +215,8 @@ class LLMService
             const illustrationResponse = await this.ai.models.generateContent({
                 model: aiModel,
                 contents,
-                config: { responseModalities: ["IMAGE"] }
+                config: { responseModalities: ["IMAGE"] },
+                thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
             });
             if(!illustrationResponse) throw new ApiError(500, "Failed to generate illustration");
             
