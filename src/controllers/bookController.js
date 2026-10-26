@@ -558,7 +558,7 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
     }
     if(type === "cover" && book.backImage)
     {
-        request.payload = { type, customPrompt, referenceImageURL, previousReferenceImages };
+        request.payload = { type, customPrompt, referenceImageURL, previousReferenceImages, book };
         return next();
     }    
 
