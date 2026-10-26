@@ -205,7 +205,7 @@ const viewBook = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-    const key = `books:${bookId}&viewBook`;
+    const key = `books:${bookId}:viewBook`;
 
     // Get book from cache
     let book = await getCache(key);
@@ -277,7 +277,7 @@ const viewBookContent = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-    const key = `books:${bookId}&viewBookContent`;
+    const key = `books:${bookId}:viewBookContent`;
 
     // Get from cache
     let book = await getCache(key);
@@ -738,7 +738,7 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-    const key = `books:${bookId}&fetchFrontAndBackImages`;
+    const key = `books:${bookId}:fetchFrontAndBackImages`;
 
     // Get from cache
     let book = await getCache(key);

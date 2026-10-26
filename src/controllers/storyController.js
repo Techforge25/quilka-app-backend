@@ -199,7 +199,7 @@ const viewStoryContent = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-    const key = `books:${bookId}&viewStoryContent`;
+    const key = `books:${bookId}:viewStoryContent`;
 
     // Get from cache
     let book = await getCache(key);
