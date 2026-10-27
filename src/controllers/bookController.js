@@ -14,6 +14,7 @@ const Spread = require("../models/spreadModel");
 const Regeneration = require("../models/regenerationModel");
 const { customPromptValidatorForFrontAndCover } = require("../validators/illustrationValidator");
 const { getCache, setCache, deleteCacheByPattern } = require("../redis/redisHelpers");
+const { redis } = require("../redis/connection");
 
 // Create book in custom
 const createBookInCustom = asyncHandler(async (request, response, next) => {
@@ -205,12 +206,18 @@ const viewBook = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-    const key = `books:${bookId}:viewBook`;
 
     // Get book from cache
+    const key = `books:${bookId}:viewBook`;
     let book = await getCache(key);
     if(!book)
     {
+        // Track not found attempts
+        const ip = request.headers["x-real-ip"] || request.ip;
+        const notFoundKey = `NotFound:${ip.replaceAll(":", "-")}`;
+        const attempts = await getCache(notFoundKey);
+        if(attempts >= 3) throw new ApiError(429, "Too many requests for non-existing data");
+
         // Get from DB
         [book] = await Book.aggregate([
             // Match
@@ -256,11 +263,17 @@ const viewBook = asyncHandler(async (request, response) => {
                 }
             }
         ]);
-        if(!book) throw new ApiError(404, "Book not found");
-        await setCache(key, book, 20);        
+        if(!book)
+        {
+            // Track attempts
+            const attempts = await redis.incr(notFoundKey);
+            if(attempts === 1) await redis.expire(notFoundKey, 60 * 5);
+            throw new ApiError(404, "Book not found");
+        }
+        await setCache(key, book, 20);
     }
 
-    // Validate
+    // Authorization check
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to view this book");
 
     // Exclude property
@@ -277,12 +290,18 @@ const viewBookContent = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-    const key = `books:${bookId}:viewBookContent`;
 
     // Get from cache
+    const key = `books:${bookId}:viewBookContent`;
     let book = await getCache(key);
     if(!book)
     {
+        // Track not found attempts
+        const ip = request.headers["x-real-ip"] || request.ip;
+        const notFoundKey = `NotFound:${ip.replaceAll(":", "-")}`;
+        const attempts = await getCache(notFoundKey);
+        if(attempts >= 3) throw new ApiError(429, "Too many requests for non-existing data");
+
         // Get from DB
         [book] = await Book.aggregate([
             // Match
@@ -342,7 +361,13 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 }
             }
         ]);
-        if(!book) throw new ApiError(404, "Book content not found");
+        if(!book)
+        {
+            // Track attempts
+            const attempts = await redis.incr(notFoundKey);
+            if(attempts === 1) await redis.expire(notFoundKey, 60 * 5);
+            throw new ApiError(404, "Book content not found");
+        }
         await setCache(key, book, 20);
     }
 
@@ -738,22 +763,29 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-    const key = `books:${bookId}:fetchFrontAndBackImages`;
 
     // Get from cache
+    const key = `books:${bookId}:fetchFrontAndBackImages`;
     let book = await getCache(key);
-    if(book)
+    if(!book)
     {
-        if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to access this book");
-        if(book.status !== "draft") throw new ApiError(400, "Book must be in draft state to view front and back images");
-        if(book.draftStage !== 3) throw new ApiError(403, "Book must be in draft stage 3 to view front and back images");
-        return response.status(200).json(new ApiResponse(200, book, "Front and back images have been fetched!"));
-    }
+        // Track not found attempts
+        const ip = request.headers["x-real-ip"] || request.ip;
+        const notFoundKey = `NotFound:${ip.replaceAll(":", "-")}`;
+        const attempts = await getCache(notFoundKey);
+        if(attempts >= 3) throw new ApiError(429, "Too many requests for non-existing data");
 
-    // Find book
-    book = await Book.findById(bookId).select("userId status draftStage frontImage backImage");
-    if(!book) throw new ApiError(404, "Book not found");
-    await setCache(key, { frontImage: book.frontImage, backImage: book.backImage }, 20);
+        // Get from DB
+        book = await Book.findById(bookId).select("userId status draftStage frontImage backImage");
+        if(!book)
+        {
+            // Track attempts
+            const attempts = await redis.incr(notFoundKey);
+            if(attempts === 1) await redis.expire(notFoundKey, 60 * 5);
+            throw new ApiError(404, "Book not found");
+        }
+        await setCache(key, book, 20);
+    }
 
     // Validate
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to access this book");
