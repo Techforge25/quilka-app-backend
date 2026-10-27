@@ -15,6 +15,7 @@ const { startSession } = require("mongoose");
 const { customStoryRefinementValidator, updateStoryValidator, newStoryValidator } = require("../validators/storyValidator");
 const Spread = require("../models/spreadModel");
 const { deleteCacheByPattern, getCache, setCache } = require("../redis/redisHelpers");
+const { redis } = require("../redis/connection");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response, next) => {
@@ -199,12 +200,18 @@ const viewStoryContent = asyncHandler(async (request, response) => {
     // Sanitize book ID
     const { bookId } = request.params;
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
-    const key = `books:${bookId}:viewStoryContent`;
 
     // Get from cache
+    const key = `books:${bookId}:viewStoryContent`;
     let book = await getCache(key);
     if(!book)
     {
+        // Track not found attempts
+        const ip = request.headers["x-real-ip"] || request.ip;
+        const notFoundKey = `NotFound:${ip.replaceAll(":", "-")}`;
+        const attempts = await getCache(notFoundKey);
+        if(attempts >= 3) throw new ApiError(429, "Too many requests for non-existing data");
+
         // Get from DB
         [book] = await Book.aggregate([
             // Match
@@ -255,7 +262,13 @@ const viewStoryContent = asyncHandler(async (request, response) => {
                 }
             }
         ]);
-        if(!book) throw new ApiError(404, "Book not found");
+        if(!book)
+        {
+            // Track attempts
+            const attempts = await redis.incr(notFoundKey);
+            if(attempts === 1) await redis.expire(notFoundKey, 60 * 5);            
+            throw new ApiError(404, "Book not found");            
+        }
         await setCache(key, book, 20);
     }
 
