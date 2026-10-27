@@ -1,375 +1,261 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Signup Email</title>
-  </head>
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
 
-  <body style="margin: 0; padding: 0; background: #ffffff">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td align="center">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Quilka Stories — Verify your email</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;1,400;1,700&amp;family=Inter:wght@400;700&amp;display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
 
-          <table
-            role="presentation"
-            width="512"
-            cellpadding="0"
-            cellspacing="0"
-            style="background: #ffffff"
-          >
+    table {
+      border-spacing: 0;
+    }
 
-            <!-- HEADER (SAME) -->
-            <tr>
-              <td align="center" style="background: #b4b4b433; padding: 10px">
-                <img
-                  src="https://res.cloudinary.com/dh5msgx99/image/upload/v1780900492/Logo_Image__1_-removebg-preview_u9xupw.png"
-                  width="79"
-                  height="25"
-                  alt="Logo"
-                  style="display: block"
-                />
-              </td>
-            </tr>
+    td {
+      padding: 0;
+    }
 
-            <!-- CONTENT -->
-            <tr>
-              <td style="padding: 15px">
+    a {
+      color: #9d8aaa;
+    }
 
-                <!-- TITLE (CHANGED FOR SIGNUP) -->
-                <table width="100%" role="presentation">
-                  <tr>
-                    <td style="padding-top: 30px; font-family: Inter, Arial, sans-serif">
-                      <p style="font-size: 14px; font-weight: 400; color: #556179; margin: 0;">
-                        Hi User,
-                      </p>
+    @media only screen and (max-width: 480px) {
+      .outer-padding {
+        padding: 12px 10px !important;
+      }
 
-                      <p
-                        style="
-                          font-size: 18px;
-                          font-family: 'Open Sans', Arial, sans-serif;
-                          font-weight: 600;
-                          color: #22252b;
-                          margin-top: 8px;
-                          line-height: 28px;
-                        "
-                      >
-                        Welcome to 360 <br />
-                        Global Marketplace
-                      </p>
-                    </td>
-                  </tr>
-                </table>
+      .content-padding {
+        padding-left: 22px !important;
+        padding-right: 22px !important;
+      }
 
-                <!-- DIVIDER (SAME) -->
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout: fixed;">
-                  <tr>
-                    <td valign="middle">
-                      <div style="border-top: 1px solid #e3e7ee;"></div>
-                    </td>
-                    
-                    <td width="50" align="center" valign="middle">
-                      <img src="https://res.cloudinary.com/dh5msgx99/image/upload/v1780915066/Background_g8vvaf.svg" width="8" height="8" style="display: block;" />
-                    </td>
-                    
-                    <td valign="middle">
-                      <div style="border-top: 1px solid #e3e7ee;"></div>
-                    </td>
-                  </tr>
-                </table>                
+      .footer-padding {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+      }
 
-                <!-- SIGNUP MESSAGE (CHANGED) -->
-                <table width="100%" role="presentation">
-                  <tr>
-                    <td
-                      style="
-                        padding-top: 20px;
-                        font-family: Inter, Arial, sans-serif;
-                      "
-                    >
-                      <p
-                        style="
-                          font-size: 14px;
-                          color: #556179;
-                          line-height: 20px;
-                          margin: 0;
-                        "
-                      >
-                        Thank you for signing up with <b>360 Global Marketplace</b>.
-                        Your account has been successfully created.
-                      </p>
+      .brand-name {
+        font-size: 20px !important;
+      }
 
-                      <p
-                        style="
-                          font-size: 14px;
-                          color: #556179;
-                          line-height: 20px;
-                          margin-top: 12px;
-                        "
-                      >
-                        To get started, please verify your email address using the OTP below:
-                      </p>
+      .brand-subtitle {
+        font-size: 9px !important;
+        letter-spacing: 1px !important;
+      }
 
-                      <p
-                        style="
-                          text-align: center;
-                          font-size: 16px;
-                          font-weight: 600;
-                          color: #8a38f5;
-                          margin-top: 15px;
-                        "
-                      >
-                        Your Verification Code:
-                      </p>
-                    </td>
-                  </tr>
-                </table>
+      .code-panel {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+      }
 
-              
-                <table align="center" role="presentation" style="margin-top: 0px">
-                  <tr>
-                    <td
-                      style="
-                        border: 1px solid #e3e7ee;
-                        border-radius: 12px;
-                        padding: 16px;
-                        text-align: center;
-                      "
-                    >
-                      <p
-                        style="
-                          font-size: 22px;
-                          font-weight: 600;
-                          color: #240457;
-                          font-family: 'Open Sans', Arial, sans-serif;
-                          margin: 0;
-                        "
-                      >
-                        {{accountVerificationToken}}
-                      </p>
+      .security-label {
+        font-size: 10px !important;
+        letter-spacing: 1px !important;
+      }
 
-                      <table align="center" style="margin-top: 10px">
-                        <tr>
-                          <td>
-                            <img
-                              src="https://res.cloudinary.com/dh5msgx99/image/upload/v1780915040/Vector_5_xrtoxg.svg"
-                              width="10"
-                              height="11"
-                            />
-                          </td>
-                          <td
-                            style="
-                              font-size: 12px;
-                              color: #556179;
-                              padding-left: 5px;
-                              font-family: Inter, Arial, sans-serif;
-                            "
-                          >
-                            (Don't share this code with anyone)
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
+      .otp {
+        font-size: 32px !important;
+        letter-spacing: 6px !important;
+      }
+    }
+  </style>
+</head>
 
-          
-                <table
-                  width="100%"
-                  role="presentation"
-                  style="
-                    margin-top: 35px;
-                    background: #b4b4b433;
-                    border-radius: 12px;
-                    padding-top: 16px;
-                    padding-bottom: 16px;
-                    padding-right: 16px;
-                  "
-                >
-                  <tr>
-                   <td
-                      width="50"
-                      valign="top"
-                      align="center"
-                      style="padding-left: 16px"
-                      
-                    >
-                      <table
-                        role="presentation"
-                        cellpadding="0"
-                        cellspacing="0"
-                      >
-                        <tr>
-                          <td
-                            style="
-                                    width: 40px;
-                                    height: 40px;
-                                    background-color: #240457;
-                                    border-radius: 50%;
-                                    text-align: center;
-                                    vertical-align: middle;
-                                  "
-                          >
-                             <img
-                                    src="https://res.cloudinary.com/dh5msgx99/image/upload/v1780903304/Vector_1_fnnmko.svg"
-                                    width="16"
-                                    height="16"
-                                    style="display: block; margin: 0 auto"
-                                  />
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
+<body
+  style="margin:0;padding:0;width:100%;background-color:#1d1d1d;color:#574e5e;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1d1d1d"
+    style="width:100%;background-color:#1d1d1d;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+    <tr>
+      <td class="outer-padding" align="center" style="padding:12px 24px 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff"
+          style="width:100%;max-width:520px;background-color:#ffffff;border:1px solid #e5d8ef;border-radius:21px;border-spacing:0;box-shadow:0 14px 25px rgba(77,32,112,0.22);">
+          <tr>
+            <td height="9" bgcolor="#60509e"
+              style="height:9px;font-size:0;line-height:9px;background-color:#60509e;border-radius:20px 20px 0 0;">
+              &nbsp;</td>
+          </tr>
+          <tr>
+            <td class="content-padding" style="padding:28px 36px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:0 0 24px;border-bottom:1px solid #eee4f3;">
+                    <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="43" valign="middle" style="width:43px;padding-right:4px;">
+                          <table role="presentation" width="32" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="center">
+                                <img style="width: auto; height:40px;"
+                                  src="https://res.cloudinary.com/ndlremz2/image/upload/v1792656308/Quilka-logo.png" />
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                        <td valign="middle" align="left">
+                          <div class="brand-name"
+                            style="font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:21px;line-height:27px;font-weight:bold;color:#5d4ca0;">
+                            Quilka Stories</div>
+                          <div class="brand-subtitle"
+                            style="padding-top:3px;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:10px;line-height:15px;font-weight:bold;letter-spacing:1.1px;color:#514956;">
+                            AI STORYBOOK CREATOR</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top:29px;">
+                    <table role="presentation" align="center" width="88" cellpadding="0" cellspacing="0" border="0"
+                      style="width:88px;">
+                      <tr>
+                        <td width="86" height="86" valign="middle" align="center" bgcolor="#f8edfc"
+                          style="width:86px;height:86px;background-color:#f8edfc;border:1px solid #dcc4eb;border-radius:22px;box-shadow:inset 0 1px 3px rgba(91,75,154,0.08);">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="right" height="15"
+                                style="height:15px;line-height:15px;font-family:Georgia,serif;font-size:13px;color:#665172;">
+                                ☆<span style="font-size:9px;">✧</span></td>
+                            </tr>
+                            <tr>
+                              <td align="center" height="54"
+                                style="height:54px;font-family:'Segoe UI Emoji','Apple Color Emoji',sans-serif;font-size:36px;line-height:54px;">
+                                📖</td>
+                            </tr>
+                            <tr>
+                              <td align="left" height="15"
+                                style="height:15px;font-size:14px;line-height:15px;color:#e5af21;">✧</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top:17px;">
+                    <h1
+                      style="margin:0;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:23px;line-height:31px;font-weight:bold;color:#131a2e;">
+                      Verify Your Email <span
+                        style="font-family:'Inter','Apple Color Emoji',sans-serif;font-size:21px;">✨</span>
+                    </h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center"
+                    style="padding-top:8px;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#6050a3;overflow-wrap:break-word;word-break:break-word;">
+                    Hi {{fullName}},</td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top:4px;">
+                    <table role="presentation" width="100%" align="center" cellpadding="0" cellspacing="0" border="0"
+                      style="max-width:300px;">
+                      <tr>
+                        <td align="center"
+                          style="font-family:'Inter',Arial,Helvetica,sans-serif;font-size:13px;line-height:18px;color:#766087;">
+                          Use the verification code below to complete your sign-up:</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top:36px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f1eaf5"
+                      style="width:100%;background-color:#f1eaf5;border:2px dashed #6a56ab;border-radius:15px;">
+                      <tr>
+                        <td class="code-panel" align="center" style="padding:21px 20px 22px;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td class="security-label" align="center"
+                                style="font-family:'Inter',Arial,Helvetica,sans-serif;font-size:11px;line-height:16px;font-weight:bold;letter-spacing:1.3px;color:#6050a3;">
+                                <span style="letter-spacing:0;">🛡</span> SINGLE-USE SECURITY CODE
+                              </td>
+                            </tr>
+                            <tr>
+                              <td align="center" style="padding-top:8px;">
+                                <table role="presentation" width="230" align="center" cellpadding="0" cellspacing="0"
+                                  border="0" style="width:100%;max-width:230px;">
+                                  <tr>
+                                    <td class="otp" align="center" bgcolor="#ffffff"
+                                      style="padding:10px 10px 10px 18px;background-color:#ffffff;border:1px solid #e3cef5;border-radius:11px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:34px;line-height:41px;font-weight:bold;letter-spacing:8px;color:#43186b;box-shadow:0 5px 12px rgba(83,48,104,0.05);">
+                                      {{accountVerificationToken}}
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td align="center"
+                                style="padding-top:13px;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:11px;line-height:18px;color:#574e5e;">
+                                <span style="font-size:17px;vertical-align:-1px;color:#c69b24;">◷</span>&nbsp; This code
+                                will expire in <span style="font-weight:bold;color:#c69b24;">10 minutes</span>.
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center"
+                    style="border-top:1px solid #eee4f3;padding-top:17px;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:12.5px;line-height:18px;color:#574e5e;">
+                    If you didn't request this code, you can safely ignore this email. Someone may have typed your email
+                    address by mistake.</td>
+                </tr>
+                <tr>
+                  <td align="center"
+                    style="padding-top:23px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:13px;line-height:20px;font-style:italic;color:#74528c;">
+                    With love,</td>
+                </tr>
+                <tr>
+                  <td align="center"
+                    style="padding-top:1px;padding-bottom:37px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:14px;line-height:21px;font-weight:bold;color:#43186b;">
+                    The Quilka Stories Team</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="footer-padding" align="center" bgcolor="#faf5fc"
+              style="padding:18px 36px 18px;background-color:#faf5fc;border-top:1px solid #eee3f3;border-radius:0 0 20px 20px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center"
+                    style="font-family:'Inter',Arial,Helvetica,sans-serif;font-size:11px;line-height:17px;color:#81698f;">
+                    Crafting bedtime memories and timeless children's storybooks with AI magic.</td>
+                </tr>
+                <tr>
+                  <td align="center"
+                    style="padding-top:7px;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:10.5px;line-height:17px;color:#9d8aaa;">
+                    <a href="{{helpCenterUrl}}" style="color:#9d8aaa;text-decoration:underline;white-space:nowrap;">Help
+                      Center</a>&nbsp;&nbsp; • &nbsp;&nbsp;<a href="{{privacyPolicyUrl}}"
+                      style="color:#9d8aaa;text-decoration:underline;white-space:nowrap;">Privacy Policy</a>&nbsp;&nbsp;
+                    • &nbsp;&nbsp;<a href="{{termsOfServiceUrl}}"
+                      style="color:#9d8aaa;text-decoration:underline;white-space:nowrap;">Terms of Service</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center"
+                    style="padding-top:12px;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:9px;line-height:15px;color:#ac9ab8;">
+                    © 2026 Quilka Stories Inc. All rights reserved.</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
 
-                    <td width="5" style="font-size: 0; line-height: 0">
-                      &nbsp;
-                    </td>
-
-                    <td
-                      style="
-                        font-size: 14px;
-                        color: #22252b;
-                        line-height: 22.5px;
-                        font-family: Inter, Arial, sans-serif;
-                      "
-                    >
-                      Your account is now created successfully. You can explore
-                      businesses, connect with partners, and start using the platform
-                      after email verification.
-                    </td>
-                  </tr>
-                </table>
-
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top: 30px; table-layout: fixed;">
-                  <tr>
-                    <td valign="middle" align="center">
-                      <div style="border-top: 1px solid #e3e7ee; width: 100%;"></div>
-                    </td>
-
-                    <td width="60" align="center" valign="middle">
-                      <table role="presentation" cellpadding="0" cellspacing="0">
-                        <tr>
-                          <td style="width: 40px; height: 40px; background-color: #240457; border-radius: 50%; text-align: center; vertical-align: middle;">
-                            <img src="https://res.cloudinary.com/dh5msgx99/image/upload/v1780903337/Vector_2_cysckl.svg" width="16" height="16" alt="" style="display: block; margin: 0 auto;" />
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-
-                    <td valign="middle" align="center">
-                      <div style="border-top: 1px solid #e3e7ee; width: 100%;"></div>
-                    </td>
-                  </tr>
-                </table>
-             
-                   <table
-                  width="100%"
-                  role="presentation"
-                  style="margin-top: 40px"
-                >
-                  <tr>
-                    <td
-                      width="50"
-                      valign="top"
-                      align="center"
-                      style="padding-left: 16px"
-                    >
-                      <table
-                        role="presentation"
-                        cellpadding="0"
-                        cellspacing="0"
-                      >
-                        <tr>
-                          <td
-                            style="
-                              width: 40px;
-                              height: 40px;
-                              background-color: #b4b4b433;
-                              border-radius: 50%;
-                              border: 1px solid #240457;
-                              text-align: center;
-                              vertical-align: middle;
-                            "
-                          >
-                            <img
-                              src="https://res.cloudinary.com/dh5msgx99/image/upload/v1780915021/Vector_4_zplkpu.svg"
-                              width="16"
-                              height="16"
-                              style="display: block; margin: 0 auto"
-                            />
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-
-                    <td width="5" style="font-size: 0; line-height: 0">
-                      &nbsp;
-                    </td>
-
-                    <td
-                      style="
-                        font-size: 14px;
-                        color: #768299;
-                        line-height: 22.5px;
-                        font-family: Inter, Arial, sans-serif;
-                      "
-                    >
-                       If you did not create this account, please ignore this email.
-                      No action is required from your side.
-                    </td>
-                  </tr>
-                </table>
-
-                <!-- SIGNATURE (SAME) -->
-                <table
-                  width="100%"
-                  role="presentation"
-                  style="margin-top: 50px; margin-bottom: 20px"
-                >
-                  <tr>
-                    <td style="font-family: Inter, Arial, sans-serif">
-                      <p style="margin: 0; font-size: 14px; color: #22252b">
-                        Thank you
-                      </p>
-                      <p
-                        style="
-                          margin: 5px 0;
-                          font-size: 14px;
-                          font-weight: 700;
-                          color: #240457;
-                        "
-                      >
-                        360 Global Marketplace
-                      </p>
-                      <p style="margin: 0; font-size: 14px; color: #768299">
-                        Building innovative digital solutions for the future.
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-
-              </td>
-            </tr>
-
-            <!-- FOOTER (SAME) -->
-            <tr>
-              <td align="center" style="background: #b4b4b433; padding: 15px">
-                <p
-                  style="
-                    margin: 0;
-                    font-size: 16px;
-                    color: #22252b;
-                    font-family: Inter, Arial, sans-serif;
-                  "
-                >
-                  © 2025 360GMP. All rights reserved.
-                </p>
-              </td>
-            </tr>
-
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
 </html>

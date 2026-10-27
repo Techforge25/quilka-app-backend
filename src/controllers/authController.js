@@ -45,7 +45,7 @@ const signup = asyncHandler(async (request, response) => {
     await setCache(getOTPKey(email), accountVerificationToken, 10);
 
     // Send email in backgrouund
-    await emailQueue.add("signupOTP", { email, accountVerificationToken });
+    await emailQueue.add("signupOTP", { fullName, email, accountVerificationToken });
 
     // Response
     return response.status(200)
@@ -69,7 +69,7 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     await setCache(getOTPKey(email), accountVerificationToken, 10);
 
     // Send email in backgrouund
-    await emailQueue.add("signupOTP", { email, accountVerificationToken }); 
+    await emailQueue.add("signupOTP", { fullName: user.fullName, email, accountVerificationToken }); 
 
     // Response
     return response.status(200).json(new ApiResponse(200, { userId: user._id }, "We have re-sent you an OTP to your email"));         

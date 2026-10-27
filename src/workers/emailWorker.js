@@ -9,22 +9,19 @@ const worker = new Worker("emailQueue", async (job) => {
     // Send OTP Email
     if(job.name === "signupOTP")
     {
-        const { email, accountVerificationToken } = job.data;
+        const { fullName, email, accountVerificationToken } = job.data;
               
         // Get HTML template
-        // const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/signupOTPEmail.html"), "utf-8");
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/signupOTPEmail.html"), "utf-8");
 
         // Replace placeholders
-        // const filledHtml = html
-        // .replaceAll('{{email}}', email)
-        // .replaceAll('{{accountVerificationToken}}', accountVerificationToken);     
+        const filledHtml = html
+        .replaceAll('{{fullName}}', fullName)
+        .replaceAll('{{email}}', email)
+        .replaceAll('{{accountVerificationToken}}', accountVerificationToken);     
 
         // Execute
-        const result = await sendEmail(email, "Your verification code", `
-            Your verification code is ${accountVerificationToken}. 
-            This code is for verifying your account. If you did not request this code, you can safely ignore this email.
-            Please do not reply to this automated message.
-        `);
+        const result = await sendEmail(email, "Account Activation Code", filledHtml);
         if(!result) throw new Error("Failed to send OTP email");
     }
 
