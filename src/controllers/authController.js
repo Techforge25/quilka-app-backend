@@ -110,7 +110,7 @@ const login = asyncHandler(async (request, response) => {
     const { email, password } = validatePayload(userLoginValidator, request.body) || {};
 
     // Get IP (IPv4)
-    const ip = request.headers["x-real-ip"];
+    const ip = request.headers["x-real-ip"] || request.ip;
     const key = `failedLoginAttempts:${ip}`;
 
     // Check total attempts
