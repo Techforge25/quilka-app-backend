@@ -39,7 +39,7 @@ class LLMService
         }
         catch(error)
         {
-            throw new ApiError(403, error.message);
+            throw error;
         }
     }
 
@@ -81,7 +81,7 @@ class LLMService
         }
         catch(error)
         {
-            throw new ApiError(500, error.message);
+            throw error;
         }
     }
 
@@ -122,7 +122,7 @@ class LLMService
         }
         catch(error)
         {
-            throw new ApiError(500, error.message);
+            throw error;
         }
     }
 
@@ -184,7 +184,7 @@ class LLMService
         }
         catch(error)
         {
-            throw new ApiError(500, error.message);
+            throw error;
         }
     }
 
@@ -234,7 +234,7 @@ class LLMService
         }
         catch(error)
         {
-            throw new ApiError(500, error.message);
+            throw error;
         }        
     }
 }

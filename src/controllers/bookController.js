@@ -397,9 +397,9 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
 
     // Validate
     if(!book) throw new ApiError(404, "Book not found");
-    if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate front and cover images for this book");
-    if(book.status !== "draft") throw new ApiError(400, "Front and cover images can only be generated in draft state");
-    if(book.draftStage !== 3) throw new ApiError(403, "Book should be in draft stage 3 before generating front and cover images");
+    // if(String(userId) !== String(book.userId)) throw new ApiError(403, "You are not authorized to generate front and cover images for this book");
+    // if(book.status !== "draft") throw new ApiError(400, "Front and cover images can only be generated in draft state");
+    // if(book.draftStage !== 3) throw new ApiError(403, "Book should be in draft stage 3 before generating front and cover images");
 
     // Story content
     const storyContent = spreads.map(spread => spread.content.trim()).join(" ");
