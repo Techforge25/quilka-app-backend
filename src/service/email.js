@@ -17,9 +17,11 @@ const sendEmail = async (to, subject, body, attachments = []) => {
         from: GMAIL,
         to: to,
         subject: subject,
-        html: body,
-        attachments: attachments
+        html: body
     }
+
+    // Add attachment (Optional)
+    if(attachments.length) mailOptions.attachments = attachments;
 
     try 
     {

@@ -66,9 +66,8 @@ const worker = new Worker("emailQueue", async (job) => {
         // Replace placeholders
         const filledHtml = html
         .replaceAll('{{email}}', email)
-        .replaceAll('{{subject}}', subject)
         .replaceAll('{{category}}', category)
-        .replaceAll('{{body}}', body);
+        .replaceAll('{{message}}', body);
 
         // Send email to admin
         await sendEmail("fullstackdev556@gmail.com", subject, filledHtml, attachments);

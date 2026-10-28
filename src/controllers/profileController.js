@@ -76,7 +76,7 @@ const sendSupportEmail = asyncHandler(async (request, response) => {
     const { email, subject, category, body } = validatePayload(supportEmailValidator, request.body) || {};
 
     // Get attachment
-    const attachment = request.file; 
+    const attachment = request.file;
 
     // Add in queue
     await emailQueue.add("sendSupportEmail", { email, subject, category, body, attachment });
