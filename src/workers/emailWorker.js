@@ -25,21 +25,22 @@ const worker = new Worker("emailQueue", async (job) => {
         if(!result) throw new Error("Failed to send OTP email");
     }
 
-    // Send Reset password email
-    if(job.name === "sendResetPasswordEmail")
+    // Send forgot password email
+    if(job.name === "sendForgotPasswordEmail")
     {
-        const { email, resetPasswordOTP } = job.data;
+        const { fullName, email, resetPasswordOTP } = job.data;
 
         // Get HTML template
-        // const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/forgotPasswordEmail.html"), "utf-8");
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/forgotPasswordEmail.html"), "utf-8");
 
         // Replace placeholders
-        // const filledHtml = html
-        // .replaceAll('{{email}}', email)
-        // .replaceAll('{{resetPasswordOTP}}', resetPasswordOTP); 
+        const filledHtml = html
+        .replaceAll('{{fullName}}', fullName)
+        .replaceAll('{{email}}', email)
+        .replaceAll('{{resetPasswordOTP}}', resetPasswordOTP);
 
         // Execute
-        const result = await sendEmail(email, "Password Reset Request", `Your reset password code is ${resetPasswordOTP}`);
+        const result = await sendEmail(email, "Password Reset Request", filledHtml);
         if(!result) throw new Error("Failed to send password reset email");
     }
 

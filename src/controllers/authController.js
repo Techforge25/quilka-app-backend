@@ -185,7 +185,7 @@ const forgotPassword = asyncHandler(async (request, response) => {
     await setCache(getResetPasswordKey(email), resetPasswordOTP, 10); // 10 minutes
 
     // Send email in backgrouund
-    await emailQueue.add("sendResetPasswordEmail", { email, resetPasswordOTP });
+    await emailQueue.add("sendForgotPasswordEmail", { fullName: user.fullName, email, resetPasswordOTP });
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Password reset token has been sent to your email"));
