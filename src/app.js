@@ -6,7 +6,7 @@ const { corsOptions, port } = require("./constants");
 const compression = require("compression");
 const errorHandler = require("./middlewares/errorHandler");
 const passport = require("passport");
-// require("./service/social-auth");
+require("./service/social-auth");
 const helmet = require("helmet");
 const { limitRequest } = require("./middlewares/rateLimit");
 const apolloServer = require("./graphql");
