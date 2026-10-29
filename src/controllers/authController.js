@@ -248,7 +248,7 @@ const googleLogin = asyncHandler(async (request, response) => {
     const oneTimeCode = crypto.randomUUID();
     
     // Set on redis
-    await setCache(`auth:google:code:${oneTimeCode}`, String(user._id), 1);
+    await setCache(`auth:google:code:${oneTimeCode}`, user._id, 1);
 
     // Redirect
     return response.status(302).redirect(`quilka:///auth/callback?code=${encodeURIComponent(oneTimeCode)}`);
@@ -263,9 +263,10 @@ const googleLoginCodeExchange = asyncHandler(async (request, response) => {
     // Retrieve and delete from cache
     const userId = await getAndDeleteCache(`auth:google:code:${oneTimeCode}`);
     if(!userId) throw new ApiError(401, "Your Google login code is invalid, expired, or has already been used. Please sign in again");
+    if(!isValidObjectId(userId)) throw new ApiError(400, "Signature Failed! Invalid User ID");
 
     // Find user
-    const user = await User.findById(userId).lean();
+    const user = await User.findById(userId);
     if(!user) throw new ApiError(404, "User not found");
     if(user.status !== "active") throw new ApiError(403, "Your account is not eligible for login");
 
