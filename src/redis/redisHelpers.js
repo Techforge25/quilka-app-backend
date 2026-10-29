@@ -70,4 +70,20 @@ const deleteCacheByPattern = async (pattern) => {
     }
 };
 
-module.exports = { setCache, getCache, deleteCache, deleteCacheByPattern };
+// Get and delete cache
+const getAndDeleteCache = async (key) => {
+    if(!key) return null;
+
+    try 
+    {
+        const data = await redis.getdel(key);
+        return data ? JSON.parse(data) : null;
+    } 
+    catch(error) 
+    {
+        console.log("Failed to get and delete cache", error.message);
+        return null;
+    }
+};
+
+module.exports = { setCache, getCache, deleteCache, deleteCacheByPattern, getAndDeleteCache };

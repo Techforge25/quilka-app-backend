@@ -8,7 +8,7 @@ const generateCode = require("../utils/generateCode");
 const validatePayload = require("../utils/validatePayload");
 const { userSignupValidator, userLoginValidator, verifyOtpValidator, resendOtpValidator, 
 forgotPasswordValidator, verifyResetPasswordOTPValidator, resetPasswordValidator } = require("../validators/userAuthValidator");
-const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
+const { setCache, getCache, deleteCache, getAndDeleteCache } = require("../redis/redisHelpers");
 const { getOTPKey, getResetPasswordKey, getUserSessionKey } = require("../utils/redisKeys");
 const emailQueue = require("../queues/emailQueue");
 const { redis } = require("../redis/connection");
@@ -264,7 +264,7 @@ const googleLoginCodeExchange = asyncHandler(async (request, response) => {
     if(!oneTimeCode) throw new ApiError(400, "One-time code is missing");
 
     // Retrieve and delete from cache
-    const userId = await redis.getdel(`auth:google:code:${oneTimeCode}`);
+    const userId = await getAndDeleteCache(`auth:google:code:${oneTimeCode}`);
     if(!userId) throw new ApiError(401, "Your Google login code is invalid, expired, or has already been used. Please sign in again");
 
     // Find user
