@@ -87,8 +87,8 @@ const verifyOTP = asyncHandler(async (request, response) => {
     const user = await User.findById(userId);
     if(!user) throw new ApiError(404, "User not found!");
 
-    // Get OTP from redis
-    const otp = await getCache(getOTPKey(user.email));
+    // Get and delete OTP from redis
+    const otp = await getAndDeleteCache(getOTPKey(user.email));
 
     // Validate
     if(!otp) throw new ApiError(400, "Invalid OTP");
@@ -97,9 +97,6 @@ const verifyOTP = asyncHandler(async (request, response) => {
     // Save to db
     user.status = "active";
     await user.save();
-
-    // Delete from redis
-    await deleteCache(getOTPKey(user.email));
 
     // Response
     return response.status(200).json(new ApiResponse(200, user.email, "Your account has been activated"));
