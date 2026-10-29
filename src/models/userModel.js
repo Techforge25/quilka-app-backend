@@ -1,13 +1,14 @@
 const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
+const ApiError = require("../utils/ApiError");
 
 // Schema
 const userSchema = new Schema({
-    gid: { type: String, trim: true, unqiue: true },
+    gid: { type: String, trim: true, unique: true },
     fullName: { type: String, trim: true, required: true },
     email: { type: String, trim: true, lowercase: true, required: true, unique: [true, "This email has already been registered"] },
-    password: { type: String, trim: true, required: true },
+    password: { type: String, trim: true, required: function() { return !this.googleAccount } },
     status: { type: String, trim: true, enum: ["pending", "active", "flagged"], default: "pending" },
     role: { type: String, trim: true, enum: ["user"], default: "user" },
 
@@ -22,9 +23,9 @@ userSchema.pre("save", async function() {
     {
         this.password = await bcrypt.hash(this.password, 10);
     } 
-    catch(error) 
+    catch(error)
     {
-        console.log("Failed to hash user password", error.message);
+        throw new ApiError("Failed to hash user password", error.message);
     }
 });
 
