@@ -8,7 +8,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const passport = require("passport");
 require("./service/social-auth");
 const helmet = require("helmet");
-const { limitRequest } = require("./middlewares/rateLimit");
+const { rateLimit } = require("./middlewares/rateLimit");
 const apolloServer = require("./graphql");
 const { expressMiddleware } = require("@as-integrations/express5");
 const { authentication } = require("./middlewares/auth");
@@ -23,7 +23,7 @@ async function startApp()
     // Middlewares
     app.use(helmet());
     app.use(cors(corsOptions));
-    app.use(limitRequest({ maxRequests: 100 }));
+    app.use(rateLimit(100, 1));
     app.set("trust proxy", 1);
     app.use(cookieParser(process.env.COOKIE_PARSER_SECRET));
     app.use(express.urlencoded({ extended: true, limit: "50kb" }));
