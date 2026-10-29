@@ -12,6 +12,7 @@ const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
 const { getOTPKey, getResetPasswordKey, getUserSessionKey } = require("../utils/redisKeys");
 const emailQueue = require("../queues/emailQueue");
 const { redis } = require("../redis/connection");
+const crypto = require("crypto");
 
 // Signup
 const signup = asyncHandler(async (request, response) => {
@@ -241,28 +242,42 @@ const resetPassword = asyncHandler(async (request, response) => {
 
 // Login as gmail
 const googleLogin = asyncHandler(async (request, response) => {
-    if(!request.user) throw new ApiError(404, "User not found");
+    // Validate
+    const user = request.user;
+    if(!user) throw new ApiError(401, "Google authentication failed");
+    if(user.status !== "active") throw new ApiError(403, "Your account is not eligible for login");
 
-    // Get user id
-    const userId = request.user._id;
-    if(!userId) throw new ApiError(400, "Failed to fetch User ID on google login");
+    // Generate one-time code
+    const oneTimeCode = crypto.randomUUID();
+    
+    // Set on redis
+    await setCache(`auth:google:code:${oneTimeCode}`, String(user._id), 1);
 
-    // Find and validate user
-    const user = await User.findById(userId);
-    if(!user) throw new ApiError(400, "Failed to fetch user on google login!");
-    if(user.status === "pending")
-    {
-        return response.status(400)
-        .json(new ApiResponse(400, { otpRequired: true, userId }, "Your account is not activated yet. Please verify your identity via OTP."));
-    }
-    if(user.status === "flagged") throw new ApiError(400, "Your account has been flagged. Please contact support for assistance.");
+    // Redirect
+    return response.status(302).redirect(`quilka:///auth/callback?code=${encodeURIComponent(oneTimeCode)}`);
+});
+
+// Google login code exchange
+const googleLoginCodeExchange = asyncHandler(async (request, response) => {
+    // Sanitize payload
+    const { oneTimeCode } = request.body || {};
+    if(!oneTimeCode) throw new ApiError(400, "One-time code is missing");
+
+    // Retrieve and delete from cache
+    const userId = await redis.getdel(`auth:google:code:${oneTimeCode}`);
+    if(!userId) throw new ApiError(401, "Your Google login code is invalid, expired, or has already been used. Please sign in again");
+
+    // Find user
+    const user = await User.findById(userId).lean();
+    if(!user) throw new ApiError(404, "User not found");
+    if(user.status !== "active") throw new ApiError(403, "Your account is not eligible for login");
 
     // Generate access token
     const accessToken = await generateAccessToken(user);
-    if(!accessToken) throw new ApiError(400, "Failed to generate access token");
+    if(!accessToken) throw new ApiError(500, "Failed to generate access token");
 
-    // Redirect
-    return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));    
+    // Response
+    return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
 });
 
 // User auth check
@@ -291,4 +306,5 @@ const authStatus = asyncHandler(async (request, response) => {
 });
 
 module.exports = { signup, login, logout, forgotPassword, resendOTPToken, 
-verifyOTP, verifyResetpasswordOTP, resetPassword, googleLogin, authMe, authStatus };
+verifyOTP, verifyResetpasswordOTP, resetPassword, googleLogin, googleLoginCodeExchange, 
+authMe, authStatus };

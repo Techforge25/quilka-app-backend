@@ -1,9 +1,10 @@
 const { Router } = require("express");
 const { signup, login, logout, forgotPassword, verifyResetpasswordOTP, 
-resetPassword, googleLogin, verifyOTP, resendOTPToken, authMe, authStatus } = require("../controllers/authController");
+resetPassword, googleLogin, googleLoginCodeExchange, verifyOTP, resendOTPToken, 
+authMe, authStatus } = require("../controllers/authController");
 const { authentication } = require("../middlewares/auth");
-const passport = require("passport");
-const { limitRequest } = require("../middlewares/rateLimit");
+const { rateLimit } = require("../middlewares/rateLimit");
+const { googleAuthInit, googleAuthCallback } = require("../service/social-auth");
 
 // Router instance
 const authRouter = Router();
@@ -13,7 +14,7 @@ authRouter.route("/signup").post(signup);
 
 // Resend OTP token
 authRouter.route("/resend-otp")
-.post(limitRequest({ minutes: 1, maxRequests: 3, message: "Please wait 1 minute for next otp request" }), resendOTPToken);
+.post(rateLimit(3, 1), resendOTPToken);
 
 // Account activation
 authRouter.route("/verify-otp").post(verifyOTP);
@@ -40,8 +41,8 @@ authRouter.route("/verifyResetPasswordOTP").post(verifyResetpasswordOTP);
 authRouter.route("/resetPassword").post(resetPassword);
 
 // Login as google
-authRouter.route('/google').get(passport.authenticate('google', { scope: ['profile', 'email'], prompt: "select_account" }));
-authRouter.route('/google/callback').get(passport.authenticate('google', 
-{ session: false, failureRedirect: `frontendDomain/login` }), googleLogin);
+authRouter.route('/google').get(googleAuthInit);
+authRouter.route('/google/callback').get(googleAuthCallback, googleLogin);
+authRouter.route('/google/exchange').post(rateLimit(10, 1), googleLoginCodeExchange);
 
 module.exports = authRouter;
