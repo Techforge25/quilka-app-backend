@@ -51,8 +51,9 @@ const updatePassword = asyncHandler(async (request, response) => {
     const { currentPassword, newPassword } = validatePayload(updatePasswordValidator, request.body) || {};
 
     // Find user
-    const user = await User.findById(userId).select("password");
+    const user = await User.findById(userId).select("password gid");
     if(!user) throw new ApiError(404, "User not found");
+    if(!user.gid) throw new ApiError(403, "You cannot update password for Google-Linked accounts");
 
     // Check current password
     const compare = await user.matchPassword(currentPassword);
