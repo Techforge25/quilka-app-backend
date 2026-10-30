@@ -3,17 +3,30 @@ const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
 
+// Password condition
+function isPasswordRequired()
+{
+    return !this.googleAccount && !this.appleAccount;
+}
+
 // Schema
 const userSchema = new Schema({
+    // Google & Apple account IDs
     gid: { type: String, trim: true, unique: true, required: function() { return this.googleAccount } },
+    appleId: { type: String, trim: true, required: function() { return this.appleAccount } },
+
+    // Basic info
     fullName: { type: String, trim: true, required: true },
     email: { type: String, trim: true, lowercase: true, required: true, unique: [true, "This email has already been registered"] },
-    password: { type: String, trim: true, required: function() { return !this.googleAccount } },
+    password: { type: String, trim: true, required: isPasswordRequired },
+
+    // Security and access
     status: { type: String, trim: true, enum: ["pending", "active", "flagged"], default: "pending" },
     role: { type: String, trim: true, enum: ["user"], default: "user" },
 
-    // Google account flag
-    googleAccount: { type: Boolean, default: false }
+    // Social account flags
+    googleAccount: { type: Boolean, default: false },
+    appleAccount: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // Hash password
