@@ -32,7 +32,7 @@ authRouter.route("/status").get(authStatus);
 authRouter.route("/logout").get(authentication, logout);
 
 // Forgot password
-authRouter.route("/forgotPassword").post(forgotPassword);
+authRouter.route("/forgotPassword").post(rateLimit(5, 10, "Too many password reset requests!"), forgotPassword);
 
 // Reset password otp verification
 authRouter.route("/verifyResetPasswordOTP").post(verifyResetpasswordOTP);

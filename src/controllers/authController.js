@@ -166,16 +166,11 @@ const forgotPassword = asyncHandler(async (request, response) => {
     // Get validated payload
     const { email } = validatePayload(forgotPasswordValidator, request.body) || {};
 
-    // Track attempts
-    const key = `forgotPasswordEmailAttempts:${email}`;
-    const attempts = await redis.incr(key);
-    if(attempts === 1) await redis.expire(key, 60 * 10); // 10 minutes
-    if(attempts > 5) throw new ApiError(429, "Too many password reset requests. You can request up to 5 resets within 10 minutes. Please try again later");
-
     // Find user
     const user = await User.findOne({ email });
     if(!user) throw new ApiError(404, "User not found associated with this email");
-    if(user.googleAccount) throw new ApiError(403, "OTP verification is not available for Google-linked accounts.");
+    if(user.gid) throw new ApiError(403, "OTP verification is not available for Google-linked accounts.");
+    if(user.appleId) throw new ApiError(403, "OTP verification is not available for Apple-linked accounts.");
 
     // Generate a reset password OTP
     const { code: resetPasswordOTP } = generateCode(6);
@@ -220,9 +215,10 @@ const resetPassword = asyncHandler(async (request, response) => {
     if(resetToken !== resetPasswordOTP) throw new ApiError(400, "Your password reset session has expired. Please try again");    
 
     // Find user associated with this email
-    const user = await User.findOne({ email }).select("_id password googleAccount");
+    const user = await User.findOne({ email }).select("_id password gid appleId");
     if(!user) throw new ApiError(404, "User not found associated with this email");
-    if(user.googleAccount) throw new ApiError(403, "Reset password feature is not available for Google-linked accounts.");
+    if(user.gid) throw new ApiError(403, "Reset password feature is not available for Google-linked accounts.");
+    if(user.appleId) throw new ApiError(403, "Reset password feature is not available for Apple-linked accounts.");
 
     // Prevent restting password as old password
     const matchPassword = await user.matchPassword(newPassword);

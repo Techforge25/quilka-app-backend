@@ -21,7 +21,7 @@ const rateLimit = (totalAttempts = 10, minutes = 1, message = "Too many requests
         // Get IP (IPv4) & API url
         const ip = request.headers["x-real-ip"] || request.ip;
         const url = request.url;
-        const key = `rateLimit:${ip}:${url}`;
+        const key = `rateLimit:${ip.replaceAll(":", "-")}:${url}`;
 
         // Attempts
         const attempts = await redis.incr(key);
@@ -32,7 +32,7 @@ const rateLimit = (totalAttempts = 10, minutes = 1, message = "Too many requests
             const ttl = await redis.ttl(key);
             const remainingMinutes = Math.ceil(ttl / 60);
 
-            throw new ApiError(429, `${message} Please try again after ${remainingMinutes} minutes`);
+            throw new ApiError(429, `${message} Please try again after ${remainingMinutes} ${remainingMinutes > 1 ? "minutes" : "minute"}.`);
         }
 
         return next();
