@@ -37,7 +37,6 @@ async (accessToken, refreshToken, profile, done) => {
             gid,
             fullName,
             email,
-            password: `${Date.now()}${crypto.randomUUID()}`,
             googleAccount: true,
             status: 'active'
         });
