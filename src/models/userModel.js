@@ -29,6 +29,14 @@ const userSchema = new Schema({
     appleAccount: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// Social authentication indexes
+userSchema.index({ gid: 1 }, { unique: true, sparse: true });
+userSchema.index({ appleId: 1 }, { unique: true, sparse: true });
+
+/* 
+    Note: Sparse unique indexes allow multiple documents to omit the field while enforcing uniqueness for indexed values only. 
+*/
+
 // Hash password
 userSchema.pre("save", async function() {
     if(!this.isModified("password")) return;
