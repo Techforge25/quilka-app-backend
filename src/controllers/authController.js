@@ -7,12 +7,14 @@ const asyncHandler = require("../utils/asyncHandler");
 const generateCode = require("../utils/generateCode");
 const validatePayload = require("../utils/validatePayload");
 const { userSignupValidator, userLoginValidator, verifyOtpValidator, resendOtpValidator, 
-forgotPasswordValidator, verifyResetPasswordOTPValidator, resetPasswordValidator } = require("../validators/userAuthValidator");
+forgotPasswordValidator, verifyResetPasswordOTPValidator, resetPasswordValidator, 
+appleLoginValidator} = require("../validators/userAuthValidator");
 const { setCache, getCache, deleteCache, getAndDeleteCache } = require("../redis/redisHelpers");
 const { getOTPKey, getResetPasswordKey, getUserSessionKey } = require("../utils/redisKeys");
 const emailQueue = require("../queues/emailQueue");
 const { redis } = require("../redis/connection");
 const crypto = require("crypto");
+const { verifyAppleIdentityToken } = require("../service/apple-auth");
 
 // Signup
 const signup = asyncHandler(async (request, response) => {
@@ -278,6 +280,66 @@ const googleLoginCodeExchange = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
 });
 
+// Initialize Apple authentication
+const appleAuthInit = asyncHandler(async (request, response) => {
+    // Generate nonce
+    const nonce = crypto.randomUUID();
+
+    // Store nonce in Redis for 5 minutes
+    await setCache(`auth:apple:nonce:${nonce}`, "pending", 5);
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { nonce }, "Apple authentication initialized"));
+});
+
+// Login as Apple
+const appleLogin = asyncHandler(async (request, response) => {
+    // Sanitize payload
+    const { identityToken, nonce, fullName } = validatePayload(appleLoginValidator, request.body) || {};
+
+    // Verify Apple identity token
+    const applePayload = await verifyAppleIdentityToken(identityToken, nonce);
+
+    // Retrieve and delete nonce from Redis
+    const storedNonce = await getAndDeleteCache(`auth:apple:nonce:${nonce}`);
+    if(!storedNonce) throw new ApiError(401, "Apple authentication request is invalid, expired, or has already been used");
+
+    // Extract properties
+    const appleId = applePayload.sub;
+    const email = typeof applePayload.email === "string" ? applePayload.email.trim().toLowerCase() : "";
+
+    // Validate apple provided fields
+    if(!appleId || !email) throw new ApiError(400, "Apple did not provide the required fields");
+
+    // Find existing Apple account
+    let user = await User.findOne({ appleId });
+    if(!user)
+    {
+        // Check whether email is already registered
+        user = await User.findOne({ email });
+        if(user) throw new ApiError(409, "An account with this email already exists. Please sign in using your existing login method");
+
+        // Create new user
+        user = await User.create({
+            appleId,
+            fullName,
+            email,
+            appleAccount: true,
+            status: "active"
+        });
+    }
+
+    // Check account status
+    if(user.status !== "active") throw new ApiError(403, "Your account is not eligible for login");
+
+    // Generate access token
+    const accessToken = await generateAccessToken(user);
+    if(!accessToken) throw new ApiError(500, "Failed to generate access token");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
+});
+
 // User auth check
 const authMe = asyncHandler(async (request, response) => {
     const { _id: userId } = request.user;
@@ -305,4 +367,4 @@ const authStatus = asyncHandler(async (request, response) => {
 
 module.exports = { signup, login, logout, forgotPassword, resendOTPToken, 
 verifyOTP, verifyResetpasswordOTP, resetPassword, googleLogin, googleLoginCodeExchange, 
-authMe, authStatus };
+appleAuthInit, appleLogin, authMe, authStatus };

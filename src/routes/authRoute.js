@@ -5,6 +5,7 @@ authMe, authStatus } = require("../controllers/authController");
 const { authentication } = require("../middlewares/auth");
 const { rateLimit } = require("../middlewares/rateLimit");
 const { googleAuthInit, googleAuthCallback } = require("../service/social-auth");
+const { appleAuthInit, appleLogin } = require("../controllers/authController");
 
 // Router instance
 const authRouter = Router();
@@ -13,8 +14,7 @@ const authRouter = Router();
 authRouter.route("/signup").post(signup);
 
 // Resend OTP token
-authRouter.route("/resend-otp")
-.post(rateLimit(3, 1), resendOTPToken);
+authRouter.route("/resend-otp").post(rateLimit(3, 1), resendOTPToken);
 
 // Account activation
 authRouter.route("/verify-otp").post(verifyOTP);
@@ -44,5 +44,10 @@ authRouter.route("/resetPassword").post(resetPassword);
 authRouter.route('/google').get(googleAuthInit);
 authRouter.route('/google/callback').get(googleAuthCallback, googleLogin);
 authRouter.route('/google/exchange').post(rateLimit(10, 1), googleLoginCodeExchange);
+
+// Login as Apple
+authRouter.route("/apple")
+.get(rateLimit(10, 1), appleAuthInit)
+.post(rateLimit(10, 1), appleLogin);
 
 module.exports = authRouter;
