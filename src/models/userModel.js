@@ -12,7 +12,7 @@ function isPasswordRequired()
 // Schema
 const userSchema = new Schema({
     // Google & Apple account IDs
-    gid: { type: String, trim: true, unique: true, required: function() { return this.googleAccount } },
+    gid: { type: String, trim: true, required: function() { return this.googleAccount } },
     appleId: { type: String, trim: true, required: function() { return this.appleAccount } },
 
     // Basic info
