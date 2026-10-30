@@ -54,5 +54,12 @@ const resetPasswordValidator = joi.object({
     confirmPassword: joi.string().valid(joi.ref("newPassword")).required().label("Confirm Password")   
 });
 
+// Apple login validator
+const appleLoginValidator = joi.object({
+    identityToken: joi.string().trim().required().min(2).max(1000).label("Apple identity token"),
+    nonce: joi.string().trim().required().min(3).max(500).label("Apple authentication nonce"),
+    fullName: joi.string().trim().required().min(2).max(100).label("Full name")
+});
+
 module.exports = { userSignupValidator, userLoginValidator, verifyOtpValidator, resendOtpValidator,
-forgotPasswordValidator, verifyResetPasswordOTPValidator, resetPasswordValidator };
+forgotPasswordValidator, verifyResetPasswordOTPValidator, resetPasswordValidator, appleLoginValidator };
