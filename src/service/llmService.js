@@ -16,7 +16,7 @@ class LLMService
         this.ai = new GoogleGenAI({ apiKey: this.GEMINI_API_KEY });
     }
 
-    // Generate story text
+    // Generate / Regenerate story text
     async generateStoryText(dynamicPrompt, aiModel = "gemini-3.5-flash")
     {
         try
@@ -42,19 +42,28 @@ class LLMService
         }
     }
 
-    // Generate story illustration
-    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
+    // Generate / Regenerate story illustration
+    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", previousReferenceImagesURLs = [], userProvidedReference = null)
     { 
         try
         {
             // Initialize contents with text
             const contents = [{ text: dynamicPrompt }];
-            if(referenceImagesURLs.length)
+
+            // Add user provided reference image url if provided
+            if(userProvidedReference)
             {
-                for(const referenceImageUrl of referenceImagesURLs)
+                contents.push({ fileData: { mimeType: "image/jpg", fileUri: userProvidedReference } });
+            }
+            else
+            {
+                if(previousReferenceImagesURLs.length)
                 {
-                    // Append reference image url
-                    contents.push({ fileData: { mimeType: "image/jpg", fileUri: referenceImageUrl } });
+                    for(const previousReferenceImageUrl of previousReferenceImagesURLs)
+                    {
+                        // Append reference image url
+                        contents.push({ fileData: { mimeType: "image/jpg", fileUri: previousReferenceImageUrl } });
+                    }
                 }
             }
 
@@ -84,45 +93,7 @@ class LLMService
         }
     }
 
-    // Generate illustration with custom prompt
-    async generateIllustrationWithCustomPrompt(dynamicPrompt, referenceImageURL = null, aiModel = "gemini-3.1-flash-image")
-    {
-        try
-        {
-            // Initialize contents
-            const contents = [{ text: dynamicPrompt }];
-
-            // Fetch reference image if exist
-            if(referenceImageURL) contents.push({ fileData: { mimeType: "image/jpg", fileUri: referenceImageURL } });
-
-            // Generate illustration
-            const illustrationResponse = await this.ai.models.generateContent({
-                model: aiModel,
-                contents,
-                config: { responseModalities: ["IMAGE"] },
-                thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
-            });
-            if(!illustrationResponse) throw new ApiError(500, "Failed to generate illustration with custom prompt");
-            
-            // Find generated image
-            const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
-            if(!imagePart?.inlineData?.data) throw new ApiError(500, "Inline data is missing");
-
-            // Download base64 image
-            const imageBuffer = Buffer.from(imagePart.inlineData.data, "base64");
-            if(!imageBuffer) throw new ApiError(500, "Failed to download base64 image");
-
-            // Extract token counts
-            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
-            return { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };            
-        }
-        catch(error)
-        {
-            throw error;
-        }
-    }
-
-    // Generate front and cover images
+    // Generate / Regenerate front and cover images
     async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
     {
         try
@@ -184,25 +155,25 @@ class LLMService
         }
     }
 
-    // Regenerate illustration
-    async regenerateIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", previousReferenceImagesURLs = [], referenceImageURL = null)
+    // Generate / Regenerate front or cover image with custom prompt
+    async generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, aiModel = "gemini-3.1-flash-image", previousReferenceImagesURLs = [], userProvidedReference = null)
     {
         try
         {
             // Initialize contents
             const contents = [{ text: dynamicPrompt }];
 
-            // Fetch reference image if exist
-            if(referenceImageURL)
+            // Add user provided reference image if provided
+            if(userProvidedReference)
             {
-                contents.push({ fileData: { mimeType: "image/jpg", fileUri: referenceImageURL } });
+                contents.push({ fileData: { mimeType: "image/jpg", fileUri: userProvidedReference } });
             }
             else
             {
-                for(const preveiousReferenceImageURL of previousReferenceImagesURLs)
+                for(const previousReferenceImageURL of previousReferenceImagesURLs)
                 {
                     // Append previous images
-                    contents.push({ fileData: { mimeType: "image/jpg", fileUri: preveiousReferenceImageURL } });
+                    contents.push({ fileData: { mimeType: "image/jpg", fileUri: previousReferenceImageURL } });
                 }
             }
 

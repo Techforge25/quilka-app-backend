@@ -222,7 +222,7 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     });
 
     // Generate illustration
-    const illustrationResponse = await llm.generateIllustrationWithCustomPrompt(prompt, referenceImageURL, "gemini-3.1-flash-image");
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", [], referenceImageURL);
     const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary
@@ -264,7 +264,7 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
     });
 
     // Generate illustration
-    const illustrationResponse = await llm.generateIllustrationWithCustomPrompt(prompt, referenceImageURL, "gemini-3.1-flash-image");
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", [], referenceImageURL);
     const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary

@@ -599,7 +599,7 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
     }
 
     // LLM Response
-    const llmResponse = await llm.regenerateIllustration(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
+    const llmResponse = await llm.generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
     const { imageBuffer } = llmResponse;
 
     // Upload to cloudinary from illustration pipeline
@@ -662,7 +662,7 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
     }
 
     // LLM Response
-    const llmResponse = await llm.regenerateIllustration(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
+    const llmResponse = await llm.generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
     const { imageBuffer } = llmResponse;
 
     // Upload to cloudinary from illustration pipeline
