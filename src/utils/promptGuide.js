@@ -138,7 +138,59 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
 
         Strict Constraints:
         - Completely borderless, full-bleed, edge-to-edge canvas.
-        - Absolutely NO text, NO dialogue, NO typography, NO sound effect lettering, and NO speech bubbles. Pure visual illustration only.`;
+        - Absolutely NO text, NO dialogue, NO typography, NO sound effect lettering, and NO speech bubbles. Pure visual illustration only.
+
+        HIGHEST PRIORITY: STRICT CHARACTER CONSISTENCY
+
+        Character consistency is the most important requirement throughout the entire story. Every recurring character MUST maintain exactly the same visual identity across all illustrations.
+
+        1. PRESERVE EVERY CHARACTER DETAIL:
+        - Maintain the exact same face, facial structure, eye shape, eye color, nose, mouth, ears, and other distinctive features.
+        - Maintain the same skin, fur, feather, or body color.
+        - Maintain the same hairstyle, hair color, hair texture, length, and overall appearance.
+        - Maintain the same clothing, outfit colors, patterns, shoes, and accessories.
+        - Maintain the same body proportions, size, age, and recognizable physical characteristics.
+        - Preserve every distinctive detail that makes a character recognizable.
+
+        2. REFERENCE IMAGES ARE THE VISUAL SOURCE OF TRUTH:
+        If reference images are provided through fileData, carefully examine and analyze EVERY reference image before generating the illustration.
+
+        - Pay close attention to even the smallest visual details of each character.
+        - Identify each recurring character and accurately preserve their appearance.
+        - Carefully observe colors, facial features, clothing, textures, proportions, hairstyles, accessories, and other distinctive characteristics.
+        - Reproduce the established character designs as accurately as possible.
+        - Do not casually reinterpret, redesign, simplify, or alter any character.
+        - Never ignore visual details from the reference images simply because they are not explicitly mentioned in the current story text.
+
+        3. NO UNNECESSARY APPEARANCE CHANGES:
+        A character's appearance MUST NOT change between illustrations.
+        For example, a red teddy bear must remain red, a brown horse must remain brown, and a character wearing a blue sweater must continue wearing the same blue sweater.
+
+        Never randomly change a character's colors, clothes, hairstyle, facial features, body proportions, or other established characteristics.
+
+        4. STORY-REQUIRED CHANGES ONLY:
+        Changes to a character's appearance are permitted ONLY when they are explicitly necessary for the story.
+        For example, if the story specifically requires a character to wear a raincoat, costume, or different outfit, make only that necessary change.
+        All other established visual characteristics MUST remain unchanged.
+        Once a temporary story-required change is no longer relevant, return to the character's established original appearance.
+
+        5. DISTINGUISH CHARACTERS FROM SCENE CHANGES:
+        Characters may change their pose, facial expression, body position, movement, and interaction according to the story.
+        Backgrounds, environments, lighting, weather, camera angles, and composition may also change.
+        However, these changes MUST NEVER alter a character's established visual identity.
+
+        6. HANDLE MISSING DETAILS CAREFULLY:
+        If a character's appearance is not explicitly described in the current story text, use the reference images and previously established character appearance as the definitive guide.
+        Never invent a different appearance or assume that an unmentioned detail can be changed freely.
+
+        7. FINAL CONSISTENCY CHECK:
+        Before generating each illustration, compare every recurring character against the provided reference images and their established appearance.
+        Verify that their face, colors, clothing, hairstyle, proportions, and distinctive features remain consistent.
+        Correct any unintended differences before producing the final illustration.
+
+        FINAL RULE:
+        Visual consistency is more important than creative reinterpretation. You may creatively adapt the scene, composition, poses, and expressions, but NEVER sacrifice character identity or established appearance for artistic variation.
+    `;
         return data;
 };
 

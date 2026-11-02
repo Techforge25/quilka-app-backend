@@ -19,9 +19,6 @@ const spreadSchema = new Schema({
         aspectRatio: { type: String, trim: true }
     },
 
-    // Reference image chunk
-    base64Image: { type: String, trim: true, default: null },
-
     // Sizes and limit
     textSize: { type: String, trim: true, enum: allowedTextSizes, default: "Small" },
     characterLimit: { type: Number },
