@@ -44,18 +44,18 @@ class LLMService
     }
 
     // Generate story illustration
-    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesChunks = [])
-    {
+    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
+    { 
         try
         {
             // Initialize contents with text
             const contents = [{ text: dynamicPrompt }];
-            if(referenceImagesChunks.length)
+            if(referenceImagesURLs.length)
             {
-                for(const referenceImage of referenceImagesChunks)
+                for(const referenceImageUrl of referenceImagesURLs)
                 {
-                    // Append image chunk
-                    contents.push({ inlineData: { mimeType: "image/jpg", data: referenceImage } });
+                    // Append reference image url
+                    contents.push({ fileData: { mimeType: "image/jpg", fileUri: referenceImageUrl } });
                 }
             }
 
@@ -94,17 +94,14 @@ class LLMService
             const contents = [{ text: dynamicPrompt }];
 
             // Fetch reference image if exist
-            if(referenceImageURL)
-            {
-                const base64Image = await getReferenceImage(referenceImageURL);
-                contents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
-            }
+            if(referenceImageURL) contents.push({ fileData: { mimeType: "image/jpg", fileUri: referenceImageURL } });
 
             // Generate illustration
             const illustrationResponse = await this.ai.models.generateContent({
                 model: aiModel,
                 contents,
-                config: { responseModalities: ["IMAGE"] }
+                config: { responseModalities: ["IMAGE"] },
+                thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
             });
             if(!illustrationResponse) throw new ApiError(500, "Failed to generate illustration with custom prompt");
             

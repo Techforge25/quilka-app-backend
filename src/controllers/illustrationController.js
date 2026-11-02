@@ -27,8 +27,8 @@ const createIllustration = asyncHandler(async (request, response, next) => {
     // Find book, spread and reference images urls  
     const [book, spread, referenceImages] = await Promise.all([
         Book.findById(bookId).select("userId status draftStage illustrationStyle").lean(),
-        Spread.findById(spreadId).select("content characterLimit illustrationSize illustrationURL base64Image"),
-        Spread.find({ bookId }).select("-_id base64Image").lean()
+        Spread.findById(spreadId).select("content characterLimit illustrationSize illustrationURL"),
+        Spread.find({ bookId, _id: { $ne: spreadId } }).select("-_id illustrationURL").lean()
     ]);
 
     // Validate
@@ -38,12 +38,13 @@ const createIllustration = asyncHandler(async (request, response, next) => {
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation with AI cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be created in draft stage 2");
 
+    // Get previous images if exists
+    const previousReferenceImages = referenceImages.filter(ref => ref.illustrationURL).map(url => url.illustrationURL);    
+
     // Pass to regeneration controller
     if(spread.illustrationURL)
     {
-        request.book = book;
-        request.spread = spread;
-        request.referenceImages = referenceImages;
+        request.payload = { book, spread, previousReferenceImages };
         return next();
     }
 
@@ -55,13 +56,8 @@ const createIllustration = asyncHandler(async (request, response, next) => {
         aspectRatio: spread.illustrationSize.aspectRatio
     });
 
-    // Get previous images if exists
-    const previousReferenceImages = referenceImages.filter(ref => ref.base64Image).map(url => url.base64Image);
-
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
-
-    // Extract generated image buffer
     const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary
@@ -71,18 +67,13 @@ const createIllustration = asyncHandler(async (request, response, next) => {
     // Get secure URL
     const illustrationURL = uploadResult.secure_url;
 
-    // Fetch reference image
-    const base64Image = await getReferenceImage(illustrationURL);
-    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
-
     // Save to db
     spread.illustrationURL = illustrationURL;
-    spread.base64Image = base64Image;
     await spread.save();
     await deleteCacheByPattern(`books:${bookId}*`);
 
     // Response
-    return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been created"));
+    return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been generated"));
 });
 
 // Regenerate illustration
@@ -90,7 +81,7 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
     // Get metadata
     const userId = request.user._id;
     const { bookId } = request.params;
-    const { book, spread, referenceImages } = request;
+    const { book, spread, previousReferenceImages } = request.payload;
 
     // Find regenerations
     const regeneration = await Regeneration.findOne({ userId, bookId });
@@ -107,13 +98,8 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
         aspectRatio: spread.illustrationSize.aspectRatio
     });
 
-    // Get previous images if exists
-    const previousReferenceImages = referenceImages.filter(ref => ref.base64Image).map(url => url.base64Image);
-
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
-
-    // Extract generated image buffer
     const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary
@@ -123,10 +109,6 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
     // Get secure URL
     const illustrationURL = uploadResult.secure_url;
 
-    // Fetch reference image
-    const base64Image = await getReferenceImage(illustrationURL);
-    if(!base64Image) throw new ApiError(500, "Failed to process reference image");
-
     // Start transactional queries
     const dbSession = await startSession();
     try
@@ -135,7 +117,6 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
 
         // Save to db
         spread.illustrationURL = illustrationURL;
-        spread.base64Image = base64Image;
         await spread.save({ session: dbSession });
         await Regeneration.updateOne(
             { userId, bookId, limit: { $gt: 0 } },
@@ -216,7 +197,7 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     // Find book and spread
     const [book, spread] = await Promise.all([
         Book.findById(bookId).select("userId status draftStage illustrationStyle").lean(),
-        Spread.findById(spreadId).select("illustrationSize illustrationURL base64Image")
+        Spread.findById(spreadId).select("illustrationSize illustrationURL")
     ]);
 
     // Validate
@@ -229,9 +210,7 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     // Pass to rengerate with custom prompt controller
     if(spread.illustrationURL)
     {
-        request.book = book;
-        request.spread = spread;
-        request.payload = { customPrompt, referenceImageURL };
+        request.payload = { book, spread, customPrompt, referenceImageURL };
         return next();
     }
 
@@ -245,8 +224,6 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
 
     // Generate illustration
     const illustrationResponse = await llm.generateIllustrationWithCustomPrompt(prompt, referenceImageURL, "gemini-3.1-flash-image");
-
-    // Extract generated image buffer
     const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary
@@ -254,15 +231,10 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     if(!uploadResult) throw new ApiError(500, "Failed to upload to cloudinary");
     
     // Get secure URL
-    const illustrationURL = uploadResult.secure_url;
-
-    // Fetch reference image
-    const base64Image = await getReferenceImage(illustrationURL);
-    if(!base64Image) throw new ApiError(500, "Failed to process reference image");        
+    const illustrationURL = uploadResult.secure_url;  
 
     // Save to db
     spread.illustrationURL = illustrationURL;
-    spread.base64Image = base64Image;
     await spread.save();
     await deleteCacheByPattern(`books:${bookId}*`);
 
@@ -275,8 +247,7 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
     // Get metadata
     const userId = request.user._id;
     const { bookId } = request.params;
-    const { book, spread } = request;
-    const { customPrompt, referenceImageURL } = request.payload;
+    const { book, spread, customPrompt, referenceImageURL } = request.payload;
 
     // Find regenerations
     const regeneration = await Regeneration.findOne({ userId, bookId });
@@ -295,8 +266,6 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
 
     // Generate illustration
     const illustrationResponse = await llm.generateIllustrationWithCustomPrompt(prompt, referenceImageURL, "gemini-3.1-flash-image");
-
-    // Extract generated image buffer
     const { imageBuffer } = illustrationResponse;
 
     // Upload to cloudinary
@@ -304,11 +273,7 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
     if(!uploadResult) throw new ApiError(500, "Failed to upload to cloudinary");
     
     // Get secure URL
-    const illustrationURL = uploadResult.secure_url;
-
-    // Fetch reference image
-    const base64Image = await getReferenceImage(illustrationURL);
-    if(!base64Image) throw new ApiError(500, "Failed to process reference image");     
+    const illustrationURL = uploadResult.secure_url;    
 
     // Start transactional queries
     const dbSession = await startSession();
@@ -318,7 +283,6 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
 
         // Save to db
         spread.illustrationURL = illustrationURL;
-        spread.base64Image = base64Image;
         await spread.save({ session: dbSession });
         await Regeneration.updateOne(
             { userId, bookId, limit: { $gt: 0 } },
