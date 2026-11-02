@@ -1,6 +1,5 @@
 const { GoogleGenAI } = require("@google/genai");
 const ApiError = require("../utils/ApiError");
-const { getReferenceImage } = require("../utils/getReferenceImage");
 
 // LLM Service
 class LLMService
@@ -71,9 +70,9 @@ class LLMService
             const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
             if(!imagePart?.inlineData?.data) throw new ApiError(500, "Inline data is missing");
 
-            // Convert base64 image to buffer
+            // Download base64 image
             const imageBuffer = Buffer.from(imagePart.inlineData.data, "base64");
-            if(!imageBuffer) throw new ApiError(500, "Failed to convert base64 image to buffer");
+            if(!imageBuffer) throw new ApiError(500, "Failed to download base64 image");
 
             // Extract token counts
             const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
@@ -109,9 +108,9 @@ class LLMService
             const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
             if(!imagePart?.inlineData?.data) throw new ApiError(500, "Inline data is missing");
 
-            // Convert base64 image to buffer
+            // Download base64 image
             const imageBuffer = Buffer.from(imagePart.inlineData.data, "base64");
-            if(!imageBuffer) throw new ApiError(500, "Failed to convert base64 image to buffer");
+            if(!imageBuffer) throw new ApiError(500, "Failed to download base64 image");
 
             // Extract token counts
             const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
@@ -124,20 +123,20 @@ class LLMService
     }
 
     // Generate front and cover images
-    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesChunks = [])
+    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
     {
         try
         {
             // Initialize front and cover contents with text
             const frontImageContents = [{ text: frontPrompt }];
             const coverImageContents = [{ text: coverPrompt }];
-            if(referenceImagesChunks.length)
+            if(referenceImagesURLs.length)
             {
-                for(const referenceImage of referenceImagesChunks)
+                for(const referenceImageURL of referenceImagesURLs)
                 {
-                    // Append image chunks
-                    frontImageContents.push({ inlineData: { mimeType: "image/jpg", data: referenceImage } });
-                    coverImageContents.push({ inlineData: { mimeType: "image/jpg", data: referenceImage } });
+                    // Append image references
+                    frontImageContents.push({ fileData: { mimeType: "image/jpg", fileUri: referenceImageURL } });
+                    coverImageContents.push({ fileData: { mimeType: "image/jpg", fileUri: referenceImageURL } });
                 }
             }
 
@@ -168,11 +167,11 @@ class LLMService
             if(!frontImagePart?.inlineData?.data) throw new ApiError(500, "Inline data of front image is missing");
             if(!coverImagePart?.inlineData?.data) throw new ApiError(500, "Inline data of cover image is missing");
 
-            // Convert base64 images to buffer
+            // Download base64 images
             const frontImageBuffer = Buffer.from(frontImagePart.inlineData.data, "base64");
             const coverImageBuffer = Buffer.from(coverImagePart.inlineData.data, "base64");
-            if(!frontImageBuffer) throw new ApiError(500, "Failed to convert base64 front image to buffer");
-            if(!coverImageBuffer) throw new ApiError(500, "Failed to convert base64 cover image to buffer");
+            if(!frontImageBuffer) throw new ApiError(500, "Failed to download base64 front image");
+            if(!coverImageBuffer) throw new ApiError(500, "Failed to download base64 cover image");
 
             // Extract token counts
             const { totalTokenCount: frontTotalTokenCount } = frontResponse.usageMetadata;
@@ -186,7 +185,7 @@ class LLMService
     }
 
     // Regenerate illustration
-    async regenerateIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesChunks = [], referenceImageURL = null)
+    async regenerateIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", previousReferenceImagesURLs = [], referenceImageURL = null)
     {
         try
         {
@@ -196,16 +195,15 @@ class LLMService
             // Fetch reference image if exist
             if(referenceImageURL)
             {
-                const base64Image = await getReferenceImage(referenceImageURL);
-                contents.push({ inlineData: { mimeType: "image/jpg", data: base64Image } });
+                contents.push({ fileData: { mimeType: "image/jpg", fileUri: referenceImageURL } });
             }
             else
             {
-                for(const referenceImage of referenceImagesChunks)
+                for(const preveiousReferenceImageURL of previousReferenceImagesURLs)
                 {
-                    // Append image chunk
-                    contents.push({ inlineData: { mimeType: "image/jpg", data: referenceImage } });
-                }    
+                    // Append previous images
+                    contents.push({ fileData: { mimeType: "image/jpg", fileUri: preveiousReferenceImageURL } });
+                }
             }
 
             // Generate illustration
@@ -221,9 +219,9 @@ class LLMService
             const imagePart = illustrationResponse.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
             if(!imagePart?.inlineData?.data) throw new ApiError(500, "Inline data is missing");
 
-            // Convert base64 image to buffer
+            // Download base64 image
             const imageBuffer = Buffer.from(imagePart.inlineData.data, "base64");
-            if(!imageBuffer) throw new ApiError(500, "Failed to convert base64 image to buffer");
+            if(!imageBuffer) throw new ApiError(500, "Failed to download base64 image");
 
             // Extract token counts
             const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;

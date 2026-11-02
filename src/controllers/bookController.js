@@ -389,7 +389,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
     // Find book and spreads
     const [book, spreads] = await Promise.all([
         Book.findById(bookId),
-        Spread.find({ bookId }).select("-_id content illustrationURL base64Image")
+        Spread.find({ bookId }).select("-_id content illustrationURL").lean()
     ]);
 
     // Validate
@@ -402,7 +402,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
     const storyContent = spreads.map(spread => spread.content.trim()).join(" ");
 
     // Get previous images chunks as a reference
-    const previousReferenceImages = spreads.filter(spread => spread.base64Image).map(spread => spread.base64Image);
+    const previousReferenceImages = spreads.filter(spread => spread.illustrationURL).map(spread => spread.illustrationURL);
 
     // Pass control to regenerate front and cover image controller
     if(book.frontImage || book.backImage)
@@ -430,10 +430,6 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
     // LLM Response
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image", previousReferenceImages);
     const { frontImageBuffer, coverImageBuffer } = llmResponse;
-
-    // Validate
-    if(!frontImageBuffer) throw new ApiError(500, "Failed to generate front image");
-    if(!coverImageBuffer) throw new ApiError(500, "Failed to generate cover image");
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -488,10 +484,6 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
     // LLM Response
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image", previousReferenceImages);
     const { frontImageBuffer, coverImageBuffer } = llmResponse;
-
-    // Validate
-    if(!frontImageBuffer) throw new ApiError(500, "Failed to generate front image");
-    if(!coverImageBuffer) throw new ApiError(500, "Failed to generate cover image");
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -560,7 +552,7 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
     // Find book and spreads
     const [book, spreads] = await Promise.all([
         Book.findById(bookId),
-        Spread.find({ bookId }).select("-_id content illustrationURL base64Image")
+        Spread.find({ bookId }).select("-_id content illustrationURL").lean()
     ]);
 
     // Validate
@@ -570,7 +562,7 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
     if(book.draftStage !== 3) throw new ApiError(403, "Book should be in draft stage 3 before generating front and cover images");
 
     // Get previous images chunks as a reference
-    const previousReferenceImages = spreads.filter(spread => spread.base64Image).map(spread => spread.base64Image);
+    const previousReferenceImages = spreads.filter(spread => spread.illustrationURL).map(spread => spread.illustrationURL);
 
     // Determine first time generation or regeneration
     if(type === "front" && book.frontImage)
@@ -609,9 +601,6 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
     // LLM Response
     const llmResponse = await llm.regenerateIllustration(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
     const { imageBuffer } = llmResponse;
-
-    // Validate
-    if(!imageBuffer) throw new ApiError(500, "Failed to generate image");
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -675,9 +664,6 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
     // LLM Response
     const llmResponse = await llm.regenerateIllustration(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
     const { imageBuffer } = llmResponse;
-
-    // Validate
-    if(!imageBuffer) throw new ApiError(500, "Failed to generate image");
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);
