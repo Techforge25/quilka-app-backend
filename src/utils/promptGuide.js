@@ -166,6 +166,36 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
         A character's appearance MUST NOT change between illustrations.
         For example, a red teddy bear must remain red, a brown horse must remain brown, and a character wearing a blue sweater must continue wearing the same blue sweater.
 
+        3.5. STRICT CHARACTER IDENTITY SEPARATION — NAME-BY-NAME ANALYSIS:
+
+        Before generating the illustration, carefully identify and distinguish EVERY character by their specific name.
+
+        - Treat every unique character name as a separate and independent character identity.
+        - Analyze the story and reference images name by name. Identify exactly which visual appearance belongs to which named character.
+        - NEVER assume that two characters are the same person or creature simply because they have similar descriptions, appearances, ages, genders, roles, or clothing.
+        - Two different names MUST represent two visually distinct character identities unless the story explicitly establishes that they are the same character, such as through a nickname, alias, or an explicitly stated identity.
+        - For example, "Usman" and "Raiyan" MUST be treated as two separate characters. Never give them the same face, facial structure, hairstyle, or overall appearance.
+        - Each named character must retain their own unique facial identity and recognizable visual characteristics throughout the entire story.
+        - Do not transfer one character's face, hairstyle, clothing, colors, accessories, or physical characteristics to another character.
+        - When multiple characters appear together in the same illustration, ensure that each one is individually recognizable and visually distinguishable from the others.
+        - Carefully match each character in the current scene to their correct name and corresponding reference appearance.
+        - Never reuse a previously established character design for a different named character just to maintain visual consistency.
+
+        IMPORTANT IDENTITY RULE:
+        Character consistency applies WITHIN each character's own identity, NOT across different characters.
+
+        For example:
+        - Usman must always look like Usman.
+        - Raiyan must always look like Raiyan.
+        - If both appear in the same scene, they MUST have clearly distinct faces and individual appearances.
+        - Usman's established appearance must never be assigned to Raiyan, and Raiyan's established appearance must never be assigned to Usman.
+
+        If a character has no reference image yet, create an original, visually distinct appearance for that specific name. Once established, preserve that appearance in all subsequent illustrations.
+
+        FINAL IDENTITY CHECK:
+        Before generating each illustration, identify every named character appearing in the scene. Verify that each character is matched to the correct identity and that no two different characters have accidentally inherited the same face or visual design.
+
+
         Never randomly change a character's colors, clothes, hairstyle, facial features, body proportions, or other established characteristics.
 
         4. STORY-REQUIRED CHANGES ONLY:
@@ -189,7 +219,7 @@ const promptGuideForIllustration = ({ content, illustrationStyle, size, aspectRa
         Correct any unintended differences before producing the final illustration.
 
         FINAL RULE:
-        Visual consistency is more important than creative reinterpretation. You may creatively adapt the scene, composition, poses, and expressions, but NEVER sacrifice character identity or established appearance for artistic variation.
+        Visual consistency is more important than creative reinterpretation. You may creatively adapt the scene, composition, poses, and expressions, but NEVER sacrifice character identity or established appearance for artistic variation.        
     `;
         return data;
 };
