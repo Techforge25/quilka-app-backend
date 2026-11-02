@@ -10,7 +10,6 @@ const validatePayload = require("../utils/validatePayload");
 const { updateSpreadSublayoutValidator, uploadManualIllustrationValidator, 
 generateWithCustomPromptValidator } = require("../validators/illustrationValidator");
 const Spread = require("../models/spreadModel");
-const { getReferenceImage } = require("../utils/getReferenceImage");
 const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
 const { deleteCacheByPattern } = require("../redis/redisHelpers");
