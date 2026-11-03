@@ -6,12 +6,9 @@ const { getUserSessionKey } = require("../utils/redisKeys");
 
 // Authentication
 const authentication = asyncHandler(async (request, response, next) => {
+    // Get & verify access token
     const accessToken = getAccessToken(request);
-    if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing");
-    
-    // Verify
     const user = verifyAccessToken(accessToken);
-    if(!user) throw new ApiError(401, "Unauthorized! Invalid access token");
 
     // Check token in redis
     const token = await getCache(getUserSessionKey(user.jti));

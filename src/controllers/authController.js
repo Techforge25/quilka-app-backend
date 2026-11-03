@@ -15,6 +15,8 @@ const emailQueue = require("../queues/emailQueue");
 const { redis } = require("../redis/connection");
 const crypto = require("crypto");
 const { verifyAppleIdentityToken } = require("../service/apple-auth");
+const { ACCESS_TOKEN_SECRET } = process.env;
+const { verify } = require("jsonwebtoken");
 
 // Signup
 const signup = asyncHandler(async (request, response) => {
@@ -143,7 +145,6 @@ const login = asyncHandler(async (request, response) => {
 
     // Generate access token
     const accessToken = await generateAccessToken(user);
-    if(!accessToken) throw new ApiError(500, "Failed to generate access token");
 
     // Delete attempts
     await deleteCache(key);
@@ -270,7 +271,6 @@ const googleLoginCodeExchange = asyncHandler(async (request, response) => {
 
     // Generate access token
     const accessToken = await generateAccessToken(user);
-    if(!accessToken) throw new ApiError(500, "Failed to generate access token");
 
     // Response
     return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
@@ -330,7 +330,6 @@ const appleLogin = asyncHandler(async (request, response) => {
 
     // Generate access token
     const accessToken = await generateAccessToken(user);
-    if(!accessToken) throw new ApiError(500, "Failed to generate access token");
 
     // Response
     return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
@@ -350,7 +349,7 @@ const authStatus = asyncHandler(async (request, response) => {
     if(!accessToken) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
 
     // Verify
-    const user = verifyAccessToken(accessToken);
+    const user = verify(accessToken, ACCESS_TOKEN_SECRET);
     if(!user) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
 
     // Check token in redis

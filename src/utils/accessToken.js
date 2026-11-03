@@ -1,19 +1,20 @@
-const jwt = require("jsonwebtoken");
+const { sign, verify, JsonWebTokenError, TokenExpiredError } = require("jsonwebtoken");
 const { ACCESS_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY } = process.env;
 const crypto = require("crypto");
 const { setCache } = require("../redis/redisHelpers");
 const { getUserSessionKey } = require("./redisKeys");
+const { ApiError } = require("@google/genai");
 
 // Generate access token
 const generateAccessToken = async (payload) => {
-    if(!payload) return null;
+    if(!payload) throw new ApiError(500, `Payload is missing`);
     try 
     {
         // Unique JWT ID
         const jwtId = crypto.randomUUID();
 
         // Sign token
-        const accessToken = jwt.sign({
+        const accessToken = sign({
             _id: payload._id,
             fullName: payload.fullName,
             role: payload.role,
@@ -26,37 +27,36 @@ const generateAccessToken = async (payload) => {
     } 
     catch(error) 
     {
-        console.log("Failed to generate access token", error.message);
-        return null;
+        throw new ApiError(500, `Failed to generate access token. ${error.message}`);
     }
 };
 
 // Verify access token
 const verifyAccessToken = (accessToken) => {
-    if(!accessToken) return null;
-    try 
+    if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing");
+    try
     {
-        return jwt.verify(accessToken, ACCESS_TOKEN_SECRET);
+        return verify(accessToken, ACCESS_TOKEN_SECRET);
     } 
-    catch(error) 
+    catch(error)
     {
-        console.log("Failed to verify access token", error.message);
-        return null;
+        if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Access token has expired");
+        if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid access token");
+        throw new ApiError(500, `Failed to verify access token. ${error.message}`);
     }
 };
 
 // Get access token
 const getAccessToken = (request) => {
-    if(!request) return null;
+    if(!request) null;
     try
     {
         const accessToken = request.headers['authorization']?.split(" ")?.[1];
-        return accessToken;
+        return accessToken ? accessToken : null;
     }
     catch(error)
     {
-        console.log("Failed to extract access token", error.message);
-        return null;
+        throw new ApiError(500, `Failed to get access token. ${error.message}`);
     }
 };
 
