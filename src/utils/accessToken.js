@@ -48,7 +48,7 @@ const verifyAccessToken = (accessToken) => {
 
 // Get access token
 const getAccessToken = (request) => {
-    if(!request) null;
+    if(!request) throw new ApiError(500, "Request object is required");
     try
     {
         const accessToken = request.headers['authorization']?.split(" ")?.[1];

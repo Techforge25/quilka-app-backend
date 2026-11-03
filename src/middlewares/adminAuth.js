@@ -5,20 +5,9 @@ const asyncHandler = require("../utils/asyncHandler");
 
 // Admin Authentication
 const adminAuthentication = asyncHandler((request, response, next) => {
+    // Get & Verify access token
     const accessToken = getAdminAccessToken(request);
-    if(!accessToken)
-    {
-        return response.status(401)
-        .json(new ApiResponse(401, { redirectURL: `${adminFrontendURL}/login` }, "Unauthorized! Access token is missing"));
-    }
-
-    // Verify
     const admin = verifyAdminAccessToken(accessToken);
-    if(!admin)
-    {
-        return response.status(401)
-        .json(new ApiResponse(401, { redirectURL: `${adminFrontendURL}/login` }, "Unauthorized! Invalid access token"));
-    }
 
     // Pass through
     request.admin = admin;

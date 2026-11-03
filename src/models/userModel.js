@@ -59,8 +59,7 @@ userSchema.methods.matchPassword = async function(password) {
     } 
     catch (error) 
     {
-        console.log("Failed to compare passwords", error.message);
-        return false;
+        throw new ApiError("Failed to compare passwords", error.message);
     }
 }
 
