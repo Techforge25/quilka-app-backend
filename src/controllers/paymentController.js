@@ -44,12 +44,20 @@ const payForBook = asyncHandler(async (request, response) => {
     // Mark book status as draft
     book.status = "draft";
     book.draftStage = 1;
-    await book.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
 
-    // Add 5 free regeneration to this book
-    const regeneration = await Regeneration.create({ userId, bookId, limit: 5 });
-    if(!regeneration) throw new ApiError(500, "Failed to add 5 free regenerations");
+    // Parallel execution
+    const result = await Promise.all([
+        // Update book status
+        book.save(),
+
+        // Add 5 free regeneration to this book
+        Regeneration.create({ userId, bookId, limit: 5 }),
+
+        // Delete cache
+        deleteCacheByPattern(`books:${bookId}*`),
+        deleteCacheByPattern(`books:${userId}*`)
+    ]);
+    if(!result[1]) throw new ApiError(500, "Failed to add 5 free regenerations");
     
     // Response
     return response.status(200).json(new ApiResponse(200, bookId, "Payment has been completed"));
@@ -97,11 +105,14 @@ const payForRegeneration = asyncHandler(async (request, response) => {
         Regeneration.findOneAndUpdate(
             { userId, bookId },
             { $inc: { limit: Number(package.credits) } }
-        )
+        ),
+
+        // Delete cache
+        deleteCacheByPattern(`books:${bookId}*`),
+        deleteCacheByPattern(`books:${userId}*`)
     ]);
     if(!revenueGeneration) throw new ApiError(500, "Failed to save record in revenue generation");
     if(!regeneration) throw new ApiError(500, "Failed to update regenerations");
-    await deleteCacheByPattern(`books:${bookId}*`);
     
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Payment has been completed"));
