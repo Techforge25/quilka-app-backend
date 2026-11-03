@@ -341,6 +341,26 @@ const viewBookContent = asyncHandler(async (request, response) => {
                 }
             },
 
+            // Add field to determine whether story generated or not
+            {
+                $addFields: {
+                    hasStoryGenerated: {
+                        $anyElementTrue: {
+                            $map: {
+                                input: "$spreads",
+                                as: "spread",
+                                in: {
+                                    $and: [
+                                        { $ne: ["$$spread.content", null] },
+                                        { $ne: ["$$spread.content", ""] }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },            
+
             // Projection
             {
                 $project: {
@@ -354,7 +374,8 @@ const viewBookContent = asyncHandler(async (request, response) => {
                     status: 1,
                     draftStage: 1,
                     spreads: { content: 1, characterLimit: 1 },
-                    regenerations: 1
+                    regenerations: 1,
+                    hasStoryGenerated: 1
                 }
             }
         ]);

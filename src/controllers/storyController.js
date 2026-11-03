@@ -87,7 +87,12 @@ const generateWithAi = asyncHandler(async (request, response, next) => {
     // Save generated content to spreads
     const result = await Spread.bulkWrite(bulkOperations);
     if(result.matchedCount !== spreads.length) throw new ApiError(500, "Failed to save AI generated story content");
-    await deleteCacheByPattern(`books:${bookId}*`);
+    
+    // Delete cache
+    await Promise.all([
+        deleteCacheByPattern(`books:${bookId}*`),
+        deleteCacheByPattern(`books:${userId}*`)
+    ]);
 
     // Payload
     const payload = {
@@ -170,7 +175,12 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
         
         // Commit transaction
         await dbSession.commitTransaction();
-        await deleteCacheByPattern(`books:${bookId}*`);
+
+        // Delete cache
+        await Promise.all([
+            deleteCacheByPattern(`books:${bookId}*`),
+            deleteCacheByPattern(`books:${userId}*`)
+        ]);
 
         // Payload
         const payload = {
@@ -343,7 +353,12 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
         { userId, bookId, limit: { $gt: 0 } },
         { $inc: { limit: -1 } },
     );
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await Promise.all([
+        deleteCacheByPattern(`books:${bookId}*`),
+        deleteCacheByPattern(`books:${userId}*`)
+    ]);
 
     // Payload
     const payload = {
@@ -391,7 +406,12 @@ const useNewStoryVersion = asyncHandler(async (request, response) => {
 
     // Update spreads
     await Spread.bulkWrite(operations);
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await Promise.all([
+        deleteCacheByPattern(`books:${bookId}*`),
+        deleteCacheByPattern(`books:${userId}*`)
+    ]);
 
     // Get updated story
     const getUpdatedStory = await Spread.find({ bookId }).select("content").sort({ _id: 1 });
@@ -441,7 +461,12 @@ const updateStory = asyncHandler(async (request, response) => {
 
     // Update spreads
     await Spread.bulkWrite(operations);
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await Promise.all([
+        deleteCacheByPattern(`books:${bookId}*`),
+        deleteCacheByPattern(`books:${userId}*`)
+    ]);
 
     // Response
     return response.status(200).json(new ApiResponse(200, spreads, "Story has been updated successfully"));
@@ -480,7 +505,12 @@ const updateStoryWithSpreadTextSize = asyncHandler(async (request, response) => 
     spread.content = spreadContent;
     spread.textSize = textSize;
     await spread.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await Promise.all([
+        deleteCacheByPattern(`books:${bookId}*`),
+        deleteCacheByPattern(`books:${userId}*`)
+    ]);
 
     // Response
     return response.status(200).json(new ApiResponse(200, spreadContent, "Story has been updated"));
@@ -513,7 +543,12 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
     // Save to db
     book.draftStage = 2;
     await book.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await Promise.all([
+        deleteCacheByPattern(`books:${bookId}*`),
+        deleteCacheByPattern(`books:${userId}*`)
+    ]);
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Book has been marked for draft stage 2"));
@@ -549,7 +584,12 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     // Save to db
     book.draftStage = 3;
     await book.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await Promise.all([
+        deleteCacheByPattern(`books:${bookId}*`),
+        deleteCacheByPattern(`books:${userId}*`)
+    ]);
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));
