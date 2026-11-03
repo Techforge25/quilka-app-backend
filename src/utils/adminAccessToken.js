@@ -39,7 +39,7 @@ const getAdminAccessToken = (request) => {
     try
     {
         const accessToken = request.signedCookies?.adminAccessToken || request.cookies?.adminAccessToken;
-        return accessToken;
+        return accessToken ? accessToken : null;
     }
     catch(error)
     {
@@ -84,7 +84,7 @@ const getAdminRefreshToken = (request) => {
     try
     {
         const refreshToken = request.signedCookies?.adminRefreshToken || request.cookies?.adminRefreshToken;
-        return refreshToken;
+        return refreshToken ? refreshToken : null;
     }
     catch(error)
     {
