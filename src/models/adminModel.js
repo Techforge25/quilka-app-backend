@@ -1,20 +1,14 @@
 const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
+const ApiError = require("../utils/ApiError");
 
 // Schema
 const adminSchema = new Schema({
     username: { type: String, trim: true, lowercase: true, required: true, unique: [true, "This username has already been taken by another admin"] },
     email: { type: String, trim: true, lowercase: true, required: true, unique: [true, "This email has already been taken by another admin"] },
     password: { type: String, trim: true, required: true },
-    role: { type: String, default: "admin" },
-    allowedModules: [{
-        _id: false,
-        module: { type: String, trim: true },
-        url: { type: String, trim: true }
-    }],
-    refreshToken: { type: String, default: null },
-    status: { type: String, enum: ["active", "inactive"], default: "active" }
+    refreshToken: { type: String, default: null }
 }, { timestamps: true });
 
 // Hash password
@@ -26,7 +20,7 @@ adminSchema.pre("save", async function() {
     } 
     catch(error) 
     {
-        console.log("Failed to hash admin password", error.message);
+        throw new ApiError("Failed to hash admin password", error.message);
     }
 });
 
@@ -39,8 +33,7 @@ adminSchema.methods.matchPassword = async function(password) {
     } 
     catch (error) 
     {
-        console.log("Failed to compare passwords", error.message);
-        return false;
+        throw new ApiError("Failed to compare passwords", error.message);
     }
 }
 
