@@ -35,7 +35,7 @@ const verifyAdminAccessToken = (accessToken) => {
 
 // Get admin access token
 const getAdminAccessToken = (request) => {
-    if(!request) return null;
+    if(!request) throw new ApiError(500, "Request object is required");
     try
     {
         const accessToken = request.signedCookies?.adminAccessToken || request.cookies?.adminAccessToken;
@@ -80,7 +80,7 @@ const verifyAdminRefreshToken = (refreshToken) => {
 
 // Get admin refresh token
 const getAdminRefreshToken = (request) => {
-    if(!request) return null;
+    if(!request) throw new ApiError(500, "Request object is required");
     try
     {
         const refreshToken = request.signedCookies?.adminRefreshToken || request.cookies?.adminRefreshToken;
