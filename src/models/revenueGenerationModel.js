@@ -3,7 +3,7 @@ const { Schema, model } = require("mongoose");
 // Schema
 const revenueGenerationSchema = new Schema({
     // Reference
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", index: true, required: true },
 
     // Revenue info
     revenue: { type: Number, required: true },
