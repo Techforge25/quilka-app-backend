@@ -61,10 +61,12 @@ async function startApp()
     // Import Admin Routes
     const adminAuthRouter = require("./routes/admin/adminAuthRoute");
     const adminProfileRouter = require("./routes/admin/adminProfileRoute");
+    const packageCreditRouter = require("./routes/admin/packageRoute");
 
     // Registered Admin Routes
     app.use("/api/v1/admin/auth", adminAuthRouter);
     app.use("/api/v1/admin/profile", adminProfileRouter);
+    app.use("/api/v1/admin/package", packageCreditRouter);
 
     // API status route
     app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));
