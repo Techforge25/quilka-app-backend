@@ -13,19 +13,19 @@ let adminFrontendURL = null;
 // Production
 if(isProduction)
 {
-    adminFrontendURL = "https://360-gmp-front-end.vercel.app/admin";
+    adminFrontendURL = "https://quilka-admin-staging.vercel.app";
 }
 
 // Staging
 if(isStaging)
 {
-    adminFrontendURL = "https://360-gmp-front-end-git-staging-projects-80f407ba.vercel.app/admin";
+    adminFrontendURL = "https://quilka-admin-staging.vercel.app";
 }
 
 // Local
 if(isLocal)
 {
-    adminFrontendURL = "http://localhost:3000/admin";
+    adminFrontendURL = "http://localhost:3000";
 }
 
 // Cors options
