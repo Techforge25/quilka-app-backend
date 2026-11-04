@@ -1,7 +1,7 @@
 const { Router } = require("express");
-const { updateUsername, updatePassword } = require("../../controllers/admin/adminProfileController");
+const { fetchUsername, updateUsername, updatePassword } = require("../../controllers/admin/adminProfileController");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
-const { rateLimit } = require("../../middlewares/rateLimit");
+const { expressRateLimit } = require("../../middlewares/rateLimit");
 
 // Router instance
 const adminProfileRouter = Router();
@@ -10,7 +10,9 @@ const adminProfileRouter = Router();
 adminProfileRouter.use(adminAuthentication);
 
 // Update username
-adminProfileRouter.route("/username").patch(updateUsername);
+adminProfileRouter.route("/username")
+.get(expressRateLimit({ maxRequests: 5, minutes: 1 }), fetchUsername)
+.patch(expressRateLimit({ maxRequests: 3, minutes: 1 }), updateUsername);
 
 // Update password
 adminProfileRouter.route("/password").patch(updatePassword);

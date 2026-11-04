@@ -5,6 +5,26 @@ const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const validatePayload = require("../../utils/validatePayload");
 const { updateUsernameValidator, updateAdminPasswordValidator } = require("../../validators/adminProfileValidator");
+const { getCache, setCache } = require("../../redis/redisHelpers");
+
+// Fetch username
+const fetchUsername = asyncHandler(async (request, response) => {
+    const adminId = request.admin._id;
+    const key = `admin:${adminId}:username`;
+
+    // Fetch
+    let admin = await getCache(key);
+    if(!admin)
+    {
+        // Get from db
+        admin = await Admin.findById(adminId).select("username").lean();
+        if(!admin) throw new ApiError(404, "Admin not found");
+        await setCache(key, admin, 60 * 24 * 7);
+    }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, admin.username, "Username has been fetched"));
+});
 
 // Update username
 const updateUsername = asyncHandler(async (request, response) => {
@@ -49,4 +69,4 @@ const updatePassword = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Admin password has been updated"));    
 });
 
-module.exports = { updateUsername, updatePassword };
+module.exports = { fetchUsername, updateUsername, updatePassword };
