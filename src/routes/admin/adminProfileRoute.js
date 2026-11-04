@@ -9,7 +9,7 @@ const adminProfileRouter = Router();
 // Inject middleware
 adminProfileRouter.use(adminAuthentication);
 
-// Update username
+// Fetch / Update username
 adminProfileRouter.route("/username")
 .get(expressRateLimit({ maxRequests: 5, minutes: 1 }), fetchUsername)
 .patch(expressRateLimit({ maxRequests: 3, minutes: 1 }), updateUsername);
