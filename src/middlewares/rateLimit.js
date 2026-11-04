@@ -3,8 +3,8 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { redis } = require('../redis/connection');
 
-// Global rate limiter
-const globalRateLimit = ({ minutes = 1, maxRequests = 10, message = "Too many requests, please try again later" }) => {
+// Express rate limiter
+const expressRateLimit = ({ minutes = 1, maxRequests = 10, message = "Too many requests, please try again later" }) => {
     const limiter = rateLimiter({
         windowMs: 1000 * 60 * minutes,
         max: maxRequests, // Max requests per IP per window
@@ -39,4 +39,4 @@ const rateLimit = (totalAttempts = 10, minutes = 1, message = "Too many requests
     });
 };
 
-module.exports = { globalRateLimit, rateLimit };
+module.exports = { expressRateLimit, rateLimit };
