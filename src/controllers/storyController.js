@@ -16,6 +16,8 @@ const { customStoryRefinementValidator, updateStoryValidator, newStoryValidator 
 const Spread = require("../models/spreadModel");
 const { deleteCacheByPattern, getCache, setCache } = require("../redis/redisHelpers");
 const { redis } = require("../redis/connection");
+const { getNotFoundKey } = require("../utils/redisKeys");
+const { markNotFoundCache } = require("../utils/markNotFoundCache");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response, next) => {
@@ -217,10 +219,8 @@ const viewStoryContent = asyncHandler(async (request, response) => {
     if(!book)
     {
         // Track not found attempts
-        const ip = request.headers["x-real-ip"] || request.ip;
-        const notFoundKey = `NotFound:${ip.replaceAll(":", "-")}`;
-        const attempts = await getCache(notFoundKey);
-        if(attempts >= 3) throw new ApiError(429, "Too many requests for non-existing data");
+        const notFoundKey = getNotFoundKey(request);
+        await markNotFoundCache(notFoundKey);
 
         // Get from DB
         [book] = await Book.aggregate([

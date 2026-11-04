@@ -15,6 +15,8 @@ const Regeneration = require("../models/regenerationModel");
 const { customPromptValidatorForFrontAndCover } = require("../validators/illustrationValidator");
 const { getCache, setCache, deleteCacheByPattern } = require("../redis/redisHelpers");
 const { redis } = require("../redis/connection");
+const { markNotFoundCache } = require("../utils/markNotFoundCache");
+const { getNotFoundKey } = require("../utils/redisKeys");
 
 // Create book in custom
 const createBookInCustom = asyncHandler(async (request, response, next) => {
@@ -210,10 +212,8 @@ const viewBook = asyncHandler(async (request, response) => {
     if(!book)
     {
         // Track not found attempts
-        const ip = request.headers["x-real-ip"] || request.ip;
-        const notFoundKey = `NotFound:${ip.replaceAll(":", "-")}`;
-        const attempts = await getCache(notFoundKey);
-        if(attempts >= 3) throw new ApiError(429, "Too many requests for non-existing data");
+        const notFoundKey = getNotFoundKey(request);
+        await markNotFoundCache(notFoundKey);
 
         // Get from DB
         [book] = await Book.aggregate([
@@ -294,10 +294,8 @@ const viewBookContent = asyncHandler(async (request, response) => {
     if(!book)
     {
         // Track not found attempts
-        const ip = request.headers["x-real-ip"] || request.ip;
-        const notFoundKey = `NotFound:${ip.replaceAll(":", "-")}`;
-        const attempts = await getCache(notFoundKey);
-        if(attempts >= 3) throw new ApiError(429, "Too many requests for non-existing data");
+        const notFoundKey = getNotFoundKey(request);
+        await markNotFoundCache(notFoundKey);
 
         // Get from DB
         [book] = await Book.aggregate([
@@ -774,10 +772,8 @@ const fetchFrontAndBackImages = asyncHandler(async (request, response) => {
     if(!book)
     {
         // Track not found attempts
-        const ip = request.headers["x-real-ip"] || request.ip;
-        const notFoundKey = `NotFound:${ip.replaceAll(":", "-")}`;
-        const attempts = await getCache(notFoundKey);
-        if(attempts >= 3) throw new ApiError(429, "Too many requests for non-existing data");
+        const notFoundKey = getNotFoundKey(request);
+        await markNotFoundCache(notFoundKey);
 
         // Get from DB
         book = await Book.findById(bookId).select("userId status draftStage frontImage backImage");

@@ -1,3 +1,5 @@
+const ApiError = require("./ApiError");
+
 // Get otp key
 const getOTPKey = (email) => `otp:${email}`;
 
@@ -13,4 +15,15 @@ const getUserSessionKey = (jwtid) => `userSession:${jwtid}`;
 // Get my book key
 const getMyBookKey = (bookId, userId) => `book:${bookId}:user:${userId}`;
 
-module.exports = { getOTPKey, getResetPasswordKey, getCancelSubscriptionOTPKey, getUserSessionKey, getMyBookKey };
+// Get not found key
+const getNotFoundKey = (request) => {
+    if(!request) throw new ApiError(500, "Request object is required to extract IP address");
+    const ip = request.ip || request.headers["x-real-ip"];
+    if(!ip) throw new ApiError(500, "IP address is missing");
+    if(typeof ip !== "string") throw new ApiError(500, "Invalid IP address");
+
+    return `NotFound:${ip.replaceAll(":", "-")}`;
+};
+
+module.exports = { getOTPKey, getResetPasswordKey, getCancelSubscriptionOTPKey, 
+getUserSessionKey, getMyBookKey, getNotFoundKey };
