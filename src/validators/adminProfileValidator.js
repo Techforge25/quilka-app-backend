@@ -6,7 +6,7 @@ const passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}
 
 // Update username
 const updateUsernameValidator = joi.object({
-    username: joi.string().trim().required().min(3).max(20).pattern(usernamePattern).messages({
+    username: joi.string().trim().required().min(3).max(20).pattern(new RegExp(usernamePattern)).messages({
         "string.pattern.base": "Username can only contain letters, numbers, and at most one special character (., _, or -). Spaces are not allowed."
     }).label("Username")
 });
