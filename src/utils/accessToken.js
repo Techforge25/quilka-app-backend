@@ -10,18 +10,18 @@ const generateAccessToken = async (payload) => {
     if(!payload) throw new ApiError(500, `Payload is missing`);
     try 
     {
-        // Unique JWT ID
-        const jwtId = crypto.randomUUID();
+        // Unique Session ID
+        const sessionId = crypto.randomUUID();
 
         // Sign token
         const accessToken = sign({
             _id: payload._id,
             fullName: payload.fullName,
             role: payload.role,
-        }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY, jwtid: jwtId });
+        }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY, jwtid: sessionId });
 
         // Set session to redis
-        await setCache(getUserSessionKey(jwtId), accessToken, 60 * 24 * 30);
+        await setCache(getUserSessionKey(sessionId), String(payload._id), 60 * 24 * 30);
 
         return accessToken;
     } 

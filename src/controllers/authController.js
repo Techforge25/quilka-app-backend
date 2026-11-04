@@ -352,10 +352,11 @@ const authStatus = asyncHandler(async (request, response) => {
     const user = verify(accessToken, ACCESS_TOKEN_SECRET);
     if(!user) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
 
-    // Check token in redis
-    const token = await getCache(getUserSessionKey(user.jti));
-    if(!token) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));    
-    
+    // Check session
+    const session = await getCache(getUserSessionKey(user.jti));
+    if(!session) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
+    if(session !== user._id) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
+
     // Response
     return response.status(200).json(new ApiResponse(200, { isLoggedIn: true }, "Login session found")); 
 });

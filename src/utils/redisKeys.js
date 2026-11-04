@@ -10,7 +10,7 @@ const getCancelSubscriptionOTPKey = (userId) => `cancelSubscriptionOTP:${userId}
 const getResetPasswordKey = (email) => `resetPassword:${email}`;
 
 // Get user session key
-const getUserSessionKey = (jwtid) => `userSession:${jwtid}`;
+const getUserSessionKey = (sessionId) => `userSession:${sessionId}`;
 
 // Get my book key
 const getMyBookKey = (bookId, userId) => `book:${bookId}:user:${userId}`;
