@@ -16,8 +16,8 @@ const createPackage = asyncHandler(async (request, response) => {
     const { name, credits, price, description, extras } = validatePayload(createPackageValidator, request.body) || {};
 
     // Prevent packacge duplication
-    const exists = await Package.findOne({ name: { $regex: `^${name}$`, $options: "i" } }).select("_id").lean();
-    if(exists) throw new ApiError(400, "Package with this name already exists");
+    const package = await Package.findOne({ name: { $regex: `^${name}$`, $options: "i" } }).select("_id").lean();
+    if(package) throw new ApiError(400, "Package with this name already exists");
 
     // Payload
     const payload = { name, credits, price, description, extras };
@@ -85,6 +85,10 @@ const updatePackage = asyncHandler(async (request, response) => {
 
     // Sanitize payload
     const { name, credits, price, description, extras } = validatePayload(createPackageValidator, request.body) || {};
+
+    // Prevent packacge duplication
+    const package = await Package.findOne({ name: { $regex: `^${name}$`, $options: "i" } }).select("_id").lean();
+    if(package && String(package._id) !== String(packageId)) throw new ApiError(400, "Package with this name already exists");
 
     // Trigger event
     const payload = { packageId, name, credits, price, description, extras };
