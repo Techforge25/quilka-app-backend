@@ -1,6 +1,7 @@
 const EventEmitter = require("events");
 const { deleteCacheByPattern } = require("../../redis/redisHelpers");
 const Package = require("../../models/packageModel");
+const FreeCredit = require("../../models/freeCreditModel");
 
 // Event instance
 const packageEvent = new EventEmitter();
@@ -30,6 +31,19 @@ packageEvent.on("updatePackage", async ({ packageId, name, credits, price, descr
     catch(error)
     {
         console.log("Failed to update package:", error);
+    }
+});
+
+// Update credits allowance
+packageEvent.on("updateCreditsAllowance", async ({ creditId, enable, credits }) => {
+    try
+    {
+        await FreeCredit.findByIdAndUpdate(creditId, { enable, credits });
+        await deleteCacheByPattern(`freeCredits`);
+    }
+    catch(error)
+    {
+        console.log("Failed to update free credits allowance:", error);
     }
 });
 
