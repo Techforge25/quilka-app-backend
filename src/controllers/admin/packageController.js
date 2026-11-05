@@ -1,5 +1,4 @@
 const ApiError = require("../../utils/ApiError");
-const Admin = require("../../models/adminModel");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const validatePayload = require("../../utils/validatePayload");
@@ -16,8 +15,14 @@ const createPackage = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { name, credits, price, description, extras } = validatePayload(createPackageValidator, request.body) || {};
 
-    // Trigger event
+    // Prevent packacge duplication
+    const exists = await Package.findOne({ name: { $regex: `^${name}$`, $options: "i" } }).select("_id").lean();
+    if(exists) throw new ApiError(400, "Package with this name already exists");
+
+    // Payload
     const payload = { name, credits, price, description, extras };
+    
+    // Trigger event
     packageEvent.emit("createPackage", payload);
 
     // Response

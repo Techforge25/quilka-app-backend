@@ -9,8 +9,10 @@ const packageEvent = new EventEmitter();
 packageEvent.on("createPackage", async ({ name, credits, price, description, extras }) => {
     try
     {
-        await Package.create({ name, credits, price, description, extras });
-        await deleteCacheByPattern(`packages*`);
+        await Promise.all([
+            Package.create({ name, credits, price, description, extras }),
+            deleteCacheByPattern(`packages*`)
+        ]);
     }
     catch(error)
     {
