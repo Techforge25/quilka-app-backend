@@ -6,7 +6,7 @@ const { getCache, setCache } = require("../../redis/redisHelpers");
 const Package = require("../../models/packageModel");
 const { emptyList } = require("../../constants");
 const FreeCredit = require("../../models/freeCreditModel");
-const { createPackageValidator } = require("../../validators/packageValidator");
+const { createPackageValidator, updateCreditsAllowanceValidator } = require("../../validators/packageValidator");
 const { packageEvent } = require("../../events/admin/packageEvent");
 const { isValidObjectId } = require("mongoose");
 
@@ -98,4 +98,20 @@ const updatePackage = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "A package has been updated"));
 });
 
-module.exports = { createPackage, fetchPackages, updatePackage };
+// Update free credits allowance
+const updateCreditsAllowance = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { creditId } = request.params;
+    if(!isValidObjectId(creditId)) throw new ApiError(400, "Invalid credit ID");
+
+    // Sanitize payload
+    const { enable, credits } = validatePayload(updateCreditsAllowanceValidator, request.body) || {};
+
+    // Trigger event
+    packageEvent.emit("updateCreditsAllowance", { creditId, enable, credits });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { enable, credits }, "Credits allowance has been updated"));
+});
+
+module.exports = { createPackage, fetchPackages, updatePackage, updateCreditsAllowance };
