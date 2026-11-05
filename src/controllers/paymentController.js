@@ -10,6 +10,7 @@ const { payForBookValidator, payForRegenerationValidator } = require("../validat
 const Package = require("../models/packageModel");
 const { deleteCacheByPattern } = require("../redis/redisHelpers");
 const FreeCredit = require("../models/freeCreditModel");
+const { startSession } = require("mongoose");
 
 // Pay for book
 const payForBook = asyncHandler(async (request, response) => {
@@ -87,34 +88,51 @@ const payForRegeneration = asyncHandler(async (request, response) => {
     if(!package) throw new ApiError(404, "Package not found");
     if(price !== Number(package.price)) throw new ApiError(400, "Price mismatch!");  
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to purchase regenerations for this book");
-    if(book.status === "published") throw new ApiError(403, "Forbidden! You cannot purchase regenerations for published book");  
+    if(book.status === "published") throw new ApiError(403, "Forbidden! You cannot purchase regenerations for published book");
 
-    // Execute parallel
-    const [revenueGeneration, regeneration] = await Promise.all([
+    // Start db session
+    const dbSession = await startSession();
+    try
+    {
+        dbSession.startTransaction();
+
+        // Update regenerations
+        const regeneration = await Regeneration.findOneAndUpdate(
+            { userId, bookId },
+            { $inc: { limit: Number(package.credits) } },
+            { returnDocument: 'after', session: dbSession }
+        );
+
         // Save to revenue generation
-        RevenueGeneration.create({
+        await RevenueGeneration.create([{
             userId,
             revenue: price,
-            sourceId: packageId,
+            sourceId: regeneration._id,
             sourceModel: "Regeneration",
             paymentGateway,
             transactionId,
             status: "paid"
-        }),
+        }], { session: dbSession });
 
-        // Update regenerations
-        Regeneration.findOneAndUpdate(
-            { userId, bookId },
-            { $inc: { limit: Number(package.credits) } }
-        ),
+        // Commit transaction
+        await dbSession.commitTransaction();
+    }
+    catch(error)
+    {
+        await dbSession.abortTransaction();
+        throw new ApiError(500, error.message);
+    }
+    finally
+    {
+        dbSession.endSession();
+    }
 
-        // Delete cache
+    // Delete caches
+    await Promise.all([
         deleteCacheByPattern(`books:${bookId}*`),
         deleteCacheByPattern(`books:${userId}*`),
         deleteCacheByPattern(`payments*`)
     ]);
-    if(!revenueGeneration) throw new ApiError(500, "Failed to save record in revenue generation");
-    if(!regeneration) throw new ApiError(500, "Failed to update regenerations");
     
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Payment has been completed"));
