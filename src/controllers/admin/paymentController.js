@@ -61,58 +61,47 @@ const fetchPayments = asyncHandler(async (request, response) => {
                 }
             },
 
-            // Lookup book
-            {
-                $lookup: {
-                    from: "books",
-                    localField: "sourceId",
-                    foreignField: "_id",
-                    as: "book",
-                    pipeline: [{ $project: { title: 1 } }]
-                }
-            },
-            
-            // Lookup regenerations
+            // Lookup regeneration
             {
                 $lookup: {
                     from: "regenerations",
                     localField: "sourceId",
                     foreignField: "_id",
                     as: "regeneration",
-                    pipeline: [
-                        {
-                            $lookup: {
-                                from: "packages",
-                                localField: "packageId",
-                                foreignField: "_id",
-                                as: "package",
-                                pipeline: [{ $project: { name: 1 } }]
-                            }
-                        },
-
-                        // Unwind package
-                        { $unwind: { path: "$regeneration.package", preserveNullAndEmptyArrays: true } }               
-                    ]
+                    pipeline: [{ $project: { bookId: 1 } }]
                 }
             },
 
             // Unwind
             { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$book", preserveNullAndEmptyArrays: true } },
             { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
 
-            // Add source name conditionally
+            // Add book id conditionally
             {
                 $addFields: {
-                    sourceName: {
+                    bookId: {
                         $cond: [
                             { $eq: ["$sourceModel", "Book"] },
-                            "$book.title",
-                            "$regeneration.package.name"
+                            "$sourceId",
+                            "$regeneration.bookId"
                         ]
                     }
                 }
             },
+
+            // Lookup book
+            {
+                $lookup: {
+                    from: "books",
+                    localField: "bookId",
+                    foreignField: "_id",
+                    as: "book",
+                    pipeline: [{ $project: { title: 1 } }]
+                }
+            },
+
+            // Unwind book
+            { $unwind: { path: "$book", preserveNullAndEmptyArrays: true } },
 
             // Sort
             { $sort: { createdAt: -1 } },
@@ -121,7 +110,7 @@ const fetchPayments = asyncHandler(async (request, response) => {
             {
                 $project: {
                     user: "$user.fullName",
-                    sourceName: 1,
+                    book: "$book.title",
                     transactionId: 1,
                     sourceType: "$sourceModel",
                     amount: "$revenue",
