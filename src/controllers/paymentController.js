@@ -55,7 +55,8 @@ const payForBook = asyncHandler(async (request, response) => {
 
         // Delete cache
         deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`)
+        deleteCacheByPattern(`books:${userId}*`),
+        deleteCacheByPattern(`payments*`)
     ]);
     if(!result[1]) throw new ApiError(500, "Failed to add 5 free regenerations");
     
@@ -109,7 +110,8 @@ const payForRegeneration = asyncHandler(async (request, response) => {
 
         // Delete cache
         deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`)
+        deleteCacheByPattern(`books:${userId}*`),
+        deleteCacheByPattern(`payments*`)
     ]);
     if(!revenueGeneration) throw new ApiError(500, "Failed to save record in revenue generation");
     if(!regeneration) throw new ApiError(500, "Failed to update regenerations");
