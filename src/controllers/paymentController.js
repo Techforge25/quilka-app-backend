@@ -9,6 +9,7 @@ const { isValidObjectId } = require("mongoose");
 const { payForBookValidator, payForRegenerationValidator } = require("../validators/paymentValidator");
 const Package = require("../models/packageModel");
 const { deleteCacheByPattern } = require("../redis/redisHelpers");
+const FreeCredit = require("../models/freeCreditModel");
 
 // Pay for book
 const payForBook = asyncHandler(async (request, response) => {
@@ -29,16 +30,15 @@ const payForBook = asyncHandler(async (request, response) => {
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to access this book.");
     if(book.status !== "pending") throw new ApiError(403, "Forbidden! Payment has already been processed for this book");
 
-    // Save to revenue generation
-    const revenueGeneration = await RevenueGeneration.create({ 
-        userId,
-        revenue: price,
-        sourceId: bookId,
-        sourceModel: "Book",
-        paymentGateway,
-        transactionId,
-        status: "paid"
-    });
+    // Parallel execution
+    const [revenueGeneration, freeCredits] = await Promise.all([
+        // Save to revenue generation
+        RevenueGeneration.create({ userId, revenue: price, sourceId: bookId, sourceModel: "Book", 
+        paymentGateway, transactionId, status: "paid" }),
+
+        // Fetch free regeneration credits allowance
+        FreeCredit.findOne().select("-_id credits").lean()
+    ]);
     if(!revenueGeneration) throw new ApiError(500, "Failed to save record in revenue generation");
 
     // Mark book status as draft
@@ -51,7 +51,7 @@ const payForBook = asyncHandler(async (request, response) => {
         book.save(),
 
         // Add 5 free regeneration to this book
-        Regeneration.create({ userId, bookId, limit: 5 }),
+        Regeneration.create({ userId, bookId, limit: Number(freeCredits.credits) }),
 
         // Delete cache
         deleteCacheByPattern(`books:${bookId}*`),
