@@ -5,7 +5,6 @@ const regenerationSchema = new Schema({
     // References
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     bookId: { type: Schema.Types.ObjectId, ref: "Book", required: true },
-    packageId: { type: Schema.Types.ObjectId, ref: "Package", default: null },
 
     // Limitations
     limit: { type: Number, required: true, default: 5 }
