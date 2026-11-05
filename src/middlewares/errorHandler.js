@@ -2,6 +2,7 @@ const { isLocal } = require("../constants");
 const ApiError = require("../utils/ApiError");
 const { MongooseError } = require("mongoose");
 const { ApiError: GeminiApiError } = require("@google/genai");
+const { MulterError } = require("multer");
 
 const errorHandler = (error, request, response, next) => {
     // API Error
@@ -22,7 +23,6 @@ const errorHandler = (error, request, response, next) => {
     // Mongoose Error
     if(error instanceof MongooseError)
     {
-        // Response
         return response.status(400).json({ 
             statusCode: 400, 
             message: error.message, 
@@ -54,6 +54,18 @@ const errorHandler = (error, request, response, next) => {
             // Fallback response for Gemini Error
             return response.status(code).json({ statusCode: code, message, data: null, status, success: false });            
         }
+    }
+
+    // Multer Error
+    if(error instanceof MulterError)
+    {
+        return response.status(400).json({ 
+            statusCode: 400, 
+            message: error.message, 
+            data: null, 
+            success: false, 
+            stack: isLocal ? error.stack || "No stack trace found" : undefined
+        });         
     }
 
     // Fallback response for unexpected errors

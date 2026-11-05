@@ -10,10 +10,11 @@ const upload = multer({
     fileFilter: (request, file, callback) => {
         if(!allowedTypes.includes(file.mimetype))
         {
-            return callback(new Error("Only PNG, JPG and JPEG files are allowed"));
+            throw new multer.MulterError("LIMIT_UNEXPECTED_FILE", file.fieldname);
         }
         callback(null, true);
-    }
+    },
+    
 });
 
 module.exports = upload;
