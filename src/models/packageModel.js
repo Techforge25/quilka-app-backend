@@ -3,7 +3,7 @@ const aggregatePaginate = require("mongoose-aggregate-paginate-v2")
 
 // Schema
 const packageSchema = new Schema({
-    name: { type: String, trim: true, required: true },
+    name: { type: String, trim: true, required: true, unique: [true, "Package with this name already exists"] },
     credits: { type: Number, required: true },
     price: { type: Number, required: true },
     description: { type: String, trim: true },
