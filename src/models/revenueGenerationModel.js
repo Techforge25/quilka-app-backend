@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Schema
 const revenueGenerationSchema = new Schema({
@@ -15,6 +16,9 @@ const revenueGenerationSchema = new Schema({
     transactionId: { type: String, trim: true, required: true },
     status: { type: String, trim: true, enum: ["pending", "paid", "failed"], default: "pending" }
 }, { timestamps: true });
+
+// Add pagination plugin
+revenueGenerationSchema.plugin(aggregatePaginate);
 
 // Model
 const RevenueGeneration = model("RevenueGeneration", revenueGenerationSchema);
