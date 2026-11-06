@@ -4,14 +4,11 @@ const ApiError = require("./ApiError");
 const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
 
 // Helper function to implement date range
-const getDateFilter = (request, fieldName = "createdAt") => {
-    // Date filter
-    const { dateRange = "all" } = request.query;
+const getDateFilter = (dateRange = "all", fieldName = "createdAt") => {
     if(!allowedDateFilters.includes(dateRange)) throw new ApiError(400, "Invalid date range");
 
     // Date filter
     const dateFilter = {};
-
     if(dateRange !== "all")
     {
         // Calculate date
