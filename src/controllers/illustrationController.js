@@ -13,6 +13,7 @@ const Spread = require("../models/spreadModel");
 const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
 const { deleteCacheByPattern } = require("../redis/redisHelpers");
+const { saveTokenConsumption } = require("../utils/saveTokenConsumption");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response, next) => {
@@ -57,7 +58,10 @@ const createIllustration = asyncHandler(async (request, response, next) => {
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
-    const { imageBuffer } = illustrationResponse;
+    const { imageBuffer, totalTokenCount } = illustrationResponse;
+    
+    // Save token consumption
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -99,7 +103,10 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
-    const { imageBuffer } = illustrationResponse;
+    const { imageBuffer, totalTokenCount } = illustrationResponse;
+
+    // Save token consumption
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -223,7 +230,10 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", [], referenceImageURL);
-    const { imageBuffer } = illustrationResponse;
+    const { imageBuffer, totalTokenCount } = illustrationResponse;
+
+    // Save token consumption
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -265,7 +275,10 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", [], referenceImageURL);
-    const { imageBuffer } = illustrationResponse;
+    const { imageBuffer, totalTokenCount } = illustrationResponse;
+
+    // Save token consumption
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);

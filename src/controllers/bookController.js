@@ -17,6 +17,7 @@ const { getCache, setCache, deleteCacheByPattern } = require("../redis/redisHelp
 const { redis } = require("../redis/connection");
 const { markNotFoundCache } = require("../utils/markNotFoundCache");
 const { getNotFoundKey } = require("../utils/redisKeys");
+const { saveTokenConsumption } = require("../utils/saveTokenConsumption");
 
 // Create book in custom
 const createBookInCustom = asyncHandler(async (request, response, next) => {
@@ -448,7 +449,10 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
 
     // LLM Response
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image", previousReferenceImages);
-    const { frontImageBuffer, coverImageBuffer } = llmResponse;
+    const { frontImageBuffer, coverImageBuffer, totalTokenCount } = llmResponse;
+
+    // Save token consumption
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -502,7 +506,10 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
 
     // LLM Response
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, "gemini-3.1-flash-image", previousReferenceImages);
-    const { frontImageBuffer, coverImageBuffer } = llmResponse;
+    const { frontImageBuffer, coverImageBuffer, totalTokenCount } = llmResponse;
+
+    // Save token consumption
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -619,7 +626,10 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
 
     // LLM Response
     const llmResponse = await llm.generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
-    const { imageBuffer } = llmResponse;
+    const { imageBuffer, totalTokenCount } = llmResponse;
+
+    // Save token consumption
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -682,7 +692,10 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
 
     // LLM Response
     const llmResponse = await llm.generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, "gemini-3.1-flash-image", previousReferenceImages, referenceImageURL);
-    const { imageBuffer } = llmResponse;
+    const { imageBuffer, totalTokenCount } = llmResponse;
+
+    // Save token consumption
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);

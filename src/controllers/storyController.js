@@ -18,6 +18,7 @@ const { deleteCacheByPattern, getCache, setCache } = require("../redis/redisHelp
 const { redis } = require("../redis/connection");
 const { getNotFoundKey } = require("../utils/redisKeys");
 const { markNotFoundCache } = require("../utils/markNotFoundCache");
+const { saveTokenConsumption } = require("../utils/saveTokenConsumption");
 
 // Generate story with AI
 const generateWithAi = asyncHandler(async (request, response, next) => {
@@ -64,7 +65,10 @@ const generateWithAi = asyncHandler(async (request, response, next) => {
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
-    const { aiContent } = output;
+    const { aiContent, totalTokenCount } = output;
+
+    // Save tokens to db
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
@@ -136,7 +140,10 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
-    const { aiContent } = output;
+    const { aiContent, totalTokenCount } = output;
+
+    // Save tokens to db
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
@@ -166,7 +173,7 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
         }));
 
         // Save generated content to spreads
-        await Spread.bulkWrite(bulkOperations, { session: dbSession });
+        await Spread.bulkWrite(bulkOperations, { session: dbSession });      
 
         // Update regeneration limit
         await Regeneration.updateOne(
@@ -335,7 +342,10 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
-    const { aiContent } = output;
+    const { aiContent, totalTokenCount } = output;
+
+    // Save tokens to db
+    await saveTokenConsumption(userId, bookId, totalTokenCount);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());

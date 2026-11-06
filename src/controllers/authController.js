@@ -141,7 +141,7 @@ const login = asyncHandler(async (request, response) => {
 
     // Only approved account can log in
     if(user.status === "pending") return response.status(403).json(new ApiResponse(403, { otpRequired: true, userId: user._id }, "Please verify your identity via OTP."));
-    if(user.status === "flagged") throw new ApiError(400, "Your account is flagged. You cannot log-in to your account");  
+    if(user.status === "suspended") throw new ApiError(400, "Your account is suspended. You cannot log-in to your account");  
 
     // Generate access token
     const accessToken = await generateAccessToken(user);
