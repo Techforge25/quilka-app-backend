@@ -4,18 +4,18 @@ const { adminAuthentication } = require("../../middlewares/adminAuth");
 const { rateLimit } = require("../../middlewares/rateLimit");
 
 // Router instance
-const adminAuthRouter = Router();
+const authRouter = Router();
 
 // Login
-adminAuthRouter.route("/login").post(rateLimit(5, 5, "Too many login attempts!"), adminLogin);
+authRouter.route("/login").post(rateLimit(5, 5, "Too many login attempts!"), adminLogin);
 
 // Auth me
-adminAuthRouter.route("/me").get(adminAuthentication, authMe);
+authRouter.route("/me").get(adminAuthentication, authMe);
 
 // Refresh token
-adminAuthRouter.route("/refreshToken").get(adminRefreshAccessToken);
+authRouter.route("/refreshToken").get(adminRefreshAccessToken);
 
 // Logout
-adminAuthRouter.route("/logout").get(adminAuthentication, adminLogout);
+authRouter.route("/logout").get(adminAuthentication, adminLogout);
 
-module.exports = adminAuthRouter;
+module.exports = authRouter;
