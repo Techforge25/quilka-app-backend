@@ -160,6 +160,10 @@ const fetchUserStats = asyncHandler(async (request, response) => {
         {
             $project: {
                 _id: 0,
+                fullName: 1,
+                email: 1,
+                createdAt: 1,
+                status: 1,
                 totalBooks: 1,
                 totalSpend: 1,
                 tokensConsumed: 1,
