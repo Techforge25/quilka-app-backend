@@ -218,8 +218,8 @@ const fetchUserBooks = asyncHandler(async (request, response) => {
                     bookSize: 1,
                     spreadsCount: 1,
                     createdAt: 1,
-                    price: "$revenuegenerations.revenue"
-
+                    price: "$revenuegenerations.revenue",
+                    status: 1
                 }
             }
         ], { page, limit });
