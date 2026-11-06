@@ -12,6 +12,8 @@ const { expressRateLimit } = require("./middlewares/rateLimit");
 const apolloServer = require("./graphql");
 const { expressMiddleware } = require("@as-integrations/express5");
 const { authentication } = require("./middlewares/auth");
+const registerUserRoutes = require("./routes");
+const registerAdminRoutes = require("./routes/admin");
 require("./cron/deletePendingBooks");
 
 // Initialize express app
@@ -40,35 +42,9 @@ async function startApp()
         return { request: req, response: res };
     } }));
 
-    // Import Routes
-    const authRouter = require("./routes/authRoute");
-    const bookRouter = require("./routes/bookRoute");
-    const paymentRouter = require("./routes/paymentRoute");
-    const profileRouter = require("./routes/profileRoute");
-    const storyRouter = require("./routes/storyRoute");
-    const illustrationRouter = require("./routes/illustrationRoute");
-    const packageRouter = require("./routes/packagesRoute");
-
-    // Registered Routes
-    app.use("/api/v1/auth", authRouter);
-    app.use("/api/v1/book", bookRouter);
-    app.use("/api/v1/payment", paymentRouter);
-    app.use("/api/v1/profile", profileRouter);
-    app.use("/api/v1/story", storyRouter);
-    app.use("/api/v1/illustration", illustrationRouter);
-    app.use("/api/v1/package", packageRouter);
-
-    // Import Admin Routes
-    const adminAuthRouter = require("./routes/admin/adminAuthRoute");
-    const adminProfileRouter = require("./routes/admin/adminProfileRoute");
-    const packageCreditRouter = require("./routes/admin/packageRoute");
-    const paymentManagementRouter = require("./routes/admin/paymentRoute");
-
-    // Registered Admin Routes
-    app.use("/api/v1/admin/auth", adminAuthRouter);
-    app.use("/api/v1/admin/profile", adminProfileRouter);
-    app.use("/api/v1/admin/package", packageCreditRouter);
-    app.use("/api/v1/admin/payment", paymentManagementRouter);
+    // Register routes
+    registerUserRoutes(app);
+    registerAdminRoutes(app);
 
     // API status route
     app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));
