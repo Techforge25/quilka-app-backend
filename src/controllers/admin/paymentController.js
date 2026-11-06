@@ -41,10 +41,10 @@ const fetchPaymentStats = asyncHandler(async (request, response) => {
 
 // Fetch payments
 const fetchPayments = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, search = "" } = request.query;
 
     // Get from cache
-    const key = `payments:page:${page}:limit:${limit}`;
+    const key = `payments:page:${page}:limit:${limit}:search:${String(search).toLowerCase()}`;
     let payments = await getCache(key);
     if(!payments)
     {
@@ -76,6 +76,11 @@ const fetchPayments = asyncHandler(async (request, response) => {
             { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
             { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
 
+            // Match by user full name
+            ...(search ? [
+                { $match: { "user.fullName": { $regex: String(search).toLowerCase(), $options: "i" } } }
+            ] : []),       
+
             // Add book id conditionally
             {
                 $addFields: {
@@ -101,7 +106,7 @@ const fetchPayments = asyncHandler(async (request, response) => {
             },
 
             // Unwind book
-            { $unwind: { path: "$book", preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: "$book", preserveNullAndEmptyArrays: true } },      
 
             // Sort
             { $sort: { createdAt: -1 } },
@@ -117,7 +122,7 @@ const fetchPayments = asyncHandler(async (request, response) => {
                     provider: "$paymentGateway"
                 }
             }
-        ], { page, limit });
+        ], { page, limit, useFacet: false });
 
         // Set in cache
         await setCache(key, payments, 60);
