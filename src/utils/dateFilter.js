@@ -15,13 +15,12 @@ const getDateFilter = (request, fieldName = "createdAt") => {
     if(dateRange !== "all")
     {
         // Calculate date
-        const now = new Date();
-        let startDate = new Date();
+        const startDate = new Date();
 
-        if(dateRange === "7d") startDate.setDate(now.getDate() - 7);
-        if(dateRange === "1m") startDate.setMonth(now.getMonth() - 1);
-        if(dateRange === "6m") startDate.setMonth(now.getMonth() - 6);
-        if(dateRange === "1y") startDate.setMonth(now.getMonth() - 12);
+        if(dateRange === "7d") startDate.setDate(startDate.getDate() - 7);
+        if(dateRange === "1m") startDate.setMonth(startDate.getMonth() - 1);
+        if(dateRange === "6m") startDate.setMonth(startDate.getMonth() - 6);
+        if(dateRange === "1y") startDate.setMonth(startDate.getMonth() - 12);
 
         // Inject date range
         dateFilter[fieldName] = { $gte: startDate };
