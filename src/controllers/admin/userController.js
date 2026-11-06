@@ -7,6 +7,7 @@ const getDateFilter = require("../../utils/dateFilter");
 const { isValidObjectId } = require("mongoose");
 const ApiError = require("../../utils/ApiError");
 const convertToMongoId = require("../../utils/convertToMongoId");
+const Book = require("../../models/bookModel");
 
 // Fetch users
 const fetchUsers = asyncHandler(async (request, response) => {
@@ -172,4 +173,64 @@ const fetchUserStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, user, "User stats have been fetched"));
 });
 
-module.exports = { fetchUsers, fetchUserStats };
+// Fetch user books
+const fetchUserBooks = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Sanitize ID
+    const { userId } = request.params;
+    if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid User ID");
+
+    // Get from cache
+    const key = `users:${userId}:books`;
+    let books = await getCache(key);
+    if(!books)
+    {
+        // Get from DB
+        books = await Book.aggregatePaginate([
+            // Match
+            { $match: { userId: convertToMongoId(userId) } },
+
+            // Lookup revenue generation for book price
+            {
+                $lookup: {
+                    from: "revenuegenerations",
+                    localField: "_id",
+                    foreignField: "sourceId",
+                    as: "revenuegenerations",
+                    pipeline: [
+                        { $match: { userId: convertToMongoId(userId), sourceModel: "Book" } },
+                        { $project: { revenue: 1 } }
+                    ]
+                }
+            },
+
+            // Unwind
+            { $unwind: { path: "$revenuegenerations", preserveNullAndEmptyArrays: true } },
+
+            // Sort
+            { $sort: { createdAt: -1 } },
+
+            // Projection
+            {
+                $project: {
+                    title: 1,
+                    bookSize: 1,
+                    spreadsCount: 1,
+                    createdAt: 1,
+                    price: "$revenuegenerations.revenue"
+
+                }
+            }
+        ], { page, limit });
+
+        // Set in cache
+        await setCache(key, books, 60);
+    }
+    if(!books.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No books found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, books, "User books have been fetched"));
+});
+
+module.exports = { fetchUsers, fetchUserStats, fetchUserBooks };
