@@ -21,7 +21,7 @@ const userSchema = new Schema({
     password: { type: String, trim: true, required: isPasswordRequired },
 
     // Security and access
-    status: { type: String, trim: true, enum: ["pending", "active", "flagged"], default: "pending" },
+    status: { type: String, trim: true, enum: ["pending", "active", "suspended"], default: "pending" },
     role: { type: String, trim: true, enum: ["user"], default: "user" },
 
     // Social account flags
