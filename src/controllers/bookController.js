@@ -535,7 +535,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
         await book.save({ session: dbSession });
         await Regeneration.updateOne(
             { userId, bookId, limit: { $gt: 0 } },
-            { $inc: { limit: -1 } },
+            { $inc: { limit: -1, used: 1 } },
             { session: dbSession }
         );
 
@@ -722,7 +722,7 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
         await book.save({ session: dbSession });
         await Regeneration.updateOne(
             { userId, bookId, limit: { $gt: 0 } },
-            { $inc: { limit: -1 } },
+            { $inc: { limit: -1, used: 1 } },
             { session: dbSession }
         );
 
