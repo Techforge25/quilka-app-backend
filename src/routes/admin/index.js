@@ -1,4 +1,5 @@
 const authRouter = require("./authRoute");
+const bookRouter = require("./booksRoute");
 const packageRouter = require("./packageRoute");
 const paymentRouter = require("./paymentRoute");
 const profileRouter = require("./profileRoute");
@@ -14,6 +15,7 @@ const registerAdminRoutes = (app) => {
     app.use(`${prefix}/package`, packageRouter);
     app.use(`${prefix}/payment`, paymentRouter);
     app.use(`${prefix}/user`, userRouter);
+    app.use(`${prefix}/book`, bookRouter);
 };
 
 module.exports = registerAdminRoutes;
