@@ -8,6 +8,9 @@ const { isValidObjectId } = require("mongoose");
 const ApiError = require("../../utils/ApiError");
 const convertToMongoId = require("../../utils/convertToMongoId");
 const Book = require("../../models/bookModel");
+const { getNotFoundKey } = require("../../utils/redisKeys");
+const { markNotFoundCache } = require("../../utils/markNotFoundCache");
+const { redis } = require("../../redis/connection");
 
 // Fetch users
 const fetchUsers = asyncHandler(async (request, response) => {
@@ -89,89 +92,100 @@ const fetchUserStats = asyncHandler(async (request, response) => {
     const { userId } = request.params;
     if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid User ID");
 
-    // Fetch
-    const [user] = await User.aggregate([
-        // Match
-        { $match: { _id: convertToMongoId(userId) } },
+    // Get from cache
+    const key = `users:${userId}:stats`;
+    let user = await getCache(key);
+    if(!user)
+    {
+        // Track not found attempts
+        const notFoundKey = getNotFoundKey(request);
+        await markNotFoundCache(notFoundKey);
 
-        // Lookup book for total books computation
-        {
-            $lookup: {
-                from: "books",
-                localField: "_id",
-                foreignField: "userId",
-                as: "books",
-                pipeline: [{ $project: { title: 1 } }]
-            }
-        },
+        // Get from DB
+        [user] = await User.aggregate([
+            // Match
+            { $match: { _id: convertToMongoId(userId) } },
 
-        // Lookup revenue generations for total cost spending computation
-        {
-            $lookup: {
-                from: "revenuegenerations",
-                localField: "_id",
-                foreignField: "userId",
-                as: "revenuegenerations",
-                pipeline: [{ $project: { revenue: 1 } }]
-            }
-        },
+            // Lookup book for total books computation
+            {
+                $lookup: {
+                    from: "books",
+                    localField: "_id",
+                    foreignField: "userId",
+                    as: "books",
+                    pipeline: [{ $project: { title: 1 } }]
+                }
+            },
 
-        // Lookup token consumption for computing token counts
-        {
-            $lookup: {
-                from: "tokenconsumptions",
-                localField: "_id",
-                foreignField: "userId",
-                as: "tokenconsumptions",
-                pipeline: [{ $project: { totalTokens: 1 } }]
-            }
-        },
+            // Lookup revenue generations for total cost spending computation
+            {
+                $lookup: {
+                    from: "revenuegenerations",
+                    localField: "_id",
+                    foreignField: "userId",
+                    as: "revenuegenerations",
+                    pipeline: [{ $project: { revenue: 1 } }]
+                }
+            },
 
-        // Add total books, total spend and token consumed fields
-        {
-            $addFields: {
-                totalBooks: { $size: "$books" },
-                totalSpend: { $sum: "$revenuegenerations.revenue" },
-                tokensConsumed: { $sum: "$tokenconsumptions.totalTokens" },
-            }
-        },
+            // Lookup token consumption for computing token counts
+            {
+                $lookup: {
+                    from: "tokenconsumptions",
+                    localField: "_id",
+                    foreignField: "userId",
+                    as: "tokenconsumptions",
+                    pipeline: [{ $project: { totalTokens: 1 } }]
+                }
+            },
 
-        // Lookup revenue generations for total regenerations used
-        {
-            $lookup: {
-                from: "revenuegenerations",
-                localField: "_id",
-                foreignField: "userId",
-                as: "totalRegenerationsUsed",
-                pipeline: [
-                    { $match: { sourceModel: "Regeneration" } }
-                ]
-            }
-        },
-        
-        // Add total regeneration used field
-        {
-            $addFields: {
-                regenerationsUsed: { $size: "$totalRegenerationsUsed" }
-            }
-        },
+            // Lookup regenerations for computing total used regenerations
+            {
+                $lookup: {
+                    from: "regenerations",
+                    localField: "_id",
+                    foreignField: "userId",
+                    as: "regenerations",
+                    pipeline: [{ $project: { used: 1 } }]
+                }
+            },
 
-        // Projection
-        {
-            $project: {
-                _id: 0,
-                fullName: 1,
-                email: 1,
-                createdAt: 1,
-                status: 1,
-                totalBooks: 1,
-                totalSpend: 1,
-                tokensConsumed: 1,
-                regenerationsUsed: 1
+            // Add total books, total spend and token consumed fields
+            {
+                $addFields: {
+                    totalBooks: { $size: "$books" },
+                    totalSpend: { $sum: "$revenuegenerations.revenue" },
+                    tokensConsumed: { $sum: "$tokenconsumptions.totalTokens" },
+                    regenerationsUsed: { $sum: "$regenerations.used" }
+                }
+            },
+
+            // Projection
+            {
+                $project: {
+                    _id: 0,
+                    fullName: 1,
+                    email: 1,
+                    createdAt: 1,
+                    status: 1,
+                    totalBooks: 1,
+                    totalSpend: 1,
+                    tokensConsumed: 1,
+                    regenerationsUsed: 1
+                }
             }
+        ]);        
+        if(!user)
+        {
+            // Track attempts
+            const attempts = await redis.incr(notFoundKey);
+            if(attempts === 1) await redis.expire(notFoundKey, 60 * 5);
+            throw new ApiError(404, "User not found");
         }
-    ]);
-    if(!user) throw new ApiError(404, "User not found");
+
+        // Set in cache
+        await setCache(key, user, 60);
+    }
 
     // Response
     return response.status(200).json(new ApiResponse(200, user, "User stats have been fetched"));
