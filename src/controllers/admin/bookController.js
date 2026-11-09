@@ -8,6 +8,8 @@ const Book = require("../../models/bookModel");
 const { getNotFoundKey } = require("../../utils/redisKeys");
 const { markNotFoundCache } = require("../../utils/markNotFoundCache");
 const { redis } = require("../../redis/connection");
+const TokenConsumption = require("../../models/tokenConsumptionModel");
+const { emptyList } = require("../../constants");
 
 // Fetch book stats
 const fetchBookStats = asyncHandler(async (request, response) => {
@@ -20,7 +22,6 @@ const fetchBookStats = asyncHandler(async (request, response) => {
     let book = await getCache(key);
     if(!book)
     {
-
         // Track not found attempts
         const notFoundKey = getNotFoundKey(request);
         await markNotFoundCache(notFoundKey);
@@ -112,7 +113,6 @@ const fetchBookOverview = asyncHandler(async (request, response) => {
     let book = await getCache(key);
     if(!book)
     {
-
         // Track not found attempts
         const notFoundKey = getNotFoundKey(request);
         await markNotFoundCache(notFoundKey);
@@ -122,7 +122,7 @@ const fetchBookOverview = asyncHandler(async (request, response) => {
             // Match
             { $match: { _id: convertToMongoId(bookId) } },
 
-            // Lookup revenue generation
+            // Lookup spreads
             {
                 $lookup: {
                     from: "spreads",
@@ -168,4 +168,96 @@ const fetchBookOverview = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, book, "Book overview has been fetched"));
 });
 
-module.exports = { fetchBookStats, fetchBookOverview };
+// Fetch book overview
+const fetchBookStory = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Get from cache
+    const key = `books:${bookId}:story`;
+    let book = await getCache(key);
+    if(!book)
+    {
+        // Track not found attempts
+        const notFoundKey = getNotFoundKey(request);
+        await markNotFoundCache(notFoundKey);
+
+        // Get from DB
+        [book] = await Book.aggregate([
+            // Match
+            { $match: { _id: convertToMongoId(bookId) } },
+
+            // Lookup spreads
+            {
+                $lookup: {
+                    from: "spreads",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "spreads",
+                    pipeline: [{ $project: { _id: 0, mainLayoutName: 1, content: 1 } }]
+                }
+            },
+
+            // Projection
+            {
+                $project: {
+                    _id: 0,
+                    frontImage: 1,
+                    spreads: 1
+                }
+            }
+        ]);
+        if(!book) 
+        {
+            // Track attempts
+            const attempts = await redis.incr(notFoundKey);
+            if(attempts === 1) await redis.expire(notFoundKey, 60 * 5);
+            throw new ApiError(404, "Book not found");
+        }
+
+        // Set in cache
+        await setCache(key, book, 60);
+    }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, book, "Book story has been fetched"));
+});
+
+// Fetch book AI usage
+const fetchBookAIUsage = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Sanitize ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Get from cache
+    const key = `books:${bookId}:AIusage`;
+    let aiUsage = await getCache(key);
+    if(!aiUsage)
+    {
+        // Get from DB
+        aiUsage = await TokenConsumption.aggregatePaginate([
+            // Match
+            { $match: { bookId: convertToMongoId(bookId) } },
+
+            // Projection
+            {
+                $project: {
+                    _id: 0,
+                    type: 1,
+                    tokensConsumption: "$totalTokens",
+                    createdAt: 1
+                }
+            }
+        ], { page, limit });
+        await setCache(key, aiUsage, 60);
+    }
+    if(!aiUsage.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No AI usage found for this book"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, aiUsage, "Book AI usage has been fetched"));
+});
+
+module.exports = { fetchBookStats, fetchBookOverview, fetchBookStory, fetchBookAIUsage };
