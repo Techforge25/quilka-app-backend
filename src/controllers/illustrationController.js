@@ -14,6 +14,7 @@ const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
 const { deleteCacheByPattern } = require("../redis/redisHelpers");
 const { saveTokenConsumption } = require("../utils/saveTokenConsumption");
+const { consumptionType } = require("../constants");
 
 // Create illustration
 const createIllustration = asyncHandler(async (request, response, next) => {
@@ -61,7 +62,7 @@ const createIllustration = asyncHandler(async (request, response, next) => {
     const { imageBuffer, totalTokenCount } = illustrationResponse;
     
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.illustration);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -106,7 +107,7 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
     const { imageBuffer, totalTokenCount } = illustrationResponse;
 
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.illustration);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -233,7 +234,7 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     const { imageBuffer, totalTokenCount } = illustrationResponse;
 
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.illustration);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -278,7 +279,7 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
     const { imageBuffer, totalTokenCount } = illustrationResponse;
 
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.illustration);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
