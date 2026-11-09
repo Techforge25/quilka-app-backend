@@ -10,6 +10,7 @@ const { markNotFoundCache } = require("../../utils/markNotFoundCache");
 const { redis } = require("../../redis/connection");
 const TokenConsumption = require("../../models/tokenConsumptionModel");
 const { emptyList } = require("../../constants");
+const RevenueGeneration = require("../../models/revenueGenerationModel");
 
 // Fetch book stats
 const fetchBookStats = asyncHandler(async (request, response) => {
@@ -260,4 +261,51 @@ const fetchBookAIUsage = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, aiUsage, "Book AI usage has been fetched"));
 });
 
-module.exports = { fetchBookStats, fetchBookOverview, fetchBookStory, fetchBookAIUsage };
+// Fetch book payment details
+const fetchBookPaymentDetails = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Get from cache
+    const key = `books:${bookId}:payment`;
+    let payment = await getCache(key);
+    if(!payment)
+    {
+        // Track not found attempts
+        const notFoundKey = getNotFoundKey(request);
+        await markNotFoundCache(notFoundKey);
+
+        // Get from DB
+        [payment] = await RevenueGeneration.aggregate([
+            // Match
+            { $match: { sourceId: convertToMongoId(bookId), sourceModel: "Book" } },
+
+            // Projection
+            {
+                $project: {
+                    _id: 0,
+                    transactionId: 1,
+                    paymentGateway: 1,
+                    price: "$revenue",
+                    status: 1,
+                }
+            }
+        ]);
+        if(!payment)
+        {
+            // Track attempts
+            const attempts = await redis.incr(notFoundKey);
+            if(attempts === 1) await redis.expire(notFoundKey, 60 * 5);
+            throw new ApiError(404, "Payment details not found");
+        }
+
+        // Set in cache
+        await setCache(key, payment, 60);
+    }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payment, "Book payment details have been fetched"));
+});
+
+module.exports = { fetchBookStats, fetchBookOverview, fetchBookStory, fetchBookAIUsage, fetchBookPaymentDetails };

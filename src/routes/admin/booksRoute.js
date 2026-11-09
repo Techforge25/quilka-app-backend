@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
 const { expressRateLimit } = require("../../middlewares/rateLimit");
 const { fetchBookStats, fetchBookOverview, fetchBookStory, 
-fetchBookAIUsage } = require("../../controllers/admin/bookController");
+fetchBookAIUsage, fetchBookPaymentDetails } = require("../../controllers/admin/bookController");
 
 // Router instance
 const bookRouter = Router();
@@ -21,5 +21,8 @@ bookRouter.route("/:bookId/story").get(fetchBookStory);
 
 // Fetch book AI usage
 bookRouter.route("/:bookId/aiUsage").get(fetchBookAIUsage);
+
+// Fetch book payment details
+bookRouter.route("/:bookId/payment").get(fetchBookPaymentDetails);
 
 module.exports = bookRouter;
