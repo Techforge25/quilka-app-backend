@@ -1,0 +1,104 @@
+const ApiResponse = require("../../utils/ApiResponse");
+const ApiError = require("../../utils/ApiError");
+const asyncHandler = require("../../utils/asyncHandler");
+const { getCache, setCache } = require("../../redis/redisHelpers");
+const { isValidObjectId } = require("mongoose");
+const convertToMongoId = require("../../utils/convertToMongoId");
+const Book = require("../../models/bookModel");
+const { getNotFoundKey } = require("../../utils/redisKeys");
+const { markNotFoundCache } = require("../../utils/markNotFoundCache");
+const { redis } = require("../../redis/connection");
+
+// Fetch book stats
+const fetchBookStats = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Get from cache
+    const key = `books:${bookId}:stats`;
+    let book = await getCache(key);
+    if(!book)
+    {
+
+        // Track not found attempts
+        const notFoundKey = getNotFoundKey(request);
+        await markNotFoundCache(notFoundKey);
+
+        // Get from DB
+        [book] = await Book.aggregate([
+            // Match
+            { $match: { _id: convertToMongoId(bookId) } },
+
+            // Lookup revenue generation
+            {
+                $lookup: {
+                    from: "revenuegenerations",
+                    localField: "_id",
+                    foreignField: "sourceId",
+                    as: "bookPrice",
+                    pipeline:[
+                        { $match: { sourceModel: "Book" } },
+                        { $project: { revenue: 1 } }
+                    ]
+                }
+            },
+
+            // Lookup token consumption
+            {
+                $lookup: {
+                    from: "tokenconsumptions",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "tokenconsumptions",
+                    pipeline: [{ $project: { totalTokens: 1 } }]
+                }
+            },
+
+            // Lookup regenerations
+            {
+                $lookup: {
+                    from: "regenerations",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "regeneration",
+                    pipeline: [{ $project: { limit: 1, used: 1 } }]
+                }
+            },            
+
+            // Unwind
+            { $unwind: { path: "$bookPrice", preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
+
+            // Projection
+            {
+                $project: {
+                    _id: 0,
+                    title: 1,
+                    authorName: 1,
+                    createdAt: 1,
+                    status: 1,
+                    bookPrice: "$bookPrice.revenue",
+                    tokensConsumed: { $sum: "$tokenconsumptions.totalTokens" },
+                    regenerationsUsed: "$regeneration.used",
+                    remainingCredits: "$regeneration.limit"
+                }
+            }
+        ]);
+        if(!book) 
+        {
+            // Track attempts
+            const attempts = await redis.incr(notFoundKey);
+            if(attempts === 1) await redis.expire(notFoundKey, 60 * 5);
+            throw new ApiError(404, "Book not found");
+        }
+
+        // Set in cache
+        await setCache(key, book, 60);
+    }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, book, "Book stats have been fetched"));
+});
+
+module.exports = { fetchBookStats };
