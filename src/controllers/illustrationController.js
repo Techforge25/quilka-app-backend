@@ -127,7 +127,7 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
         await spread.save({ session: dbSession });
         await Regeneration.updateOne(
             { userId, bookId, limit: { $gt: 0 } },
-            { $inc: { limit: -1 } },
+            { $inc: { limit: -1, used: 1 } },
             { session: dbSession }
         );
 
@@ -299,7 +299,7 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
         await spread.save({ session: dbSession });
         await Regeneration.updateOne(
             { userId, bookId, limit: { $gt: 0 } },
-            { $inc: { limit: -1 } },
+            { $inc: { limit: -1, used: 1 } },
             { session: dbSession }
         );
 
