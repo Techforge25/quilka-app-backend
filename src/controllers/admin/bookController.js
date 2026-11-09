@@ -101,4 +101,54 @@ const fetchBookStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, book, "Book stats have been fetched"));
 });
 
-module.exports = { fetchBookStats };
+// Fetch book overview
+const fetchBookOverview = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { bookId } = request.params;
+    if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
+
+    // Get from cache
+    const key = `books:${bookId}:overview`;
+    let book = await getCache(key);
+    if(!book)
+    {
+
+        // Track not found attempts
+        const notFoundKey = getNotFoundKey(request);
+        await markNotFoundCache(notFoundKey);
+
+        // Get from DB
+        [book] = await Book.aggregate([
+            // Match
+            { $match: { _id: convertToMongoId(bookId) } },
+
+            // Projection
+            {
+                $project: {
+                    _id: 0,
+                    bookSize: 1,
+                    illustrationStyle: 1,
+                    language: 1,
+                    spreads: 1,
+                    totalSpreads: "$spreadsCount",
+                    totalPages: { $multiply: ["$spreadsCount", 2] }
+                }
+            }
+        ]);
+        if(!book) 
+        {
+            // Track attempts
+            const attempts = await redis.incr(notFoundKey);
+            if(attempts === 1) await redis.expire(notFoundKey, 60 * 5);
+            throw new ApiError(404, "Book not found");
+        }
+
+        // Set in cache
+        await setCache(key, book, 60);
+    }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, book, "Book overview has been fetched"));
+});
+
+module.exports = { fetchBookStats, fetchBookOverview };

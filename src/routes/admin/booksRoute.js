@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
 const { expressRateLimit } = require("../../middlewares/rateLimit");
-const { fetchBookStats } = require("../../controllers/admin/bookController");
+const { fetchBookStats, fetchBookOverview } = require("../../controllers/admin/bookController");
 
 // Router instance
 const bookRouter = Router();
@@ -11,5 +11,8 @@ bookRouter.use(expressRateLimit({ maxRequests: 50, minutes: 1 }), adminAuthentic
 
 // Fetch book stats
 bookRouter.route("/:bookId/stats").get(fetchBookStats);
+
+// Fetch book overview
+bookRouter.route("/:bookId/overview").get(fetchBookOverview);
 
 module.exports = bookRouter;
