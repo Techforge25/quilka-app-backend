@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const { allowedTokenConsumptionTypes } = require("../constants");
 
 // Schema
@@ -11,6 +12,9 @@ const tokenConsumptionSchema = new Schema({
     type: { type: String, trim: true, required: true, enum: allowedTokenConsumptionTypes },
     totalTokens: { type: Number, required: true },
 }, { timestamps: true });
+
+// Add pagination plugin
+tokenConsumptionSchema.plugin(aggregatePaginate);
 
 // Model
 const TokenConsumption = model("TokenConsumption", tokenConsumptionSchema);
