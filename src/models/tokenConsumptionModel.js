@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const { allowedTokenConsumptionTypes } = require("../constants");
 
 // Schema
 const tokenConsumptionSchema = new Schema({
@@ -6,8 +7,9 @@ const tokenConsumptionSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: "User", index: true, required: true },
     bookId: { type: Schema.Types.ObjectId, ref: "Book", required: true },
 
-    // Tokens
-    totalTokens: { type: Number, required: true }
+    // Metadata
+    type: { type: String, trim: true, required: true, enum: allowedTokenConsumptionTypes },
+    totalTokens: { type: Number, required: true },
 }, { timestamps: true });
 
 // Model
