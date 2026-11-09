@@ -9,7 +9,7 @@ const validatePayload = require("../utils/validatePayload");
 const { promptGuideForTextGeneration, promptGuideForTextRegeneration, 
 promptGuideForCustomStoryRefinement } = require("../utils/promptGuide");
 const llm = require("../service/llmService");
-const { allowedTextSizes } = require("../constants");
+const { allowedTextSizes, consumptionType } = require("../constants");
 const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
 const { customStoryRefinementValidator, updateStoryValidator, newStoryValidator } = require("../validators/storyValidator");
@@ -21,7 +21,7 @@ const { markNotFoundCache } = require("../utils/markNotFoundCache");
 const { saveTokenConsumption } = require("../utils/saveTokenConsumption");
 
 // Generate story with AI
-const generateWithAi = asyncHandler(async (request, response, next) => {
+const generateStroyTextWithAI = asyncHandler(async (request, response, next) => {
     const userId = request.user._id;
 
     // Sanitize book ID
@@ -68,7 +68,7 @@ const generateWithAi = asyncHandler(async (request, response, next) => {
     const { aiContent, totalTokenCount } = output;
 
     // Save tokens to db
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.text);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
@@ -111,7 +111,7 @@ const generateWithAi = asyncHandler(async (request, response, next) => {
 });
 
 // Regenerate story text with AI
-const regenerateStoryText = asyncHandler(async (request, response) => {
+const regenerateStoryTextwithAI = asyncHandler(async (request, response) => {
     // Get metadata
     const userId = request.user._id;
     const { bookId } = request.params;
@@ -143,7 +143,7 @@ const regenerateStoryText = asyncHandler(async (request, response) => {
     const { aiContent, totalTokenCount } = output;
 
     // Save tokens to db
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.text);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
@@ -345,7 +345,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
     const { aiContent, totalTokenCount } = output;
 
     // Save tokens to db
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.text);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
@@ -605,5 +605,5 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));
 });
 
-module.exports = { generateWithAi, regenerateStoryText, viewStoryContent, useNewStoryVersion, updateStory,
+module.exports = { generateStroyTextWithAI, regenerateStoryTextwithAI, viewStoryContent, useNewStoryVersion, updateStory,
 refineStoryWithAI, updateStoryWithSpreadTextSize, finalizeTextPhase, finalizeIllustrationPhase };
