@@ -6,7 +6,7 @@ const validatePayload = require("../utils/validatePayload");
 const { createBookValidator, uploadManualFrontOrCoverImageValidator } = require("../validators/bookValidator");
 const { isValidObjectId, startSession } = require("mongoose");
 const convertToMongoId = require("../utils/convertToMongoId");
-const { emptyList } = require("../constants");
+const { emptyList, consumptionType } = require("../constants");
 const llm = require("../service/llmService");
 const { promptGuideForCoverImage, promptGuideForFrontImage } = require("../utils/promptGuide");
 const { uploadToCloudinary } = require("../utils/cloudinary");
@@ -452,7 +452,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
     const { frontImageBuffer, coverImageBuffer, totalTokenCount } = llmResponse;
 
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.frontAndCover);
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -509,7 +509,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
     const { frontImageBuffer, coverImageBuffer, totalTokenCount } = llmResponse;
 
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.frontAndCover);
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -629,7 +629,7 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
     const { imageBuffer, totalTokenCount } = llmResponse;
 
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType[type]);
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -695,7 +695,7 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
     const { imageBuffer, totalTokenCount } = llmResponse;
 
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount);
+    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType[type]);
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);
