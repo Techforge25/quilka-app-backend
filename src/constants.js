@@ -127,7 +127,22 @@ const allowedSpreadSizes = [
 const allowedLanguages = ["English", "Arabic", "Spanish", "Hindi", "Afrikaans"];
 
 // Allowed token consumption types
-const allowedTokenConsumptionTypes = ["text", "illustration", "front", "cover", "front & cover"];
+const allowedTokenConsumptionTypes = [
+    "TEXT GENERATION", 
+    "ILLUSTRATION GENERATION", 
+    "FRONT IMAGE GENERATION", 
+    "COVER IMAGE GENERATION", 
+    "FRONT & COVER IMAGES GENERATION"
+];
+
+// Consumption types enum
+const consumptionType = {
+    text: allowedTokenConsumptionTypes[0],
+    illustration: allowedTokenConsumptionTypes[1],
+    front: allowedTokenConsumptionTypes[2],
+    cover: allowedTokenConsumptionTypes[3],
+    frontAndCover: allowedTokenConsumptionTypes[4]
+}
 
 module.exports = {
     port,
@@ -145,5 +160,6 @@ module.exports = {
     allowedTextSizes,
     allowedSpreadSizes,
     allowedLanguages,
-    allowedTokenConsumptionTypes
+    allowedTokenConsumptionTypes,
+    consumptionType
 };
