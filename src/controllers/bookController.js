@@ -38,31 +38,54 @@ const createBookInCustom = asyncHandler(async (request, response, next) => {
         if(spread.content.length > spread.characterLimit) throw new ApiError(400, `Character limit exceeded for Spread ${spreadNo}`);
     });
 
-    // Create book
-    const book = await Book.create({ 
-        userId, 
-        mode, 
-        title, 
-        authorName, 
-        spreadsCount,
-        ageGroup, 
-        bookSize, 
-        spreadSize,
-        textStyle,
-        illustrationStyle,
-        language, 
-    });
-    if(!book) throw new ApiError(500, "Failed to create book");
+    // Start transactional queries
+    const dbSession = await startSession();
+    let bookId = null;
+    try
+    {
+        dbSession.startTransaction();
 
-    // Map Book ID
-    const spreadConfig = spreads.map((spread) => ({ ...spread, bookId: book._id }));
+        // Create book
+        const book = await Book.create([{ 
+            userId, 
+            mode, 
+            title, 
+            authorName, 
+            spreadsCount,
+            ageGroup, 
+            bookSize, 
+            spreadSize,
+            textStyle,
+            illustrationStyle,
+            language,
+        }], { session: dbSession });
+        if(!book) throw new ApiError(500, "Failed to create book in Custom Mode");
+        bookId = book._id;
 
-    // Create spreads
-    const spread = await Spread.insertMany(spreadConfig);
-    if(!spread) throw new ApiError(400, "Failed to create spreads");
+        // Map Book ID
+        const spreadConfig = spreads.map((spread) => ({ ...spread, bookId }));
+
+        // Create spreads
+        await Spread.insertMany(spreadConfig, { session: dbSession });        
+
+        // Commit transaction
+        await dbSession.commitTransaction();
+
+        // Delete cache
+        await deleteCacheByPattern(`books:${bookId}*`);
+    }
+    catch(error)
+    {
+        await dbSession.abortTransaction();
+        throw new ApiError(500, error.message);
+    }
+    finally
+    {
+        dbSession.endSession();
+    }
 
     // Response
-    return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created in Custom Mode!"));
+    return response.status(201).json(new ApiResponse(201, { bookId }, "Book has been created in Custom Mode!"));
 });
 
 // Create book in AI
@@ -79,32 +102,55 @@ const createBookInAI = asyncHandler(async (request, response) => {
         if(spread.content !== null) throw new ApiError(400, `Spread ${spreadNo} content must be null in AI Mode`);
     });
 
-    // Create book
-    const book = await Book.create({
-        userId, 
-        mode, 
-        title, 
-        authorName, 
-        prompt,
-        spreadsCount,
-        ageGroup, 
-        bookSize, 
-        spreadSize,
-        textStyle,
-        illustrationStyle,
-        language,
-    });
-    if(!book) throw new ApiError(500, "Failed to create book");
+    // Start transactional queries
+    const dbSession = await startSession();
+    let bookId = null;
+    try
+    {
+        dbSession.startTransaction();
 
-    // Map Book ID
-    const spreadConfig = spreads.map((spread) => ({ ...spread, bookId: book._id }));
+        // Create book
+        const book = await Book.create([{
+            userId, 
+            mode, 
+            title, 
+            authorName, 
+            prompt,
+            spreadsCount,
+            ageGroup, 
+            bookSize, 
+            spreadSize,
+            textStyle,
+            illustrationStyle,
+            language
+        }], { session: dbSession });
+        if(!book) throw new ApiError(500, "Failed to create book in AI Mode");
+        bookId = book._id;
 
-    // Create spreads
-    const spread = await Spread.insertMany(spreadConfig);
-    if(!spread) throw new ApiError(400, "Failed to create spreads");    
+        // Map Book ID
+        const spreadConfig = spreads.map((spread) => ({ ...spread, bookId }));
+
+        // Create spreads
+        await Spread.insertMany(spreadConfig, { session: dbSession });        
+
+        // Commit transaction
+        await dbSession.commitTransaction();
+
+        // Delete cache
+        await deleteCacheByPattern(`books:${bookId}*`);
+    }
+    catch(error)
+    {
+        await dbSession.abortTransaction();
+        throw new ApiError(500, error.message);
+    }
+    finally
+    {
+        dbSession.endSession();
+    }    
 
     // Response
-    return response.status(201).json(new ApiResponse(201, { bookId: book._id }, "Book has been created in AI Mode!"));
+    return response.status(201).json(new ApiResponse(201, { bookId }, "Book has been created in AI Mode!"));
 });
 
  // Fetch my books
