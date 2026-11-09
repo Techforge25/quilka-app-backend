@@ -122,6 +122,24 @@ const fetchBookOverview = asyncHandler(async (request, response) => {
             // Match
             { $match: { _id: convertToMongoId(bookId) } },
 
+            // Lookup revenue generation
+            {
+                $lookup: {
+                    from: "spreads",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "spreads",
+                    pipeline: [{ $project: { _id: 1 } }]
+                }
+            },
+
+            // Add fields
+            {
+                $addFields: {
+                    totalSpreads: { $size: "$spreads" },
+                }
+            },
+
             // Projection
             {
                 $project: {
@@ -129,9 +147,8 @@ const fetchBookOverview = asyncHandler(async (request, response) => {
                     bookSize: 1,
                     illustrationStyle: 1,
                     language: 1,
-                    spreads: 1,
-                    totalSpreads: "$spreadsCount",
-                    totalPages: { $multiply: ["$spreadsCount", 2] }
+                    totalSpreads: 1,
+                    totalPages: { $multiply: ["$totalSpreads", 2] }
                 }
             }
         ]);
