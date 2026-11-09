@@ -7,7 +7,8 @@ const regenerationSchema = new Schema({
     bookId: { type: Schema.Types.ObjectId, ref: "Book", required: true },
 
     // Limitations
-    limit: { type: Number, required: true, default: 5 }
+    limit: { type: Number, required: true },
+    used: { type: Number, default: 0 },
 }, { timestamps: true });
 
 // Compound index
