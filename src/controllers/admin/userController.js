@@ -186,7 +186,7 @@ const fetchUserBooks = asyncHandler(async (request, response) => {
     if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid User ID");
 
     // Get from cache
-    const key = `users:${userId}:books`;
+    const key = `users:${userId}:books:page:${page}:limit:${limit}`;
     let books = await getCache(key);
     if(!books)
     {
