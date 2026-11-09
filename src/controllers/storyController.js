@@ -178,7 +178,7 @@ const regenerateStoryTextwithAI = asyncHandler(async (request, response) => {
         // Update regeneration limit
         await Regeneration.updateOne(
             { userId, bookId, limit: { $gt: 0 } },
-            { $inc: { limit: -1 } },
+            { $inc: { limit: -1, used: 1 } },
             { session: dbSession }
         );
         
@@ -361,7 +361,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
     // Update regeneration limit
     await Regeneration.updateOne(
         { userId, bookId, limit: { $gt: 0 } },
-        { $inc: { limit: -1 } },
+        { $inc: { limit: -1, used: 1 } },
     );
 
     // Delete cache
