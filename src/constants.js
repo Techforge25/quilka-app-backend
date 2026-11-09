@@ -126,6 +126,9 @@ const allowedSpreadSizes = [
 // Allowed languages
 const allowedLanguages = ["English", "Arabic", "Spanish", "Hindi", "Afrikaans"];
 
+// Allowed token consumption types
+const allowedTokenConsumptionTypes = ["text", "illustration", "front", "cover", "front & cover"];
+
 module.exports = {
     port,
     isProduction,
@@ -141,5 +144,6 @@ module.exports = {
     allowedIllustrationSizes,
     allowedTextSizes,
     allowedSpreadSizes,
-    allowedLanguages
+    allowedLanguages,
+    allowedTokenConsumptionTypes
 };
