@@ -231,16 +231,23 @@ const viewBook = asyncHandler(async (request, response) => {
                 }
             },
 
-            // Add fields to calculate characters, illustrations and book length
+            // Add fields to calculate total story characters & illustrations
             {
                 $addFields: {
                     totalCharacters: { $sum: "$spreads.characterLimit" },
                     totalIllustrations: { $sum: "$spreads.illustrationLimit" },
-                    bookLength: {
-                        spreads: "$spreadsCount",
-                        pages: { $multiply: ["$spreadsCount", 2] },
-                    },
+                    totalSpreads: { $size: "$spreads" },
                     price: { $multiply: ["$spreadsCount", 2] }
+                }
+            },
+
+            // Add book length
+            {
+                $addFields: {
+                    bookLength: {
+                        spreads: "$totalSpreads",
+                        pages: { $multiply: ["$totalSpreads", 2] }
+                    },
                 }
             },
 
@@ -327,16 +334,27 @@ const viewBookContent = asyncHandler(async (request, response) => {
             // Unwind
             { $unwind: { path: "$regeneration", preserveNullAndEmptyArrays: true } },
 
-            // Add fields to calculate characters, book length
+            // Add fields to calculate total story characters & illustration
             {
                 $addFields: {
                     totalCharacters: { $sum: "$spreads.characterLimit" },
                     totalIllustrations: { $sum: "$spreads.illustrationLimit" },
+                    totalSpreads: { $size: "$spreads" },
                     bookLength: {
                         spreads: "$spreadsCount",
                         pages: { $multiply: ["$spreadsCount", 2] },
                     },
                     regenerations: "$regeneration.limit"
+                }
+            },
+
+            // Add book length
+            {
+                $addFields: {
+                    bookLength: {
+                        spreads: "$totalSpreads",
+                        pages: { $multiply: ["$totalSpreads", 2] }
+                    },                    
                 }
             },
 
