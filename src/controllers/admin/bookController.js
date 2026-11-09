@@ -234,7 +234,7 @@ const fetchBookAIUsage = asyncHandler(async (request, response) => {
     if(!isValidObjectId(bookId)) throw new ApiError(400, "Invalid Book ID");
 
     // Get from cache
-    const key = `books:${bookId}:AIusage`;
+    const key = `books:${bookId}:AIusage:page:${page}:limit:${limit}`;
     let aiUsage = await getCache(key);
     if(!aiUsage)
     {
