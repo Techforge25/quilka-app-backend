@@ -4,6 +4,7 @@ const asyncHandler = require("../../utils/asyncHandler");
 const { getCache, setCache } = require("../../redis/redisHelpers");
 const { emptyList } = require("../../constants");
 const RevenueGeneration = require("../../models/revenueGenerationModel");
+const getDateFilter = require("../../utils/dateFilter");
 
 // Fetch stats
 const fetchPaymentStats = asyncHandler(async (request, response) => {
@@ -41,15 +42,21 @@ const fetchPaymentStats = asyncHandler(async (request, response) => {
 
 // Fetch payments
 const fetchPayments = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search = "" } = request.query;
+    const { page = 1, limit = 10, search = "", dateRange = "all" } = request.query;
+
+    // Get date filter
+    const { dateFilter } = getDateFilter(dateRange);
 
     // Get from cache
-    const key = `payments:page:${page}:limit:${limit}:search:${String(search).toLowerCase()}`;
+    const key = `payments:page:${page}:limit:${limit}:search:${String(search).toLowerCase()}:dateRange:${dateRange}`;
     let payments = await getCache(key);
     if(!payments)
     {
         // Get from db
         payments = await RevenueGeneration.aggregatePaginate([
+            // Match
+            { $match: dateFilter },
+
             // Lookup user
             {
                 $lookup: {
