@@ -1,6 +1,6 @@
 const { isValidObjectId } = require("mongoose");
 const User = require("../models/userModel");
-const { generateAccessToken, verifyAccessToken, getAccessToken } = require("../utils/accessToken");
+const { generateAccessToken, getAccessToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -8,11 +8,10 @@ const generateCode = require("../utils/generateCode");
 const validatePayload = require("../utils/validatePayload");
 const { userSignupValidator, userLoginValidator, verifyOtpValidator, resendOtpValidator, 
 forgotPasswordValidator, verifyResetPasswordOTPValidator, resetPasswordValidator, 
-appleLoginValidator} = require("../validators/userAuthValidator");
+appleLoginValidator } = require("../validators/userAuthValidator");
 const { setCache, getCache, deleteCache, getAndDeleteCache } = require("../redis/redisHelpers");
 const { getOTPKey, getResetPasswordKey, getUserSessionKey } = require("../utils/redisKeys");
 const emailQueue = require("../queues/emailQueue");
-const { redis } = require("../redis/connection");
 const crypto = require("crypto");
 const { verifyAppleIdentityToken } = require("../service/apple-auth");
 const { ACCESS_TOKEN_SECRET } = process.env;
@@ -111,43 +110,20 @@ const login = asyncHandler(async (request, response) => {
     // Get validated payload
     const { email, password } = validatePayload(userLoginValidator, request.body) || {};
 
-    // Get IP (IPv4)
-    const ip = request.headers["x-real-ip"] || request.ip;
-    const key = `failedLoginAttempts:${ip}`;
-
-    // Check total attempts
-    const totalAttempts = await getCache(key);
-    if(totalAttempts >= 5) throw new ApiError(429, "Too many failed login attempts. Please try again after 5 minutes");
-
     // Find user
     const user = await User.findOne({ email });
-    if(!user) 
-    {
-        // Mark failed attempt
-        const attempts = await redis.incr(key);
-        if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
-        throw new ApiError(400, "Invalid email or password");
-    }
+    if(!user) throw new ApiError(400, "Invalid email or password");
 
     // Match password
     const isMatched = await user.matchPassword(password);
-    if(!isMatched)
-    {
-        // Mark failed attempt
-        const attempts = await redis.incr(key);
-        if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
-        throw new ApiError(400, "Invalid email or password");
-    }
+    if(!isMatched) throw new ApiError(400, "Invalid email or password");
 
     // Only approved account can log in
     if(user.status === "pending") return response.status(403).json(new ApiResponse(403, { otpRequired: true, userId: user._id }, "Please verify your identity via OTP."));
-    if(user.status === "suspended") throw new ApiError(400, "Your account is suspended. You cannot log-in to your account");  
+    if(user.status === "suspended") throw new ApiError(400, "Your account is not eligible for login");
 
     // Generate access token
     const accessToken = await generateAccessToken(user);
-
-    // Delete attempts
-    await deleteCache(key);
 
     // Response
     return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
