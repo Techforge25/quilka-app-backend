@@ -46,7 +46,7 @@ const createBookInCustom = asyncHandler(async (request, response, next) => {
         dbSession.startTransaction();
 
         // Create book
-        const book = await Book.create([{ 
+        const [book] = await Book.create([{ 
             userId, 
             mode, 
             title, 
@@ -110,7 +110,7 @@ const createBookInAI = asyncHandler(async (request, response) => {
         dbSession.startTransaction();
 
         // Create book
-        const book = await Book.create([{
+        const [book] = await Book.create([{
             userId, 
             mode, 
             title, 
