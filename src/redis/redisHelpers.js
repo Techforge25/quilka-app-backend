@@ -86,4 +86,19 @@ const getAndDeleteCache = async (key) => {
     }
 };
 
-module.exports = { setCache, getCache, deleteCache, deleteCacheByPattern, getAndDeleteCache };
+// Delete multi caches
+const deleteMultiCaches = async (...keys) => {
+    if(!keys.length) return false;
+    try 
+    {
+        await Promise.all(keys.map(key => deleteCacheByPattern(key)));
+        return true;
+    } 
+    catch(error) 
+    {
+        console.log("Failed to delete multi caches", error.message);
+        return false;
+    }
+};
+
+module.exports = { setCache, getCache, deleteCache, deleteCacheByPattern, getAndDeleteCache, deleteMultiCaches };
