@@ -23,38 +23,61 @@ const payForBook = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { price, paymentGateway, transactionId } = validatePayload(payForBookValidator, request.body) || {};
 
-    // Find book
-    const book = await Book.findById(bookId).select("userId status draftStage");
+    // Fetch book & free credits
+    const [book, freeCredits] = await Promise.all([
+        Book.findById(bookId).select("userId status draftStage"),
+        FreeCredit.findOne().select("-_id enable credits").lean()
+    ]);
 
     // Validate edge cases
     if(!book) throw new ApiError(404, "Book not found");
     if(String(userId) !== String(book.userId)) throw new ApiError(403, "Forbidden! You are not authorized to access this book.");
     if(book.status !== "pending") throw new ApiError(403, "Forbidden! Payment has already been processed for this book");
 
-    // Parallel execution
-    const [revenueGeneration, freeCredits] = await Promise.all([
+    // Initialize credits
+    const credits = freeCredits?.enable ? Number(freeCredits.credits) : 0;
+
+    // Start transactional queries
+    const dbSession = await startSession();
+    try
+    {
+        dbSession.startTransaction();
+
         // Save to revenue generation
-        RevenueGeneration.create({ userId, revenue: price, sourceId: bookId, sourceModel: "Book", 
-        paymentGateway, transactionId, status: "paid" }),
+        await RevenueGeneration.create([{
+            userId, 
+            revenue: price, 
+            sourceId: bookId, 
+            sourceModel: "Book",
+            paymentGateway, 
+            transactionId, 
+            status: "paid"
+        }], { session: dbSession });
 
-        // Fetch free regeneration credits allowance
-        FreeCredit.findOne().select("-_id credits").lean()
-    ]);
-    if(!revenueGeneration) throw new ApiError(500, "Failed to save record in revenue generation");
+        // Mark book status as draft
+        book.status = "draft";
+        book.draftStage = 1;
+        await book.save({ session: dbSession });
 
-    // Mark book status as draft
-    book.status = "draft";
-    book.draftStage = 1;
+        // Add free regeneration credits to purchased book
+        await Regeneration.create([{
+            userId, 
+            bookId, 
+            limit: credits
+        }], { session: dbSession });
 
-    // Parallel execution
-    const result = await Promise.all([
-        // Update book status
-        book.save(),
-
-        // Add 5 free regeneration to this book
-        Regeneration.create({ userId, bookId, limit: Number(freeCredits.credits) })
-    ]);
-    if(!result[1]) throw new ApiError(500, "Failed to add 5 free regenerations");
+        // Commit transaction
+        await dbSession.commitTransaction();
+    }
+    catch(error)
+    {
+        await dbSession.abortTransaction();
+        throw new ApiError(500, error.message);
+    }
+    finally
+    {
+        dbSession.endSession();
+    }
 
     // Delete caches
     await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `payments*`);
