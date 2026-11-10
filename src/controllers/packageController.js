@@ -15,9 +15,6 @@ const fetchPackages = asyncHandler(async (request, response) => {
     {
         // Get from DB
         packages = await Package.aggregatePaginate([
-            // Match
-            { $match: { name: { $ne: "Free Allowance" }, price: { $gt: 0 } } },
-
             // Sort
             { $sort: { createdAt: 1 } },
 
