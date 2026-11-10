@@ -8,7 +8,7 @@ const validatePayload = require("../utils/validatePayload");
 const { isValidObjectId } = require("mongoose");
 const { payForBookValidator, payForRegenerationValidator } = require("../validators/paymentValidator");
 const Package = require("../models/packageModel");
-const { deleteCacheByPattern } = require("../redis/redisHelpers");
+const { deleteMultiCaches } = require("../redis/redisHelpers");
 const FreeCredit = require("../models/freeCreditModel");
 const { startSession } = require("mongoose");
 
@@ -52,14 +52,12 @@ const payForBook = asyncHandler(async (request, response) => {
         book.save(),
 
         // Add 5 free regeneration to this book
-        Regeneration.create({ userId, bookId, limit: Number(freeCredits.credits) }),
-
-        // Delete cache
-        deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`),
-        deleteCacheByPattern(`payments*`)
+        Regeneration.create({ userId, bookId, limit: Number(freeCredits.credits) })
     ]);
     if(!result[1]) throw new ApiError(500, "Failed to add 5 free regenerations");
+
+    // Delete caches
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `payments*`);
     
     // Response
     return response.status(200).json(new ApiResponse(200, bookId, "Payment has been completed"));
@@ -109,6 +107,7 @@ const payForRegeneration = asyncHandler(async (request, response) => {
             revenue: price,
             sourceId: regeneration._id,
             sourceModel: "Regeneration",
+            packageId,
             paymentGateway,
             transactionId,
             status: "paid"
@@ -128,11 +127,7 @@ const payForRegeneration = asyncHandler(async (request, response) => {
     }
 
     // Delete caches
-    await Promise.all([
-        deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`),
-        deleteCacheByPattern(`payments*`)
-    ]);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `payments*`);
     
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Payment has been completed"));
