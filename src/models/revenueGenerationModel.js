@@ -1,10 +1,17 @@
 const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
+// Required condition for Package ID
+function isPackageIdRequired()
+{
+    return this.sourceModel === "Regeneration";
+}
+
 // Schema
 const revenueGenerationSchema = new Schema({
     // Reference
     userId: { type: Schema.Types.ObjectId, ref: "User", index: true, required: true },
+    packageId: { type: Schema.Types.ObjectId, ref: "Package", required: isPackageIdRequired },
 
     // Revenue info
     revenue: { type: Number, required: true },
