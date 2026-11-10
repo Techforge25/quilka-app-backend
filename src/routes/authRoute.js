@@ -20,7 +20,7 @@ authRouter.route("/resend-otp").post(rateLimit(3, 1), resendOTPToken);
 authRouter.route("/verify-otp").post(verifyOTP);
 
 // Login
-authRouter.route("/login").post(login);
+authRouter.route("/login").post(rateLimit(5, 5, "Too many login attempts!"), login);
 
 // Auth me
 authRouter.route("/me").get(authentication, authMe);
