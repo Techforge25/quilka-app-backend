@@ -80,7 +80,7 @@ const payForBook = asyncHandler(async (request, response) => {
     }
 
     // Delete caches
-    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `payments*`);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}:stats`, `payments*`);
     
     // Response
     return response.status(200).json(new ApiResponse(200, bookId, "Payment has been completed"));
@@ -150,7 +150,7 @@ const payForRegeneration = asyncHandler(async (request, response) => {
     }
 
     // Delete caches
-    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `payments*`);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}:stats`, `payments*`);
     
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Payment has been completed"));
