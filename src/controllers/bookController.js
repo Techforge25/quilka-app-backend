@@ -13,7 +13,7 @@ const { uploadToCloudinary } = require("../utils/cloudinary");
 const Spread = require("../models/spreadModel");
 const Regeneration = require("../models/regenerationModel");
 const { customPromptValidatorForFrontAndCover } = require("../validators/illustrationValidator");
-const { getCache, setCache, deleteCacheByPattern } = require("../redis/redisHelpers");
+const { getCache, setCache, deleteCacheByPattern, deleteMultiCaches } = require("../redis/redisHelpers");
 const { redis } = require("../redis/connection");
 const { markNotFoundCache } = require("../utils/markNotFoundCache");
 const { getNotFoundKey } = require("../utils/redisKeys");
@@ -70,9 +70,6 @@ const createBookInCustom = asyncHandler(async (request, response, next) => {
 
         // Commit transaction
         await dbSession.commitTransaction();
-
-        // Delete cache
-        await deleteCacheByPattern(`books:${bookId}*`);
     }
     catch(error)
     {
@@ -83,6 +80,9 @@ const createBookInCustom = asyncHandler(async (request, response, next) => {
     {
         dbSession.endSession();
     }
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
 
     // Response
     return response.status(201).json(new ApiResponse(201, { bookId }, "Book has been created in Custom Mode!"));
@@ -135,9 +135,6 @@ const createBookInAI = asyncHandler(async (request, response) => {
 
         // Commit transaction
         await dbSession.commitTransaction();
-
-        // Delete cache
-        await deleteCacheByPattern(`books:${bookId}*`);
     }
     catch(error)
     {
@@ -147,7 +144,10 @@ const createBookInAI = asyncHandler(async (request, response) => {
     finally
     {
         dbSession.endSession();
-    }    
+    }
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
 
     // Response
     return response.status(201).json(new ApiResponse(201, { bookId }, "Book has been created in AI Mode!"));
@@ -536,7 +536,9 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
     book.frontImage = frontUrl;
     book.backImage = coverUrl;
     await book.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
     
     // Response
     return response.status(201).json(new ApiResponse(201, { frontUrl, coverUrl }, "Book front & cover images have been generated"));
@@ -609,7 +611,6 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
 
         // Commit transaction
         await dbSession.commitTransaction();
-        await deleteCacheByPattern(`books:${bookId}*`);
     }
     catch(error)
     {
@@ -627,6 +628,9 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
         frontUrl,
         coverUrl
     };
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);    
     
     // Response
     return response.status(201).json(new ApiResponse(201, payload, "Book front & cover images have been regenerated"));
@@ -720,7 +724,9 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
 
     // Save to db
     await book.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
     
     // Response
     return response.status(201).json(new ApiResponse(201, payload, `Book ${type} image has been generated with custom prompt`));     
@@ -800,7 +806,6 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
 
         // Commit transaction
         await dbSession.commitTransaction();
-        await deleteCacheByPattern(`books:${bookId}*`);
     }
     catch(error)
     {
@@ -811,6 +816,9 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
     {
         dbSession.endSession();
     }
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);    
     
     // Response
     return response.status(201).json(new ApiResponse(201, payload, `Book ${type} image has been regenerated with custom prompt`));      
@@ -837,7 +845,9 @@ const publishBook = asyncHandler(async (request, response) => {
     book.draftStage = 4;
     book.status = "published";
     await book.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`);
     
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Book has been published"));
@@ -911,7 +921,9 @@ const uploadManualFrontOrCoverImage = asyncHandler(async (request, response) => 
     if(type === "front") book.frontImage = url;
     else book.backImage = url;
     await book.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, `Book ${type} image has been uploaded`));
