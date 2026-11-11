@@ -12,7 +12,7 @@ generateWithCustomPromptValidator } = require("../validators/illustrationValidat
 const Spread = require("../models/spreadModel");
 const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
-const { deleteCacheByPattern } = require("../redis/redisHelpers");
+const { deleteMultiCaches } = require("../redis/redisHelpers");
 const { saveTokenConsumption } = require("../utils/saveTokenConsumption");
 const { consumptionType } = require("../constants");
 
@@ -76,7 +76,9 @@ const createIllustration = asyncHandler(async (request, response, next) => {
     // Save to db
     spread.illustrationURL = illustrationURL;
     await spread.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been generated"));
@@ -137,7 +139,6 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
 
         // Commit transaction
         await dbSession.commitTransaction();
-        await deleteCacheByPattern(`books:${bookId}*`);
     }
     catch(error)
     {
@@ -148,6 +149,9 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
     {
         dbSession.endSession();
     }
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);    
 
     // Payload
     const payload = {
@@ -187,7 +191,9 @@ const uploadManualIllustration = asyncHandler(async (request, response) => {
     // Save to db
     spread.illustrationURL = illustrationURL;
     await spread.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`);
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been uploaded"));
@@ -252,7 +258,9 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     // Save to db
     spread.illustrationURL = illustrationURL;
     await spread.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
 
     // Response
     return response.status(201).json(new ApiResponse(201, { illustration: illustrationURL }, "Illustration has been generated with custom prompt"));
@@ -313,7 +321,6 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
 
         // Commit transaction
         await dbSession.commitTransaction();
-        await deleteCacheByPattern(`books:${bookId}*`);
     }
     catch(error)
     {
@@ -324,6 +331,9 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
     {
         dbSession.endSession();
     }
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
 
     // Payload
     const payload = {
@@ -365,7 +375,9 @@ const updateSpreadSublayout = asyncHandler(async (request, response) => {
     spread.textBgColor = textBgColor;
     spread.subLayoutDirection = subLayoutDirection;
     await spread.save();
-    await deleteCacheByPattern(`books:${bookId}*`);
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, { textColor, textBgColor, subLayoutDirection }, "Spread has been updated"));
