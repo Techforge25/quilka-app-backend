@@ -13,7 +13,10 @@ const saveTokenConsumption = async (userId, bookId, aiModel, type, totalSpreads,
         if(!bookId) throw new ApiError(500, "Book ID is missing");
         if(!type) throw new ApiError(500, "Token consumption type is required");
         if(!allowedTokenConsumptionTypes.includes(type)) throw new ApiError(500, "Invalid token consumption type");
-        if(!totalTokens) throw new ApiError(500, "Total tokens are missing");
+        if(!promptTokenCount) throw new ApiError(500, "Prompt tokens are missing");
+        if(!candidatesTokenCount) throw new ApiError(500, "Candidates tokens are missing");
+        if(!thoughtsTokenCount) throw new ApiError(500, "Thoughts tokens are missing");
+        if(!totalTokenCount) throw new ApiError(500, "Total tokens are missing");
 
         // Create
         const tokenConsumption = await TokenConsumption.create({ 
