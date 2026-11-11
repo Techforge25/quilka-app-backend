@@ -25,7 +25,7 @@ bookRouter.route("/:bookId/content").get(viewBookContent);
 
 // Generate & regenerate front and cover images / Fetch front and back images
 bookRouter.route("/:bookId/frontAndCover")
-.post(rateLimit(1, 1), createFrontAndCoverImages, regenerateFrontAndCoverImages)
+.post(rateLimit(1, 2), createFrontAndCoverImages, regenerateFrontAndCoverImages)
 .get(fetchFrontAndBackImages);
 
 // Create / Regenerate front or cover image with custom prompt
