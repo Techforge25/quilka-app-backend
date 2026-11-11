@@ -71,8 +71,10 @@ class LLMService
             const illustrationResponse = await this.ai.models.generateContent({
                 model: aiModel,
                 contents,
-                config: { responseModalities: ["IMAGE"] },
-                thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                config: { 
+                    responseModalities: ["IMAGE"], 
+                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                }
             });
             
             // Find generated image
@@ -117,16 +119,20 @@ class LLMService
                 this.ai.models.generateContent({
                     contents: frontImageContents,
                     model: aiModel,
-                    config: { responseModalities: ["IMAGE"] },
-                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                    config: { 
+                        responseModalities: ["IMAGE"],
+                        thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                    },
                 }),
 
                 // Cover
                 this.ai.models.generateContent({
                     contents: coverImageContents,
                     model: aiModel,
-                    config: { responseModalities: ["IMAGE"] },
-                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                    config: { 
+                        responseModalities: ["IMAGE"],
+                        thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                    }
                 }),
             ]);
             if(!frontResponse) throw new ApiError(500, "Failed to generate front image");
@@ -201,8 +207,10 @@ class LLMService
             const illustrationResponse = await this.ai.models.generateContent({
                 model: aiModel,
                 contents,
-                config: { responseModalities: ["IMAGE"] },
-                thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                config: { 
+                    responseModalities: ["IMAGE"],
+                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                }
             });
             if(!illustrationResponse) throw new ApiError(500, "Failed to generate illustration");
             
