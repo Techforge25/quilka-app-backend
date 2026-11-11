@@ -3,7 +3,10 @@ const TokenConsumption = require("../models/tokenConsumptionModel");
 const ApiError = require("./ApiError");
 
 // Save token consumption into db
-const saveTokenConsumption = async (userId, bookId, totalTokens, type) => {
+const saveTokenConsumption = async (userId, bookId, aiModel, type, totalSpreads, usage) => {
+    // Extract usage
+    const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = usage || {};
+
     try
     {
         if(!userId) throw new ApiError(500, "User ID is missing");
@@ -13,7 +16,17 @@ const saveTokenConsumption = async (userId, bookId, totalTokens, type) => {
         if(!totalTokens) throw new ApiError(500, "Total tokens are missing");
 
         // Create
-        const tokenConsumption = await TokenConsumption.create({ userId, bookId, totalTokens, type });
+        const tokenConsumption = await TokenConsumption.create({ 
+            userId,
+            bookId,
+            aiModel,
+            type,
+            totalSpreads: totalSpreads ? totalSpreads : undefined,
+            promptTokens: promptTokenCount,
+            candidatesTokens: candidatesTokenCount,
+            thoughtsTokens: thoughtsTokenCount,
+            totalTokens: totalTokenCount
+        });
         if(!tokenConsumption) throw new ApiError(500, "Failed to save token consumption");
     }
     catch(error)
