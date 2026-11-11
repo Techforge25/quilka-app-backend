@@ -13,7 +13,7 @@ const saveTokenConsumption = async (userId, bookId, totalTokens, type) => {
         if(!totalTokens) throw new ApiError(500, "Total tokens are missing");
 
         // Create
-        const tokenConsumption = await TokenConsumption.create({ userId, bookId, totalTokens });
+        const tokenConsumption = await TokenConsumption.create({ userId, bookId, totalTokens, type });
         if(!tokenConsumption) throw new ApiError(500, "Failed to save token consumption");
     }
     catch(error)
