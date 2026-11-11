@@ -56,13 +56,15 @@ const createIllustration = asyncHandler(async (request, response, next) => {
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
+    const aiModel = "gemini-3.1-flash-image";
 
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
-    const { imageBuffer, totalTokenCount } = illustrationResponse;
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, previousReferenceImages);
+    const { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse;
+    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
     
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.illustration);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 1, usage);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -101,13 +103,15 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
+    const aiModel = "gemini-3.1-flash-image";
 
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", previousReferenceImages);
-    const { imageBuffer, totalTokenCount } = illustrationResponse;
-
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, previousReferenceImages);
+    const { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse;
+    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+    
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.illustration);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 1, usage);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -228,13 +232,15 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
+    const aiModel = "gemini-3.1-flash-image";
 
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", [], referenceImageURL);
-    const { imageBuffer, totalTokenCount } = illustrationResponse;
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, [], referenceImageURL);
+    const { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse;
+    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
 
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.illustration);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 1, usage);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -273,13 +279,15 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
+    const aiModel = "gemini-3.1-flash-image";
 
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, "gemini-3.1-flash-image", [], referenceImageURL);
-    const { imageBuffer, totalTokenCount } = illustrationResponse;
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, [], referenceImageURL);
+    const { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse;
+    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
 
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.illustration);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 1, usage);
 
     // Upload to cloudinary
     const uploadResult = await uploadToCloudinary(imageBuffer);
