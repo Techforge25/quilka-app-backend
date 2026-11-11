@@ -71,8 +71,10 @@ class LLMService
             const illustrationResponse = await this.ai.models.generateContent({
                 model: aiModel,
                 contents,
-                config: { responseModalities: ["IMAGE"] },
-                thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                config: { 
+                    responseModalities: ["IMAGE"], 
+                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                }
             });
             
             // Find generated image
@@ -117,16 +119,20 @@ class LLMService
                 this.ai.models.generateContent({
                     contents: frontImageContents,
                     model: aiModel,
-                    config: { responseModalities: ["IMAGE"] },
-                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                    config: { 
+                        responseModalities: ["IMAGE"],
+                        thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                    },
                 }),
 
                 // Cover
                 this.ai.models.generateContent({
                     contents: coverImageContents,
                     model: aiModel,
-                    config: { responseModalities: ["IMAGE"] },
-                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                    config: { 
+                        responseModalities: ["IMAGE"],
+                        thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                    }
                 }),
             ]);
             if(!frontResponse) throw new ApiError(500, "Failed to generate front image");
@@ -144,10 +150,30 @@ class LLMService
             if(!frontImageBuffer) throw new ApiError(500, "Failed to download base64 front image");
             if(!coverImageBuffer) throw new ApiError(500, "Failed to download base64 cover image");
 
-            // Extract token counts
-            const { totalTokenCount: frontTotalTokenCount } = frontResponse.usageMetadata;
-            const { totalTokenCount: coverTotalTokenCount } = coverResponse.usageMetadata;
-            return { frontImageBuffer, coverImageBuffer, totalTokenCount: frontTotalTokenCount + coverTotalTokenCount };
+            // Extract Front Tokens
+            const { 
+                promptTokenCount: frontPromptTokenCount,
+                candidatesTokenCount: frontCandidatesTokenCount,
+                thoughtsTokenCount: frontThoughtsTokenCount,
+                totalTokenCount: frontTotalTokenCount
+            } = frontResponse.usageMetadata;
+
+            // Extract Cover Tokens
+            const { 
+                promptTokenCount: coverPromptTokenCount,
+                candidatesTokenCount: coverCandidatesTokenCount,
+                thoughtsTokenCount: coverThoughtsTokenCount,
+                totalTokenCount: coverTotalTokenCount 
+            } = coverResponse.usageMetadata;
+
+            return {
+                frontImageBuffer, 
+                coverImageBuffer, 
+                promptTokenCount: frontPromptTokenCount + coverPromptTokenCount,
+                candidatesTokenCount: frontCandidatesTokenCount + coverCandidatesTokenCount,
+                thoughtsTokenCount: frontThoughtsTokenCount + coverThoughtsTokenCount,
+                totalTokenCount: frontTotalTokenCount + coverTotalTokenCount
+            };
         }
         catch(error)
         {
@@ -181,8 +207,10 @@ class LLMService
             const illustrationResponse = await this.ai.models.generateContent({
                 model: aiModel,
                 contents,
-                config: { responseModalities: ["IMAGE"] },
-                thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                config: { 
+                    responseModalities: ["IMAGE"],
+                    thinkingConfig: { thinkingLevel: "High", includeThoughts: true }
+                }
             });
             if(!illustrationResponse) throw new ApiError(500, "Failed to generate illustration");
             
