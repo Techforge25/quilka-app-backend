@@ -62,13 +62,15 @@ const generateStroyTextWithAI = asyncHandler(async (request, response, next) => 
         totalCharacters: totalStoryCharactersLimit,
         spreads
     });
+    const aiModel = "gemini-3.5-flash";
 
     // Generate story
-    const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
-    const { aiContent, totalTokenCount } = output;
+    const output = await llm.generateStoryText(dynamicPrompt, aiModel);
+    const { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = output;
+    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
 
     // Save tokens to db
-    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.text);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.text, spreads.length, usage);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
@@ -137,13 +139,15 @@ const regenerateStoryTextwithAI = asyncHandler(async (request, response) => {
         spreads,
         previousStory: spreads.map(spread => spread.content?.trim()).join(" ")
     });
+    const aiModel = "gemini-3.5-flash";
 
     // Generate story
-    const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
-    const { aiContent, totalTokenCount } = output;
+    const output = await llm.generateStoryText(dynamicPrompt, aiModel);
+    const { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = output;
+    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
 
     // Save tokens to db
-    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.text);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.text, spreads.length, usage);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
@@ -339,13 +343,15 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
         instruction,
         spreads
     });
+    const aiModel = "gemini-3.5-flash";
 
     // Generate story
-    const output = await llm.generateStoryText(dynamicPrompt, "gemini-3.5-flash");
-    const { aiContent, totalTokenCount } = output;
+    const output = await llm.generateStoryText(dynamicPrompt, aiModel);
+    const { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = output;
+    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
 
     // Save tokens to db
-    await saveTokenConsumption(userId, bookId, totalTokenCount, consumptionType.text);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.text, spreads.length, usage);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
