@@ -14,7 +14,7 @@ const Regeneration = require("../models/regenerationModel");
 const { startSession } = require("mongoose");
 const { customStoryRefinementValidator, updateStoryValidator, newStoryValidator } = require("../validators/storyValidator");
 const Spread = require("../models/spreadModel");
-const { deleteCacheByPattern, getCache, setCache } = require("../redis/redisHelpers");
+const { getCache, setCache, deleteMultiCaches } = require("../redis/redisHelpers");
 const { redis } = require("../redis/connection");
 const { getNotFoundKey } = require("../utils/redisKeys");
 const { markNotFoundCache } = require("../utils/markNotFoundCache");
@@ -97,10 +97,7 @@ const generateStroyTextWithAI = asyncHandler(async (request, response, next) => 
     if(result.matchedCount !== spreads.length) throw new ApiError(500, "Failed to save AI generated story content");
     
     // Delete cache
-    await Promise.all([
-        deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`)
-    ]);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
 
     // Payload
     const payload = {
@@ -188,22 +185,6 @@ const regenerateStoryTextwithAI = asyncHandler(async (request, response) => {
         
         // Commit transaction
         await dbSession.commitTransaction();
-
-        // Delete cache
-        await Promise.all([
-            deleteCacheByPattern(`books:${bookId}*`),
-            deleteCacheByPattern(`books:${userId}*`)
-        ]);
-
-        // Payload
-        const payload = {
-            regenerations: regeneration.limit -1,
-            bookId: book._id,
-            spreads: spreads.map((spread, index) => ({ spreadId: spread._id, content: spreadContents[index] }))
-        };
-
-        // Response
-        return response.status(201).json(new ApiResponse(201, payload, "AI story has been regenerated"));
     }
     catch(error)
     {
@@ -214,6 +195,19 @@ const regenerateStoryTextwithAI = asyncHandler(async (request, response) => {
     {
         dbSession.endSession();
     }
+
+    // Delete cache
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
+
+    // Payload
+    const payload = {
+        regenerations: regeneration.limit -1,
+        bookId: book._id,
+        spreads: spreads.map((spread, index) => ({ spreadId: spread._id, content: spreadContents[index] }))
+    };
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, payload, "AI story has been regenerated"));
 });
 
 // View story content
@@ -371,10 +365,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
     );
 
     // Delete cache
-    await Promise.all([
-        deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`)
-    ]);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`, `users:${userId}*`);
 
     // Payload
     const payload = {
@@ -424,10 +415,7 @@ const useNewStoryVersion = asyncHandler(async (request, response) => {
     await Spread.bulkWrite(operations);
 
     // Delete cache
-    await Promise.all([
-        deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`)
-    ]);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`);
 
     // Get updated story
     const getUpdatedStory = await Spread.find({ bookId }).select("content").sort({ _id: 1 });
@@ -479,10 +467,7 @@ const updateStory = asyncHandler(async (request, response) => {
     await Spread.bulkWrite(operations);
 
     // Delete cache
-    await Promise.all([
-        deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`)
-    ]);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, spreads, "Story has been updated successfully"));
@@ -523,10 +508,7 @@ const updateStoryWithSpreadTextSize = asyncHandler(async (request, response) => 
     await spread.save();
 
     // Delete cache
-    await Promise.all([
-        deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`)
-    ]);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, spreadContent, "Story has been updated"));
@@ -561,10 +543,7 @@ const finalizeTextPhase = asyncHandler(async (request, response) => {
     await book.save();
 
     // Delete cache
-    await Promise.all([
-        deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`)
-    ]);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Book has been marked for draft stage 2"));
@@ -602,10 +581,7 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     await book.save();
 
     // Delete cache
-    await Promise.all([
-        deleteCacheByPattern(`books:${bookId}*`),
-        deleteCacheByPattern(`books:${userId}*`)
-    ]);
+    await deleteMultiCaches(`books:${bookId}*`, `books:${userId}*`);
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));
