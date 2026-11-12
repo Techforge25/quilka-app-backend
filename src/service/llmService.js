@@ -104,8 +104,8 @@ class LLMService
             if(!imageBuffer) throw new ApiError(500, "Failed to download base64 image");
 
             // Extract token counts
-            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
-            return { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount, candidatesTokensDetails } = illustrationResponse.usageMetadata;
+            return { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount, candidatesTokensDetails };
         }
         catch(error)
         {
@@ -173,7 +173,8 @@ class LLMService
                 promptTokenCount: frontPromptTokenCount,
                 candidatesTokenCount: frontCandidatesTokenCount,
                 thoughtsTokenCount: frontThoughtsTokenCount,
-                totalTokenCount: frontTotalTokenCount
+                totalTokenCount: frontTotalTokenCount,
+                candidatesTokensDetails: frontCandidatesTokensDetails
             } = frontResponse.usageMetadata;
 
             // Extract Cover Tokens
@@ -181,7 +182,8 @@ class LLMService
                 promptTokenCount: coverPromptTokenCount,
                 candidatesTokenCount: coverCandidatesTokenCount,
                 thoughtsTokenCount: coverThoughtsTokenCount,
-                totalTokenCount: coverTotalTokenCount 
+                totalTokenCount: coverTotalTokenCount,
+                candidatesTokensDetails: coverCandidatesTokensDetails
             } = coverResponse.usageMetadata;
 
             return {
@@ -190,7 +192,9 @@ class LLMService
                 promptTokenCount: frontPromptTokenCount + coverPromptTokenCount,
                 candidatesTokenCount: frontCandidatesTokenCount + coverCandidatesTokenCount,
                 thoughtsTokenCount: frontThoughtsTokenCount + coverThoughtsTokenCount,
-                totalTokenCount: frontTotalTokenCount + coverTotalTokenCount
+                totalTokenCount: frontTotalTokenCount + coverTotalTokenCount,
+                frontCandidatesTokensDetails,
+                coverCandidatesTokensDetails
             };
         }
         catch(error)
@@ -241,8 +245,8 @@ class LLMService
             if(!imageBuffer) throw new ApiError(500, "Failed to download base64 image");
 
             // Extract token counts
-            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse.usageMetadata;
-            return { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };            
+            const { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount, candidatesTokensDetails } = illustrationResponse.usageMetadata;
+            return { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount, candidatesTokensDetails };            
         }
         catch(error)
         {
