@@ -135,7 +135,7 @@ const fetchUserStats = asyncHandler(async (request, response) => {
                     localField: "_id",
                     foreignField: "userId",
                     as: "tokenconsumptions",
-                    pipeline: [{ $project: { totalTokens: 1 } }]
+                    pipeline: [{ $project: { totalTokens: "$usage.totalTokens" } }]
                 }
             },
 

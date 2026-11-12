@@ -20,10 +20,21 @@ const tokenConsumptionSchema = new Schema({
     totalSpreads: { type: Number, required: areTotalSpreadsRequired },
 
     // Usage
-    promptTokens: { type: Number, required: true },
-    candidatesTokens: { type: Number, required: true },
-    thoughtsTokens: { type: Number, required: true },
-    totalTokens: { type: Number, required: true }
+    usage: {
+        promptTokens: { type: Number, required: true },
+        candidatesTokens: { type: Number, required: true },
+        thoughtsTokens: { type: Number, required: true },
+        imageTokens: { type: Number, default: 0 },
+        totalTokens: { type: Number, required: true }
+    },
+
+    // Costing
+    costing: {
+        inputCost: { type: Number, required: true },
+        outputCost: { type: Number, required: true },
+        imageOutputCost: { type: Number, default: 0 },
+        totalCost: { type: Number, required: true }
+    }
 }, { timestamps: true });
 
 // Add pagination plugin
