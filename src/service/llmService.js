@@ -7,6 +7,7 @@ class LLMService
     // Construct properties
     GEMINI_API_KEY;
     ai;
+    model;
 
     // Initialize constructor
     constructor()
@@ -14,10 +15,14 @@ class LLMService
         // AI instance
         this.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
         this.ai = new GoogleGenAI({ apiKey: this.GEMINI_API_KEY });
+        this.model = {
+            "gemini-3.5-flash": "gemini-3.5-flash",
+            "gemini-3.1-flash-image": "gemini-3.1-flash-image"
+        };
     }
 
     // Generate / Regenerate story text
-    async generateStoryText(dynamicPrompt, aiModel = "gemini-3.5-flash")
+    async generateStoryText(dynamicPrompt, aiModel = this.model["gemini-3.5-flash"])
     {
         try
         {
@@ -43,7 +48,7 @@ class LLMService
     }
 
     // Generate / Regenerate story illustration
-    async generateStoryIllustration(dynamicPrompt, aiModel = "gemini-3.1-flash-image", previousReferenceImagesURLs = [], userProvidedReference = null)
+    async generateStoryIllustration(dynamicPrompt, aiModel = this.model["gemini-3.1-flash-image"], previousReferenceImagesURLs = [], userProvidedReference = null)
     { 
         try
         {
@@ -96,7 +101,7 @@ class LLMService
     }
 
     // Generate / Regenerate front and cover images
-    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = "gemini-3.1-flash-image", referenceImagesURLs = [])
+    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = this.model["gemini-3.1-flash-image"], referenceImagesURLs = [])
     {
         try
         {
@@ -182,7 +187,7 @@ class LLMService
     }
 
     // Generate / Regenerate front or cover image with custom prompt
-    async generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, aiModel = "gemini-3.1-flash-image", previousReferenceImagesURLs = [], userProvidedReference = null)
+    async generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, aiModel = this.model["gemini-3.1-flash-image"], previousReferenceImagesURLs = [], userProvidedReference = null)
     {
         try
         {

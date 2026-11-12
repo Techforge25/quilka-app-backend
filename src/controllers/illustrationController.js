@@ -56,7 +56,7 @@ const createIllustration = asyncHandler(async (request, response, next) => {
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
-    const aiModel = "gemini-3.1-flash-image";
+    const aiModel = llm.model["gemini-3.1-flash-image"];
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, previousReferenceImages);
@@ -105,7 +105,7 @@ const regenerateIllustraton = asyncHandler(async (request, response) => {
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
-    const aiModel = "gemini-3.1-flash-image";
+    const aiModel = llm.model["gemini-3.1-flash-image"];
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, previousReferenceImages);
@@ -238,7 +238,7 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
-    const aiModel = "gemini-3.1-flash-image";
+    const aiModel = llm.model["gemini-3.1-flash-image"];
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, [], referenceImageURL);
@@ -287,7 +287,7 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
         size: spread.illustrationSize.size,
         aspectRatio: spread.illustrationSize.aspectRatio
     });
-    const aiModel = "gemini-3.1-flash-image";
+    const aiModel = llm.model["gemini-3.1-flash-image"];
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, [], referenceImageURL);
