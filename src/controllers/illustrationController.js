@@ -60,8 +60,8 @@ const createIllustration = asyncHandler(async (request, response, next) => {
 
     // Generate illustration
     const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, previousReferenceImages);
-    const { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = illustrationResponse;
-    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+    const { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount, candidatesTokensDetails } = illustrationResponse;
+    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount, candidatesTokensDetails };
     
     // Save token consumption
     await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 1, usage);
