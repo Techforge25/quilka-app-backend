@@ -21,7 +21,7 @@ const { markNotFoundCache } = require("../utils/markNotFoundCache");
 const { saveTokenConsumption } = require("../utils/saveTokenConsumption");
 
 // Generate story with AI
-const generateStroyTextWithAI = asyncHandler(async (request, response, next) => {
+const generateStoryTextWithAI = asyncHandler(async (request, response, next) => {
     const userId = request.user._id;
 
     // Sanitize book ID
@@ -587,5 +587,5 @@ const finalizeIllustrationPhase = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Illustration has been finalized"));
 });
 
-module.exports = { generateStroyTextWithAI, regenerateStoryTextwithAI, viewStoryContent, useNewStoryVersion, updateStory,
+module.exports = { generateStoryTextWithAI, regenerateStoryTextwithAI, viewStoryContent, useNewStoryVersion, updateStory,
 refineStoryWithAI, updateStoryWithSpreadTextSize, finalizeTextPhase, finalizeIllustrationPhase };
