@@ -62,7 +62,7 @@ const generateStoryTextWithAI = asyncHandler(async (request, response, next) => 
         totalCharacters: totalStoryCharactersLimit,
         spreads
     });
-    const aiModel = llm.model["gemini-3.5-flash"];
+    const aiModel = llm.model.text["gemini-3.5-flash"];
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, aiModel);
@@ -136,7 +136,7 @@ const regenerateStoryTextwithAI = asyncHandler(async (request, response) => {
         spreads,
         previousStory: spreads.map(spread => spread.content?.trim()).join(" ")
     });
-    const aiModel = llm.model["gemini-3.5-flash"];
+    const aiModel = llm.model.text["gemini-3.5-flash"];
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, aiModel);
@@ -337,7 +337,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
         instruction,
         spreads
     });
-    const aiModel = llm.model["gemini-3.5-flash"];
+    const aiModel = llm.model.text["gemini-3.5-flash"];
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, aiModel);
