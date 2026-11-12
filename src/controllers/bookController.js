@@ -522,7 +522,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
     const { usage, costing } = computeImageGenerationCost(aiModel, { ...llmResponse, candidatesTokensDetails });
     
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 0, usage, costing);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.frontAndCover, 0, usage, costing);
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -586,7 +586,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
     const { usage, costing } = computeImageGenerationCost(aiModel, { ...llmResponse, candidatesTokensDetails });
     
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 0, usage, costing);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.frontAndCover, 0, usage, costing);
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -712,7 +712,7 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
     const { usage, costing } = computeImageGenerationCost(aiModel, llmResponse);
     
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 0, usage, costing);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType[type], 0, usage, costing);
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -784,7 +784,7 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
     const { usage, costing } = computeImageGenerationCost(aiModel, llmResponse);
     
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 0, usage, costing);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType[type], 0, usage, costing);
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);
