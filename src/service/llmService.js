@@ -16,13 +16,26 @@ class LLMService
         this.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
         this.ai = new GoogleGenAI({ apiKey: this.GEMINI_API_KEY });
         this.model = {
-            "gemini-3.5-flash": "gemini-3.5-flash",
-            "gemini-3.1-flash-image": "gemini-3.1-flash-image"
+            // For Text
+            text: {
+                "gemini-3.8-flash": "gemini-3.8-flash",
+                "gemini-3.7-flash": "gemini-3.7-flash",
+                "gemini-3.6-flash": "gemini-3.6-flash",
+                "gemini-3.5-flash": "gemini-3.5-flash",
+                "gemini-3.5-flash-lite": "gemini-3.5-flash-lite"
+            },
+
+            // For Image
+            image: {
+                "gemini-3-pro-image": "gemini-3-pro-image",
+                "gemini-3.1-flash-image": "gemini-3.1-flash-image",
+                "gemini-3.1-flash-lite-image": "gemini-3.1-flash-lite-image"                
+            }
         };
     }
 
     // Generate / Regenerate story text
-    async generateStoryText(dynamicPrompt, aiModel = this.model["gemini-3.5-flash"])
+    async generateStoryText(dynamicPrompt, aiModel = this.model.text["gemini-3.5-flash"])
     {
         try
         {
@@ -48,7 +61,7 @@ class LLMService
     }
 
     // Generate / Regenerate story illustration
-    async generateStoryIllustration(dynamicPrompt, aiModel = this.model["gemini-3.1-flash-image"], previousReferenceImagesURLs = [], userProvidedReference = null)
+    async generateStoryIllustration(dynamicPrompt, aiModel = this.model.image["gemini-3.1-flash-image"], previousReferenceImagesURLs = [], userProvidedReference = null)
     { 
         try
         {
@@ -101,7 +114,7 @@ class LLMService
     }
 
     // Generate / Regenerate front and cover images
-    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = this.model["gemini-3.1-flash-image"], referenceImagesURLs = [])
+    async generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel = this.model.image["gemini-3.1-flash-image"], referenceImagesURLs = [])
     {
         try
         {
@@ -187,7 +200,7 @@ class LLMService
     }
 
     // Generate / Regenerate front or cover image with custom prompt
-    async generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, aiModel = this.model["gemini-3.1-flash-image"], previousReferenceImagesURLs = [], userProvidedReference = null)
+    async generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, aiModel = this.model.image["gemini-3.1-flash-image"], previousReferenceImagesURLs = [], userProvidedReference = null)
     {
         try
         {
