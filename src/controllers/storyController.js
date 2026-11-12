@@ -19,6 +19,7 @@ const { redis } = require("../redis/connection");
 const { getNotFoundKey } = require("../utils/redisKeys");
 const { markNotFoundCache } = require("../utils/markNotFoundCache");
 const { saveTokenConsumption } = require("../utils/saveTokenConsumption");
+const { computeTextGenerationCost } = require("../utils/costComputation");
 
 // Generate story with AI
 const generateStoryTextWithAI = asyncHandler(async (request, response, next) => {
@@ -45,8 +46,7 @@ const generateStoryTextWithAI = asyncHandler(async (request, response, next) => 
     const isFirstTime = spreads.every(spread => spread.content === null);
     if(!isFirstTime)
     {
-        request.book = book;
-        request.spreads = spreads;
+        request.payload = { book, spreads };
         return next();
     }
 
@@ -66,11 +66,13 @@ const generateStoryTextWithAI = asyncHandler(async (request, response, next) => 
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, aiModel);
-    const { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = output;
-    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+    const { aiContent } = output;
+
+    // Compute text generation tokens and costing
+    const { usage, costing } = computeTextGenerationCost(aiModel, output);
 
     // Save tokens to db
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.text, spreads.length, usage);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.text, spreads.length, usage, costing);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
@@ -114,7 +116,7 @@ const regenerateStoryTextwithAI = asyncHandler(async (request, response) => {
     // Get metadata
     const userId = request.user._id;
     const { bookId } = request.params;
-    const { book, spreads } = request;
+    const { book, spreads } = request.payload;
 
     // Find regenerations
     const regeneration = await Regeneration.findOne({ userId, bookId });
@@ -140,11 +142,13 @@ const regenerateStoryTextwithAI = asyncHandler(async (request, response) => {
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, aiModel);
-    const { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = output;
-    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+    const { aiContent } = output;
+
+    // Compute text generation tokens and costing
+    const { usage, costing } = computeTextGenerationCost(aiModel, output);
 
     // Save tokens to db
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.text, spreads.length, usage);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.text, spreads.length, usage, costing);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
@@ -341,11 +345,13 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, aiModel);
-    const { aiContent, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = output;
-    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+    const { aiContent } = output;
+
+    // Compute text generation tokens and costing
+    const { usage, costing } = computeTextGenerationCost(aiModel, output);
 
     // Save tokens to db
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.text, spreads.length, usage);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.text, spreads.length, usage, costing);
 
     // Split AI generated content into spreads
     const spreadContents = aiContent.split("spread break").map(content => content.trim());
