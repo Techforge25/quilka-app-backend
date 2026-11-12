@@ -18,11 +18,11 @@ const pricing = {
 };
 
 // Text generation cost computation
-const computeTextGenerationCost = (model, usage) => {
+const computeTextGenerationCost = (model, tokensMetadata) => {
     if(!Object.values(llm.model.text).includes(model)) throw new ApiError(500, "Invalid model! This model is not configured in LLM service.");
 
     // Extract token counts
-    const { promptTokenCount = 0, candidatesTokenCount = 0, thoughtsTokenCount = 0 } = usage || {};
+    const { promptTokenCount = 0, candidatesTokenCount = 0, thoughtsTokenCount = 0, totalTokenCount } = tokensMetadata || {};
 
     // Calculate input cost
     const inputCost = (promptTokenCount / 1000000) * pricing[model].input;
@@ -33,15 +33,24 @@ const computeTextGenerationCost = (model, usage) => {
     // Calculate total cost
     const totalCost = inputCost + outputCost;
 
-    return { inputCost, outputCost, totalCost };
+    // Prepare payloads
+    const usage = { 
+        promptTokens: promptTokenCount,
+        candidatesTokens: candidatesTokenCount,
+        thoughtsTokens: thoughtsTokenCount,
+        totalTokens: totalTokenCount
+    };
+    const costing = { inputCost, outputCost, totalCost };
+
+    return { usage, costing };
 };
 
 // Image generation cost computation
-const computeImageGenerationCost = (model, usage) => {
+const computeImageGenerationCost = (model, tokensMetadata) => {
     if(!Object.values(llm.model.image).includes(model)) throw new ApiError(500, "Invalid model! This model is not configured in LLM service.");    
 
     // Extract token counts
-    const { promptTokenCount = 0, candidatesTokenCount = 0, thoughtsTokenCount = 0, candidatesTokensDetails = [] } = usage || {};
+    const { promptTokenCount = 0, candidatesTokenCount = 0, thoughtsTokenCount = 0, totalTokenCount, candidatesTokensDetails = [] } = tokensMetadata || {};
 
     // Extract image output tokens
     const imageTokens = candidatesTokensDetails
@@ -61,7 +70,17 @@ const computeImageGenerationCost = (model, usage) => {
     // Calculate total cost
     const totalCost = inputCost + outputCost + imageOutputCost;
 
-    return { inputCost, outputCost, imageOutputCost, totalCost };
+    // Prepare payloads
+    const usage = { 
+        promptTokens: promptTokenCount,
+        candidatesTokens: outputTokens,
+        thoughtsTokens: thoughtsTokenCount,
+        imageTokens: imageTokens,
+        totalTokens: totalTokenCount
+    };
+    const costing = { inputCost, outputCost, imageOutputCost, totalCost };
+
+    return { usage, costing };
 };
 
 module.exports = { computeTextGenerationCost, computeImageGenerationCost };
