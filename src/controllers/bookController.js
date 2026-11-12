@@ -18,6 +18,7 @@ const { redis } = require("../redis/connection");
 const { markNotFoundCache } = require("../utils/markNotFoundCache");
 const { getNotFoundKey } = require("../utils/redisKeys");
 const { saveTokenConsumption } = require("../utils/saveTokenConsumption");
+const { computeImageGenerationCost } = require("../utils/costComputation");
 
 // Create book in custom
 const createBookInCustom = asyncHandler(async (request, response, next) => {
@@ -514,11 +515,14 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
 
     // LLM Response
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel, previousReferenceImages);
-    const { frontImageBuffer, coverImageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = llmResponse;
-    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+    const { frontImageBuffer, coverImageBuffer, frontCandidatesTokensDetails, coverCandidatesTokensDetails } = llmResponse;
 
+    // Compute image generation cost for front and cover combine
+    const candidatesTokensDetails = [...frontCandidatesTokensDetails, ...coverCandidatesTokensDetails];
+    const { usage, costing } = computeImageGenerationCost(aiModel, { ...llmResponse, candidatesTokensDetails });
+    
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.frontAndCover, 0, usage);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 0, usage, costing);
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -575,11 +579,14 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
 
     // LLM Response
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel, previousReferenceImages);
-    const { frontImageBuffer, coverImageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = llmResponse;
-    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+    const { frontImageBuffer, coverImageBuffer, frontCandidatesTokensDetails, coverCandidatesTokensDetails } = llmResponse;
 
+    // Compute image generation cost for front and cover combine
+    const candidatesTokensDetails = [...frontCandidatesTokensDetails, ...coverCandidatesTokensDetails];
+    const { usage, costing } = computeImageGenerationCost(aiModel, { ...llmResponse, candidatesTokensDetails });
+    
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.frontAndCover, 0, usage);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 0, usage, costing);
 
     // Upload to cloudinary from illustration pipeline
     const [uploadFront, uploadCover] = await Promise.all([
@@ -699,11 +706,13 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
 
     // LLM Response
     const llmResponse = await llm.generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, aiModel, previousReferenceImages, referenceImageURL);
-    const { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = llmResponse;
-    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+    const { imageBuffer } = llmResponse;
 
+    // Compute image generation cost
+    const { usage, costing } = computeImageGenerationCost(aiModel, llmResponse);
+    
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType[type], 0, usage);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 0, usage, costing);
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);
@@ -769,11 +778,13 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
 
     // LLM Response
     const llmResponse = await llm.generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, aiModel, previousReferenceImages, referenceImageURL);
-    const { imageBuffer, promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount } = llmResponse;
-    const usage = { promptTokenCount, candidatesTokenCount, thoughtsTokenCount, totalTokenCount };
+    const { imageBuffer } = llmResponse;
 
+    // Compute image generation cost
+    const { usage, costing } = computeImageGenerationCost(aiModel, llmResponse);
+    
     // Save token consumption
-    await saveTokenConsumption(userId, bookId, aiModel, consumptionType[type], 0, usage);
+    await saveTokenConsumption(userId, bookId, aiModel, consumptionType.illustration, 0, usage, costing);
 
     // Upload to cloudinary from illustration pipeline
     const uploadResult = await uploadToCloudinary(imageBuffer);
