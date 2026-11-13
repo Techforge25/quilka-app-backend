@@ -341,7 +341,7 @@ const refineStoryWithAI = asyncHandler(async (request, response) => {
         instruction,
         spreads
     });
-    const aiModel = llm.model.text["gemini-3.5-flash"];
+    const aiModel = llm.model.text["gemini-3.5-flash-lite"];
 
     // Generate story
     const output = await llm.generateStoryText(dynamicPrompt, aiModel);
