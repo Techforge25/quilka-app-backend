@@ -135,7 +135,7 @@ const fetchUserStats = asyncHandler(async (request, response) => {
                     localField: "_id",
                     foreignField: "userId",
                     as: "tokenconsumptions",
-                    pipeline: [{ $project: { totalTokens: "$usage.totalTokens" } }]
+                    pipeline: [{ $project: { totalTokens: "$usage.totalTokens", aiCost: "$costing.totalCost" } }]
                 }
             },
 
@@ -155,6 +155,7 @@ const fetchUserStats = asyncHandler(async (request, response) => {
                 $addFields: {
                     totalBooks: { $size: "$books" },
                     totalSpend: { $sum: "$revenuegenerations.revenue" },
+                    aiCost: { $sum: "$tokenconsumptions.aiCost" },
                     tokensConsumed: { $sum: "$tokenconsumptions.totalTokens" },
                     regenerationsUsed: { $sum: "$regenerations.used" }
                 }
@@ -170,6 +171,7 @@ const fetchUserStats = asyncHandler(async (request, response) => {
                     status: 1,
                     totalBooks: 1,
                     totalSpend: 1,
+                    aiCost: 1,
                     tokensConsumed: 1,
                     regenerationsUsed: 1
                 }
