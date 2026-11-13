@@ -248,6 +248,7 @@ const fetchBookAIUsage = asyncHandler(async (request, response) => {
                 $project: {
                     _id: 0,
                     type: 1,
+                    aiModel: 1,
                     tokensConsumption: "$usage.totalTokens",
                     cost: "$costing.totalCost",
                     createdAt: 1
