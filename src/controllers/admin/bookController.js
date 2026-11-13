@@ -204,7 +204,6 @@ const fetchBookStory = asyncHandler(async (request, response) => {
             {
                 $project: {
                     _id: 0,
-                    frontImage: 1,
                     spreads: 1
                 }
             }
