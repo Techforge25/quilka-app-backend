@@ -8,6 +8,7 @@ class LLMService
     GEMINI_API_KEY;
     ai;
     model;
+    pricing;
 
     // Initialize constructor
     constructor()
@@ -15,6 +16,8 @@ class LLMService
         // AI instance
         this.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
         this.ai = new GoogleGenAI({ apiKey: this.GEMINI_API_KEY });
+
+        // LLM Models
         this.model = {
             // For Text
             text: {
@@ -30,6 +33,25 @@ class LLMService
                 "gemini-3-pro-image": "gemini-3-pro-image",
                 "gemini-3.1-flash-image": "gemini-3.1-flash-image",
                 "gemini-3.1-flash-lite-image": "gemini-3.1-flash-lite-image"                
+            }
+        };
+
+        // Model pricing (Per 1 Million Tokens in USD)
+        this.pricing = {
+            // Text Generation
+            text: {
+                [this.model.text["gemini-3.8-flash"]]: { input: 0.75, output: 3.75 },
+                [this.model.text["gemini-3.7-flash"]]: { input: 0.75, output: 3.75 },
+                [this.model.text["gemini-3.6-flash"]]: { input: 0.75, output: 3.75 },
+                [this.model.text["gemini-3.5-flash"]]: { input: 1.50, output: 9.00 },
+                [this.model.text["gemini-3.5-flash-lite"]]: { input: 0.30, output: 2.50 },
+            },
+
+            // Image Generation
+            image: {
+                [this.model.image["gemini-3-pro-image"]]: { input: 2.00, output: 12.00, imageOutput: 120.00 },
+                [this.model.image["gemini-3.1-flash-image"]]: { input: 0.50, output: 3.00, imageOutput: 60.00 },
+                [this.model.image["gemini-3.1-flash-lite-image"]]: { input: 0.25, output: 1.50, imageOutput: 30.00 }
             }
         };
     }
