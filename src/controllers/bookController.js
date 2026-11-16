@@ -511,7 +511,7 @@ const createFrontAndCoverImages = asyncHandler(async (request, response, next) =
         size: book.spreadSize,
         illustrationStyle: book.illustrationStyle
     });
-    const aiModel = llm.model.image["gemini-3.1-flash-image"];
+    const aiModel = llm.model.image["gemini-3.1-flash-lite-image"];
 
     // LLM Response
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel, previousReferenceImages);
@@ -575,7 +575,7 @@ const regenerateFrontAndCoverImages = asyncHandler(async (request, response) => 
         size: book.spreadSize,
         illustrationStyle: book.illustrationStyle
     });
-    const aiModel = llm.model.image["gemini-3.1-flash-image"];
+    const aiModel = llm.model.image["gemini-3.1-flash-lite-image"];
 
     // LLM Response
     const llmResponse = await llm.generateFrontAndCoverImages(frontPrompt, coverPrompt, aiModel, previousReferenceImages);
@@ -702,7 +702,7 @@ const createFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request, res
             illustrationStyle: book.illustrationStyle
         });
     }
-    const aiModel = llm.model.image["gemini-3.1-flash-image"];
+    const aiModel = llm.model.image["gemini-3.1-flash-lite-image"];
 
     // LLM Response
     const llmResponse = await llm.generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, aiModel, previousReferenceImages, referenceImageURL);
@@ -774,7 +774,7 @@ const regenerateFrontOrCoverImageWithCustomPrompt = asyncHandler(async (request,
             illustrationStyle: book.illustrationStyle
         });
     }
-    const aiModel = llm.model.image["gemini-3.1-flash-image"];
+    const aiModel = llm.model.image["gemini-3.1-flash-lite-image"];
 
     // LLM Response
     const llmResponse = await llm.generateFrontOrCoverImageWithCustomPrompt(dynamicPrompt, aiModel, previousReferenceImages, referenceImageURL);
