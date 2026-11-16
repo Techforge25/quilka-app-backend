@@ -3,7 +3,7 @@ const { ACCESS_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY } = process.env;
 const crypto = require("crypto");
 const { setCache } = require("../redis/redisHelpers");
 const { getUserSessionKey } = require("./redisKeys");
-const { ApiError } = require("@google/genai");
+const ApiError = require("./ApiError");
 
 // Generate access token
 const generateAccessToken = async (payload) => {
