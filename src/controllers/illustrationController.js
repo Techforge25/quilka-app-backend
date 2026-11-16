@@ -217,9 +217,10 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     const { customPrompt, referenceImageURL } = validatePayload(generateWithCustomPromptValidator, request.body) || {};
 
     // Find book and spread
-    const [book, spread] = await Promise.all([
+    const [book, spread, referenceImages] = await Promise.all([
         Book.findById(bookId).select("userId status draftStage illustrationStyle").lean(),
-        Spread.findById(spreadId).select("illustrationSize illustrationURL")
+        Spread.findById(spreadId).select("illustrationSize illustrationURL"),
+        Spread.find({ bookId, _id: { $ne: spreadId } }).select("-_id illustrationURL").lean()
     ]);
 
     // Validate
@@ -229,10 +230,13 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     if(book.status !== "draft") throw new ApiError(403, "The illustration generation cannot be proceeded while the book is not in draft state");
     if(book.draftStage !== 2) throw new ApiError(403, "Illustration can only be generated in draft stage 2");
 
+    // Get previous images if exists
+    const previousReferenceImages = referenceImages.filter(ref => ref.illustrationURL).map(url => url.illustrationURL);    
+
     // Pass to rengerate with custom prompt controller
     if(spread.illustrationURL)
     {
-        request.payload = { book, spread, customPrompt, referenceImageURL };
+        request.payload = { book, spread, customPrompt, referenceImageURL, previousReferenceImages };
         return next();
     }
 
@@ -246,7 +250,7 @@ const generateWithCustomPrompt = asyncHandler(async (request, response, next) =>
     const aiModel = llm.model.image["gemini-3.1-flash-image"];
 
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, [], referenceImageURL);
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, previousReferenceImages, referenceImageURL);
     const { imageBuffer } = illustrationResponse;
 
     // Compute image generation cost
@@ -278,7 +282,7 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
     // Get metadata
     const userId = request.user._id;
     const { bookId } = request.params;
-    const { book, spread, customPrompt, referenceImageURL } = request.payload;
+    const { book, spread, customPrompt, referenceImageURL, previousReferenceImages } = request.payload;
 
     // Find regenerations
     const regeneration = await Regeneration.findOne({ userId, bookId });
@@ -297,7 +301,7 @@ const regenerateWithCustomPrompt = asyncHandler(async (request, response) => {
     const aiModel = llm.model.image["gemini-3.1-flash-image"];
 
     // Generate illustration
-    const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, [], referenceImageURL);
+    const illustrationResponse = await llm.generateStoryIllustration(prompt, aiModel, previousReferenceImages, referenceImageURL);
     const { imageBuffer } = illustrationResponse;
 
     // Compute image generation cost
