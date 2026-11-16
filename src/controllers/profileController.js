@@ -35,9 +35,12 @@ const updateInfo = asyncHandler(async (request, response) => {
     const { fullName } = validatePayload(updateInfoValidator, request.body) || {};
 
     // Update
-    const update = await User.findByIdAndUpdate(userId, { $set: { fullName } });
-    if(!update) throw new ApiError(500, "Failed to update personal info");
-    await deleteCacheByPattern(`users:${userId}*`);
+    User.findByIdAndUpdate(userId, { $set: { fullName } })
+    .catch(error => console.log("Failed to update personal info:", error));
+
+    // Delete cache
+    deleteCacheByPattern(`users:${userId}*`)
+    .catch(error => console.log("Failed to delete user cache:", error));
 
     // Response
     return response.status(200).json(new ApiResponse(200, fullName, "Personal info has been updated"));
