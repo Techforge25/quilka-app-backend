@@ -4,12 +4,17 @@ const asyncHandler = require('../utils/asyncHandler');
 const { redis } = require('../redis/connection');
 
 // Express rate limiter
-const expressRateLimit = ({ minutes = 1, maxRequests = 10, message = "Too many requests, please try again later" }) => {
+const expressRateLimit = ({ minutes = 1, maxRequests = 10, message = "Too many requests!" }) => {
     const limiter = rateLimiter({
         windowMs: 1000 * 60 * minutes,
         max: maxRequests, // Max requests per IP per window
-        handler: () => {
-            throw new ApiError(429, message);
+        handler: (request, response, next, options) => {
+            // Get reset time
+            const resetTime = request.rateLimit.resetTime;
+            const remainingMs = resetTime ? resetTime.getTime() - Date.now() : 0;
+            const remainingMinutes = Math.ceil(remainingMs / 60000);
+
+            throw new ApiError(429, `${message} Please try again after ${remainingMinutes} ${remainingMinutes > 1 ? "minutes" : "minute"}.`);
         }
     });
     return limiter;
