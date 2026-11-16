@@ -2,12 +2,11 @@ const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const validatePayload = require("../../utils/validatePayload");
-const { getCache, setCache } = require("../../redis/redisHelpers");
+const { getCache, setCache, deleteCacheByPattern } = require("../../redis/redisHelpers");
 const Package = require("../../models/packageModel");
 const { emptyList } = require("../../constants");
 const FreeCredit = require("../../models/freeCreditModel");
 const { createPackageValidator, updateCreditsAllowanceValidator } = require("../../validators/packageValidator");
-const { packageEvent } = require("../../events/admin/packageEvent");
 const { isValidObjectId } = require("mongoose");
 
 // Create package
@@ -19,11 +18,16 @@ const createPackage = asyncHandler(async (request, response) => {
     const package = await Package.findOne({ name: { $regex: `^${name}$`, $options: "i" } }).select("_id").lean();
     if(package) throw new ApiError(400, "Package with this name already exists");
 
-    // Payload
+    // Prepare payload
     const payload = { name, credits, price, description, extras };
-    
-    // Trigger event
-    packageEvent.emit("createPackage", payload);
+
+    // Create package
+    Package.create(payload)
+    .catch(error => console.log("Failed to create package:", error));
+
+    // Delete cache
+    deleteCacheByPattern(`packages*`)
+    .catch(error => console.log("Failed to delete packages cache:", error));
 
     // Response
     return response.status(201).json(new ApiResponse(201, payload, "New package has been created"));
@@ -90,9 +94,16 @@ const updatePackage = asyncHandler(async (request, response) => {
     const package = await Package.findOne({ name: { $regex: `^${name}$`, $options: "i" } }).select("_id").lean();
     if(package && String(package._id) !== String(packageId)) throw new ApiError(400, "Package with this name already exists");
 
-    // Trigger event
-    const payload = { packageId, name, credits, price, description, extras };
-    packageEvent.emit("updatePackage", payload);
+    // Prepare payload
+    const payload = { name, credits, price, description, extras };
+
+    // Update package
+    Package.findByIdAndUpdate(packageId, { $set: payload })
+    .catch(error => console.log("Failed to update package:", error));
+
+    // Delete cache
+    deleteCacheByPattern(`packages*`)
+    .catch(error => console.log("Failed to delete packages cache:", error));
 
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "A package has been updated"));
@@ -107,8 +118,13 @@ const updateCreditsAllowance = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { enable, credits } = validatePayload(updateCreditsAllowanceValidator, request.body) || {};
 
-    // Trigger event
-    packageEvent.emit("updateCreditsAllowance", { creditId, enable, credits });
+    // Update free credits
+    FreeCredit.findByIdAndUpdate(creditId, { enable, credits })
+    .catch(error => console.log("Failed to update free credits:", error));
+
+    // Delete cache
+    deleteCacheByPattern(`freeCredits*`)
+    .catch(error => console.log("Failed to delete free credits cache:", error));
 
     // Response
     return response.status(200).json(new ApiResponse(200, { enable, credits }, "Credits allowance has been updated"));
