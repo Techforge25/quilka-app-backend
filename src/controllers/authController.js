@@ -1,6 +1,6 @@
 const { isValidObjectId } = require("mongoose");
 const User = require("../models/userModel");
-const { generateAccessToken, getAccessToken } = require("../utils/accessToken");
+const { getAccessToken, getRefreshToken, verifyRefreshToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -10,12 +10,12 @@ const { userSignupValidator, userLoginValidator, verifyOtpValidator, resendOtpVa
 forgotPasswordValidator, verifyResetPasswordOTPValidator, resetPasswordValidator, 
 appleLoginValidator } = require("../validators/userAuthValidator");
 const { setCache, getCache, deleteCache, getAndDeleteCache } = require("../redis/redisHelpers");
-const { getOTPKey, getResetPasswordKey, getUserSessionKey } = require("../utils/redisKeys");
+const { getOTPKey, getResetPasswordKey, getRefreshTokenKey } = require("../utils/redisKeys");
 const emailQueue = require("../queues/emailQueue");
 const crypto = require("crypto");
 const { verifyAppleIdentityToken } = require("../service/apple-auth");
 const { ACCESS_TOKEN_SECRET } = process.env;
-const { verify } = require("jsonwebtoken");
+const { verify, decode } = require("jsonwebtoken");
 
 // Signup
 const signup = asyncHandler(async (request, response) => {
@@ -122,17 +122,74 @@ const login = asyncHandler(async (request, response) => {
     if(user.status === "pending") return response.status(403).json(new ApiResponse(403, { otpRequired: true, userId: user._id }, "Please verify your identity via OTP."));
     if(user.status === "suspended") throw new ApiError(400, "Your account is not eligible for login");
 
-    // Generate access token
-    const accessToken = await generateAccessToken(user);
+    // Generate auth token
+    const { accessToken } = await user.generateAuthTokens();
 
     // Response
     return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
 });
 
+// User auth check
+const authMe = asyncHandler(async (request, response) => {
+    const { _id: userId } = request.user;
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { userId }, "Authenticated!"));
+});
+
+// Auth status for login page rendering
+const authStatus = asyncHandler(async (request, response) => {
+    const accessToken = getAccessToken(request);
+    if(!accessToken) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
+
+    // Verify
+    const user = verify(accessToken, ACCESS_TOKEN_SECRET);
+    if(!user) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true }, "Login session found")); 
+});
+
+// Refresh token
+const refreshToken = asyncHandler(async (request, response) => {
+    // Get access token
+    const accessToken = getAccessToken(request);
+    if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing");
+
+    // Extract Session ID
+    const { _id, jti: sessionId } = decode(accessToken) || {};
+    if(!sessionId) throw new ApiError(401, "Unauthorized! Session ID not found");
+    
+    // Get refresh token
+    const refreshToken = await getRefreshToken(sessionId);
+    if(!refreshToken) throw new ApiError(401, "Unauthorized! Refresh token not found associated with the session");
+
+    // Verify refresh token
+    const { _id: userId } = verifyRefreshToken(refreshToken) || {};
+    if(!userId) throw new ApiError(401, "Unauthorized! User ID is missing");
+    if(String(_id) !== String(userId)) throw new ApiError(401, "Unauthorized! User ID mismatch");
+
+    // Find user
+    const user = await User.findById(userId).select("fullName role");
+    if(!user) throw new ApiError(404, "Unauthorized! User not found associated with the refresh token");
+
+    // Parallel execution
+    const [tokens] = await Promise.all([
+        // Generate new tokens
+        user.generateAuthTokens(),
+
+        // Delete old refresh token
+        deleteCache(getRefreshTokenKey(sessionId))
+    ]);
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { accessToken: tokens.accessToken }, "Auth tokens have been refreshed"));
+});
+
 // Logout
 const logout = asyncHandler(async (request, response) => {
     // Delete session from redis
-    await deleteCache(getUserSessionKey(request.user.jti));
+    await deleteCache(getRefreshTokenKey(request.user.jti));
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Logout successful"));
@@ -245,8 +302,8 @@ const googleLoginCodeExchange = asyncHandler(async (request, response) => {
     if(!user) throw new ApiError(404, "User not found");
     if(user.status !== "active") throw new ApiError(403, "Your account is not eligible for login");
 
-    // Generate access token
-    const accessToken = await generateAccessToken(user);
+    // Generate auth token
+    const { accessToken } = await user.generateAuthTokens();
 
     // Response
     return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
@@ -283,9 +340,17 @@ const appleLogin = asyncHandler(async (request, response) => {
     // Validate apple provided fields
     if(!appleId || !email) throw new ApiError(400, "Apple did not provide the required fields");
 
+    let accessToken;
+
     // Find existing Apple account
     let user = await User.findOne({ appleId });
-    if(!user)
+    if(user)
+    {
+        // Generate access token
+        const tokens = await user.generateAuthTokens();
+        accessToken = tokens.accessToken;
+    }
+    else
     {
         // Check whether email is already registered
         user = await User.findOne({ email });
@@ -299,44 +364,20 @@ const appleLogin = asyncHandler(async (request, response) => {
             appleAccount: true,
             status: "active"
         });
+
+        // Find created user & generate auth token
+        const createdUser = await User.findById(user._id);
+        const tokens = await createdUser.generateAuthTokens();
+        accessToken = tokens.accessToken;
     }
 
     // Check account status
     if(user.status !== "active") throw new ApiError(403, "Your account is not eligible for login");
 
-    // Generate access token
-    const accessToken = await generateAccessToken(user);
-
     // Response
     return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
 });
 
-// User auth check
-const authMe = asyncHandler(async (request, response) => {
-    const { _id: userId } = request.user;
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, { userId }, "Authenticated!"));
-});
-
-// Auth status for login page rendering
-const authStatus = asyncHandler(async (request, response) => {
-    const accessToken = getAccessToken(request);
-    if(!accessToken) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
-
-    // Verify
-    const user = verify(accessToken, ACCESS_TOKEN_SECRET);
-    if(!user) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
-
-    // Check session
-    const session = await getCache(getUserSessionKey(user.jti));
-    if(!session) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
-    if(session !== user._id) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true }, "Login session found")); 
-});
-
 module.exports = { signup, login, logout, forgotPassword, resendOTPToken, 
 verifyOTP, verifyResetpasswordOTP, resetPassword, googleLogin, googleLoginCodeExchange, 
-appleAuthInit, appleLogin, authMe, authStatus };
+appleAuthInit, appleLogin, authMe, authStatus, refreshToken };
