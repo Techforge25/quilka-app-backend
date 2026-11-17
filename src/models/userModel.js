@@ -2,6 +2,9 @@ const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
+const { generateAccessToken, generateRefreshToken } = require("../utils/accessToken");
+const crypto = require("crypto");
+const { sign } = require("jsonwebtoken");
 
 // Password condition
 function isPasswordRequired()
@@ -61,6 +64,17 @@ userSchema.methods.matchPassword = async function(password) {
     {
         throw new ApiError("Failed to compare passwords", error.message);
     }
+}
+
+// Generate auth tokens
+userSchema.method.generateAuthTokens = async function() {
+    // Unique Session ID
+    const sessionId = crypto.randomUUID();
+
+    // Tokens
+    const accessToken = generateAccessToken(this, sessionId);
+    const refreshToken = generateRefreshToken(this, sessionId);
+    return { accessToken, refreshToken };
 }
 
 // Add pagination plugin
