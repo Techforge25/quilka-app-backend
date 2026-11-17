@@ -1,7 +1,7 @@
 const { sign, verify, JsonWebTokenError, TokenExpiredError } = require("jsonwebtoken");
 const { ACCESS_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_SECRET, REFRESH_TOKEN_EXPIRY } = process.env;
 const crypto = require("crypto");
-const { setCache, getCache } = require("../redis/redisHelpers");
+const { getCache } = require("../redis/redisHelpers");
 const { getRefreshTokenKey } = require("./redisKeys")
 const ApiError = require("./ApiError");
 const { tokenState } = require("../constants");
@@ -57,18 +57,15 @@ const getAccessToken = (request) => {
 };
 
 // Generate refresh token
-const generateRefreshToken = async (payload, sessionId = crypto.randomUUID()) => {
+const generateRefreshToken = (payload, sessionId = crypto.randomUUID()) => {
     if(!payload) throw new ApiError(500, `Payload is missing`);
     if(!sessionId) throw new ApiError(500, `Session ID is missing`);
-    try 
+    try
     {
         // Sign token
         const refreshToken = sign({
             _id: payload._id
         }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY, jwtid: sessionId });
-
-        // Store refresh token in redis
-        await setCache(getRefreshTokenKey(sessionId), refreshToken, 60 * 24 * 90);
 
         return refreshToken;
     } 

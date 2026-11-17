@@ -4,7 +4,8 @@ const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
 const { generateAccessToken, generateRefreshToken } = require("../utils/accessToken");
 const crypto = require("crypto");
-const { sign } = require("jsonwebtoken");
+const { setCache } = require("../redis/redisHelpers");
+const { getRefreshTokenKey } = require("../utils/redisKeys");
 
 // Password condition
 function isPasswordRequired()
@@ -74,6 +75,9 @@ userSchema.method.generateAuthTokens = async function() {
     // Tokens
     const accessToken = generateAccessToken(this, sessionId);
     const refreshToken = generateRefreshToken(this, sessionId);
+
+    // Store refresh token in redis
+    await setCache(getRefreshTokenKey(sessionId), refreshToken, 60 * 24 * 90);
     return { accessToken, refreshToken };
 }
 
