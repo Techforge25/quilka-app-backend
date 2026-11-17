@@ -7,7 +7,7 @@ const ApiError = require("./ApiError");
 const { tokenState } = require("../constants");
 
 // Generate access token
-const generateAccessToken = async (payload, sessionId = crypto.randomUUID()) => {
+const generateAccessToken = (payload, sessionId = crypto.randomUUID()) => {
     if(!payload) throw new ApiError(500, `Payload is missing`);
     if(!sessionId) throw new ApiError(500, `Session ID is missing`);
     try
