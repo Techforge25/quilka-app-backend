@@ -68,7 +68,7 @@ userSchema.methods.matchPassword = async function(password) {
 }
 
 // Generate auth tokens
-userSchema.method.generateAuthTokens = async function() {
+userSchema.methods.generateAuthTokens = async function() {
     // Unique Session ID
     const sessionId = crypto.randomUUID();
 
