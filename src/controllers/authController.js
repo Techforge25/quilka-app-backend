@@ -15,7 +15,8 @@ const emailQueue = require("../queues/emailQueue");
 const crypto = require("crypto");
 const { verifyAppleIdentityToken } = require("../service/apple-auth");
 const { ACCESS_TOKEN_SECRET } = process.env;
-const { verify, decode } = require("jsonwebtoken");
+const { verify, TokenExpiredError, JsonWebTokenError } = require("jsonwebtoken");
+const { tokenState } = require("../constants");
 
 // Signup
 const signup = asyncHandler(async (request, response) => {
@@ -152,38 +153,50 @@ const authStatus = asyncHandler(async (request, response) => {
 
 // Refresh token
 const refreshToken = asyncHandler(async (request, response) => {
-    // Get access token
-    const accessToken = getAccessToken(request);
-    if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing");
+    try
+    {
+        // Get access token
+        const accessToken = getAccessToken(request);
+        if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing");
 
-    // Extract Session ID
-    const { _id, jti: sessionId } = decode(accessToken) || {};
-    if(!sessionId) throw new ApiError(401, "Unauthorized! Session ID not found");
-    
-    // Get refresh token
-    const refreshToken = await getRefreshToken(sessionId);
-    if(!refreshToken) throw new ApiError(401, "Unauthorized! Refresh token not found associated with the session");
+        // Extract Session ID
+        const { _id: userId, jti: sessionId } = verify(accessToken, ACCESS_TOKEN_SECRET, { ignoreExpiration: true }) || {};
+        if(!userId) throw new ApiError(401, "Unauthorized! User ID is missing");
+        if(!sessionId) throw new ApiError(401, "Unauthorized! Session ID is missing");
+        
+        // Get refresh token
+        const refreshToken = await getRefreshToken(sessionId);
+        if(!refreshToken) throw new ApiError(401, "Unauthorized! Refresh token not found associated with the session");
 
-    // Verify refresh token
-    const { _id: userId } = verifyRefreshToken(refreshToken) || {};
-    if(!userId) throw new ApiError(401, "Unauthorized! User ID is missing");
-    if(String(_id) !== String(userId)) throw new ApiError(401, "Unauthorized! User ID mismatch");
+        // Verify refresh token
+        const { _id, jti } = verifyRefreshToken(refreshToken) || {};
+        if(String(_id) !== String(userId)) throw new ApiError(401, "Unauthorized! User ID mismatch");
+        if(String(jti) !== String(sessionId)) throw new ApiError(401, "Unauthorized! Session ID mismatch");
 
-    // Find user
-    const user = await User.findById(userId).select("fullName role");
-    if(!user) throw new ApiError(404, "Unauthorized! User not found associated with the refresh token");
+        // Find user
+        const user = await User.findById(userId).select("fullName role status");
+        if(!user) throw new ApiError(401, "Unauthorized! User not found associated with the refresh token");
+        if(user.status !== "active") throw new ApiError(401, "Unauthorized! Your account temporarily suspended");
 
-    // Parallel execution
-    const [tokens] = await Promise.all([
-        // Generate new tokens
-        user.generateAuthTokens(),
+        // Parallel execution
+        const [tokens, deleteOldCache] = await Promise.all([
+            // Generate new tokens
+            user.generateAuthTokens(),
 
-        // Delete old refresh token
-        deleteCache(getRefreshTokenKey(sessionId))
-    ]);
+            // Delete old refresh token
+            deleteCache(getRefreshTokenKey(sessionId))
+        ]);
+        if(!deleteOldCache) throw new ApiError(500, "Failed to clear old refresh token");
 
-    // Response
-    return response.status(200).json(new ApiResponse(200, { accessToken: tokens.accessToken }, "Auth tokens have been refreshed"));
+        // Response
+        return response.status(200).json(new ApiResponse(200, { accessToken: tokens.accessToken }, "Auth tokens have been refreshed"));
+    }
+    catch(error)
+    {
+        if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Access token has expired", { state: tokenState.expired });
+        if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid access token", { state: tokenState.invalid });
+        throw error;
+    }
 });
 
 // Logout
