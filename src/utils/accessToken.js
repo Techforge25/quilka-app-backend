@@ -1,27 +1,22 @@
 const { sign, verify, JsonWebTokenError, TokenExpiredError } = require("jsonwebtoken");
-const { ACCESS_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY } = process.env;
+const { ACCESS_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_SECRET, REFRESH_TOKEN_EXPIRY } = process.env;
 const crypto = require("crypto");
-const { setCache } = require("../redis/redisHelpers");
-const { getUserSessionKey } = require("./redisKeys");
+const { setCache, getCache } = require("../redis/redisHelpers");
+const { getRefreshTokenKey } = require("./redisKeys")
 const ApiError = require("./ApiError");
 
 // Generate access token
-const generateAccessToken = async (payload) => {
+const generateAccessToken = async (payload, sessionId = crypto.randomUUID()) => {
     if(!payload) throw new ApiError(500, `Payload is missing`);
-    try 
+    if(!sessionId) throw new ApiError(500, `Session ID is missing`);
+    try
     {
-        // Unique Session ID
-        const sessionId = crypto.randomUUID();
-
         // Sign token
         const accessToken = sign({
             _id: payload._id,
             fullName: payload.fullName,
             role: payload.role,
         }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY, jwtid: sessionId });
-
-        // Set session to redis
-        await setCache(getUserSessionKey(sessionId), String(payload._id), 60 * 24 * 30);
 
         return accessToken;
     } 
@@ -60,4 +55,58 @@ const getAccessToken = (request) => {
     }
 };
 
-module.exports = { generateAccessToken, verifyAccessToken, getAccessToken };
+// Generate refresh token
+const generateRefreshToken = async (payload, sessionId = crypto.randomUUID()) => {
+    if(!payload) throw new ApiError(500, `Payload is missing`);
+    if(!sessionId) throw new ApiError(500, `Session ID is missing`);
+    try 
+    {
+        // Sign token
+        const refreshToken = sign({
+            _id: payload._id
+        }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY, jwtid: sessionId });
+
+        // Store refresh token in redis
+        await setCache(getRefreshTokenKey(sessionId), refreshToken, 60 * 24 * 90);
+
+        return refreshToken;
+    } 
+    catch(error) 
+    {
+        throw new ApiError(500, `Failed to generate refresh token. ${error.message}`);
+    }
+};
+
+// Verify refresh token
+const verifyRefreshToken = (refreshToken) => {
+    if(!refreshToken) throw new ApiError(401, "Unauthorized! Refresh token is missing");
+    try
+    {
+        return verify(refreshToken, REFRESH_TOKEN_SECRET);
+    } 
+    catch(error)
+    {
+        if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Refresh token has expired");
+        if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid refresh token");
+        throw new ApiError(500, `Failed to verify refresh token. ${error.message}`);
+    }
+};
+
+// Get refresh token
+const getRefreshToken = async (sessionId) => {
+    if(!sessionId) throw new ApiError(500, "Session ID is missing");
+    try
+    {
+        const refreshToken = await getCache(getRefreshTokenKey(sessionId));
+        return refreshToken ? refreshToken : null;
+    }
+    catch(error)
+    {
+        throw new ApiError(500, `Failed to get refresh token. ${error.message}`);
+    }
+};
+
+module.exports = { 
+    generateAccessToken, verifyAccessToken, getAccessToken, 
+    generateRefreshToken, verifyRefreshToken, getRefreshToken
+};
