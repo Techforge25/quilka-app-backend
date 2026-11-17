@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const { setCache, getCache } = require("../redis/redisHelpers");
 const { getRefreshTokenKey } = require("./redisKeys")
 const ApiError = require("./ApiError");
+const { tokenState } = require("../constants");
 
 // Generate access token
 const generateAccessToken = async (payload, sessionId = crypto.randomUUID()) => {
@@ -28,16 +29,16 @@ const generateAccessToken = async (payload, sessionId = crypto.randomUUID()) => 
 
 // Verify access token
 const verifyAccessToken = (accessToken) => {
-    if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing");
+    if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing", { state: tokenState.missing });
     try
     {
         return verify(accessToken, ACCESS_TOKEN_SECRET);
     } 
     catch(error)
     {
-        if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Access token has expired");
-        if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid access token");
-        throw new ApiError(500, `Failed to verify access token. ${error.message}`);
+        if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Access token has expired", { state: tokenState.expired });
+        if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid access token", { state: tokenState.invalid });
+        throw new ApiError(500, `Failed to verify access token. ${error.message}`, { state: tokenState.unknown });
     }
 };
 
@@ -79,16 +80,16 @@ const generateRefreshToken = async (payload, sessionId = crypto.randomUUID()) =>
 
 // Verify refresh token
 const verifyRefreshToken = (refreshToken) => {
-    if(!refreshToken) throw new ApiError(401, "Unauthorized! Refresh token is missing");
+    if(!refreshToken) throw new ApiError(401, "Unauthorized! Refresh token is missing", { state: tokenState.missing });
     try
     {
         return verify(refreshToken, REFRESH_TOKEN_SECRET);
     } 
     catch(error)
     {
-        if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Refresh token has expired");
-        if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid refresh token");
-        throw new ApiError(500, `Failed to verify refresh token. ${error.message}`);
+        if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Refresh token has expired", { state: tokenState.expired });
+        if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid refresh token", { state: tokenState.invalid });
+        throw new ApiError(500, `Failed to verify refresh token. ${error.message}`, { state: tokenState.unknown });
     }
 };
 
