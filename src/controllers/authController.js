@@ -297,11 +297,12 @@ const googleLoginCodeExchange = asyncHandler(async (request, response) => {
     if(!user) throw new ApiError(404, "User not found");
     if(user.status !== "active") throw new ApiError(403, "Your account is not eligible for login");
 
-    // Generate auth token
-    const { accessToken } = await user.generateAuthTokens();
+    // Generate auth tokens
+    const authTokens = await user.generateAuthTokens();
+    if(!authTokens) throw new ApiError(500, "Failed to generate auth tokens");    
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
+    return response.status(200).json(new ApiResponse(200, authTokens, "Login successful"));
 });
 
 // Initialize Apple authentication
@@ -336,14 +337,14 @@ const appleLogin = asyncHandler(async (request, response) => {
     if(!appleId || !email) throw new ApiError(400, "Apple did not provide the required fields");
 
     let accessToken;
+    let authTokens;
 
     // Find existing Apple account
     let user = await User.findOne({ appleId });
     if(user)
     {
-        // Generate access token
-        const tokens = await user.generateAuthTokens();
-        accessToken = tokens.accessToken;
+        // Generate auth tokens
+        authTokens = await user.generateAuthTokens();
     }
     else
     {
@@ -360,17 +361,17 @@ const appleLogin = asyncHandler(async (request, response) => {
             status: "active"
         });
 
-        // Find created user & generate auth token
+        // Find created user & generate auth tokens
         const createdUser = await User.findById(user._id);
-        const tokens = await createdUser.generateAuthTokens();
-        accessToken = tokens.accessToken;
+        authTokens = await createdUser.generateAuthTokens();
     }
 
-    // Check account status
+    // Check tokens & account status
+    if(!authTokens) throw new ApiError(500, "Failed to generate auth tokens");
     if(user.status !== "active") throw new ApiError(403, "Your account is not eligible for login");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
+    return response.status(200).json(new ApiResponse(200, authTokens, "Login successful"));
 });
 
 module.exports = { signup, login, logout, forgotPassword, resendOTPToken, 
