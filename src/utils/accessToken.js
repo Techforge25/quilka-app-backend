@@ -17,6 +17,7 @@ const generateAccessToken = (payload, sessionId = crypto.randomUUID()) => {
             _id: payload._id,
             fullName: payload.fullName,
             role: payload.role,
+            tokenType: "access"
         }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY, jwtid: sessionId });
 
         return accessToken;
@@ -64,7 +65,8 @@ const generateRefreshToken = (payload, sessionId = crypto.randomUUID()) => {
     {
         // Sign token
         const refreshToken = sign({
-            _id: payload._id
+            _id: payload._id,
+            tokenType: "refresh"
         }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY, jwtid: sessionId });
 
         return refreshToken;
