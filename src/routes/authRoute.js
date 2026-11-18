@@ -29,7 +29,7 @@ authRouter.route("/me").get(authentication, authMe);
 authRouter.route("/status").get(authStatus);
 
 // Refresh token
-authRouter.route("/refreshToken").get(refreshToken);
+authRouter.route("/refreshToken").post(refreshToken);
 
 // Logout
 authRouter.route("/logout").get(authentication, logout);
