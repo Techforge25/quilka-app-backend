@@ -123,11 +123,11 @@ const login = asyncHandler(async (request, response) => {
     if(user.status === "pending") return response.status(403).json(new ApiResponse(403, { otpRequired: true, userId: user._id }, "Please verify your identity via OTP."));
     if(user.status === "suspended") throw new ApiError(400, "Your account is not eligible for login");
 
-    // Generate auth token
-    const { accessToken } = await user.generateAuthTokens();
+    // Generate auth tokens
+    const { accessToken, refreshToken } = await user.generateAuthTokens();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { accessToken }, "Login successful"));
+    return response.status(200).json(new ApiResponse(200, { accessToken, refreshToken }, "Login successful"));
 });
 
 // User auth check
