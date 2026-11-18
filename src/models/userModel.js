@@ -74,7 +74,8 @@ userSchema.methods.generateAuthTokens = async function(sessionId = crypto.random
     const refreshToken = generateRefreshToken(this, sessionId);
 
     // Store refresh token in redis
-    await setCache(getRefreshTokenKey(sessionId), refreshToken, 60 * 24 * 90);
+    const isStored = await setCache(getRefreshTokenKey(sessionId), refreshToken, 60 * 24 * 90);
+    if(!isStored) throw new ApiError(500, "Failed to store refresh token");    
     return { accessToken, refreshToken };
 }
 
