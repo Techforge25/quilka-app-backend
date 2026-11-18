@@ -8,6 +8,9 @@ const authentication = asyncHandler(async (request, response, next) => {
     const accessToken = getBearerToken(request);
     const user = verifyAccessToken(accessToken);
 
+    // Validate token type
+    if(payload.tokenType !== "access") throw new ApiError(401, "Unauthorized! Invalid access token type");
+
     // Pass through
     request.user = user;
     return next();
