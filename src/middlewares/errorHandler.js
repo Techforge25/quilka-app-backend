@@ -13,7 +13,7 @@ const errorHandler = (error, request, response, next) => {
         const message = error.message || "Internal Server Error";
         const data = error.data || null;
         const success = error.success || false;
-        const stack = isLocal ? error.stack || "No stack trace found" : undefined
+        const stack = isLocal ? error.stack || "No stack trace found" : error.stack || "No stack trace found"
 
         // Response
         return response.status(statusCode)
@@ -74,7 +74,7 @@ const errorHandler = (error, request, response, next) => {
         message: error.message || "Something went wrong!",
         data: error.data || null,
         success: false,
-        stack: isLocal ? error.stack || "No stack trace found" : undefined
+        stack: isLocal ? error.stack || "No stack trace found" : error.stack || "No stack trace found"
     });
 };
 
