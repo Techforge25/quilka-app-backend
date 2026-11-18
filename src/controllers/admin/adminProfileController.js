@@ -1,11 +1,10 @@
 const ApiError = require("../../utils/ApiError");
-const { profileEvent } = require("../../events/admin/profileEvent");
 const Admin = require("../../models/adminModel");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const validatePayload = require("../../utils/validatePayload");
 const { updateUsernameValidator, updateAdminPasswordValidator } = require("../../validators/adminProfileValidator");
-const { getCache, setCache } = require("../../redis/redisHelpers");
+const { getCache, setCache, deleteCacheByPattern } = require("../../redis/redisHelpers");
 
 // Fetch username
 const fetchUsername = asyncHandler(async (request, response) => {
@@ -33,8 +32,13 @@ const updateUsername = asyncHandler(async (request, response) => {
     // Sanitize payload
     const { username } = validatePayload(updateUsernameValidator, request.body) || {};
 
-    // Trigger event for updation
-    profileEvent.emit("updateUsername", { adminId, username });
+    // Update
+    Admin.findByIdAndUpdate(adminId, { $set: { username } })
+    .catch(error => console.log("Failed to update admin username:", error.message));
+
+    // Delete cache
+    deleteCacheByPattern(`admin:${adminId}:username`)
+    .catch(error => console.log("Failed to delete cache:", error.message));    
 
     // Response
     return response.status(200).json(new ApiResponse(200, username, "Username has been updated"));

@@ -12,6 +12,9 @@ const getResetPasswordKey = (email) => `resetPassword:${email}`;
 // Get user session key
 const getUserSessionKey = (sessionId) => `userSession:${sessionId}`;
 
+// Get refresh token key
+const getRefreshTokenKey = (sessionId) => `refreshToken:${sessionId}`;
+
 // Get my book key
 const getMyBookKey = (bookId, userId) => `book:${bookId}:user:${userId}`;
 
@@ -26,4 +29,4 @@ const getNotFoundKey = (request) => {
 };
 
 module.exports = { getOTPKey, getResetPasswordKey, getCancelSubscriptionOTPKey, 
-getUserSessionKey, getMyBookKey, getNotFoundKey };
+getUserSessionKey, getRefreshTokenKey, getMyBookKey, getNotFoundKey };

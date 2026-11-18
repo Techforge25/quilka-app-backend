@@ -144,6 +144,14 @@ const consumptionType = {
     frontAndCover: allowedTokenConsumptionTypes[4]
 }
 
+// Token states
+const tokenState = {
+    expired: "EXPIRED",
+    invalid: "INVALID",
+    missing: "MISSING",
+    unknown: "UNKNOWN"
+};
+
 module.exports = {
     port,
     isProduction,
@@ -161,5 +169,6 @@ module.exports = {
     allowedSpreadSizes,
     allowedLanguages,
     allowedTokenConsumptionTypes,
-    consumptionType
+    consumptionType,
+    tokenState
 };

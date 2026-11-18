@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { signup, login, logout, forgotPassword, verifyResetpasswordOTP, 
 resetPassword, googleLogin, googleLoginCodeExchange, verifyOTP, resendOTPToken, 
-authMe, authStatus } = require("../controllers/authController");
+authMe, authStatus, refreshToken } = require("../controllers/authController");
 const { authentication } = require("../middlewares/auth");
 const { rateLimit } = require("../middlewares/rateLimit");
 const { googleAuthInit, googleAuthCallback } = require("../service/social-auth");
@@ -27,6 +27,9 @@ authRouter.route("/me").get(authentication, authMe);
 
 // Auth status for login page
 authRouter.route("/status").get(authStatus);
+
+// Refresh token
+authRouter.route("/refreshToken").post(refreshToken);
 
 // Logout
 authRouter.route("/logout").get(authentication, logout);

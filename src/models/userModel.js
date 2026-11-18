@@ -2,6 +2,10 @@ const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
+const { generateAccessToken, generateRefreshToken, getRefreshToken } = require("../utils/accessToken");
+const crypto = require("crypto");
+const { setCache } = require("../redis/redisHelpers");
+const { getRefreshTokenKey } = require("../utils/redisKeys");
 
 // Password condition
 function isPasswordRequired()
@@ -60,6 +64,26 @@ userSchema.methods.matchPassword = async function(password) {
     catch (error) 
     {
         throw new ApiError("Failed to compare passwords", error.message);
+    }
+}
+
+// Generate auth tokens
+userSchema.methods.generateAuthTokens = async function(sessionId = crypto.randomUUID()) {
+    try 
+    {
+        // Tokens
+        const accessToken = generateAccessToken(this, sessionId);
+        const refreshToken = generateRefreshToken(this, sessionId);
+    
+        // Store refresh token in redis
+        const isStored = await setCache(getRefreshTokenKey(sessionId), refreshToken, 60 * 24 * 90);
+        if(!isStored) throw new ApiError(500, "Failed to store refresh token");    
+        return { accessToken, refreshToken };
+    } 
+    catch(error) 
+    {
+        console.log("Failed to generate auth tokens:", error.message);
+        return null;
     }
 }
 
