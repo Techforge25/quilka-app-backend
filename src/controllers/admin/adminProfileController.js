@@ -4,7 +4,7 @@ const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const validatePayload = require("../../utils/validatePayload");
 const { updateUsernameValidator, updateAdminPasswordValidator } = require("../../validators/adminProfileValidator");
-const { getCache, setCache } = require("../../redis/redisHelpers");
+const { getCache, setCache, deleteCacheByPattern } = require("../../redis/redisHelpers");
 
 // Fetch username
 const fetchUsername = asyncHandler(async (request, response) => {
