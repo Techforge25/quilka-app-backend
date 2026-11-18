@@ -48,7 +48,13 @@ const getBearerToken = (request) => {
     if(!request) throw new ApiError(500, "Request object is required");
     try
     {
-        const token = request.headers['authorization']?.split(" ")?.[1];
+        // Get authorization metadata
+        const authorization = request.headers['authorization'];
+        if(!authorization) throw new ApiError(401, "Bearer token is missing");
+
+        // Validate
+        const [scheme, token] = authorization.split(" ");
+        if(!scheme || String(scheme).toLowerCase() !== "bearer") throw new ApiError(401, "Invalid token scheme");
         return token ? token : null;
     }
     catch(error)
