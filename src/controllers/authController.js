@@ -1,6 +1,6 @@
 const { isValidObjectId } = require("mongoose");
 const User = require("../models/userModel");
-const { getAccessToken, getRefreshToken, verifyRefreshToken } = require("../utils/accessToken");
+const { getBearerToken, getRefreshToken, verifyRefreshToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -140,7 +140,7 @@ const authMe = asyncHandler(async (request, response) => {
 
 // Auth status for login page rendering
 const authStatus = asyncHandler(async (request, response) => {
-    const accessToken = getAccessToken(request);
+    const accessToken = getBearerToken(request);
     if(!accessToken) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
 
     // Verify
@@ -156,7 +156,7 @@ const refreshToken = asyncHandler(async (request, response) => {
     try
     {
         // Get access token
-        const accessToken = getAccessToken(request);
+        const accessToken = getBearerToken(request);
         if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing");
 
         // Extract Session ID

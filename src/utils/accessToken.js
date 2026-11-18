@@ -42,17 +42,17 @@ const verifyAccessToken = (accessToken) => {
     }
 };
 
-// Get access token
-const getAccessToken = (request) => {
+// Get bearer token
+const getBearerToken = (request) => {
     if(!request) throw new ApiError(500, "Request object is required");
     try
     {
-        const accessToken = request.headers['authorization']?.split(" ")?.[1];
-        return accessToken ? accessToken : null;
+        const token = request.headers['authorization']?.split(" ")?.[1];
+        return token ? token : null;
     }
     catch(error)
     {
-        throw new ApiError(500, `Failed to get access token. ${error.message}`);
+        throw new ApiError(500, `Failed to get bearer token. ${error.message}`);
     }
 };
 
@@ -105,6 +105,6 @@ const getRefreshToken = async (sessionId) => {
 };
 
 module.exports = { 
-    generateAccessToken, verifyAccessToken, getAccessToken, 
+    generateAccessToken, verifyAccessToken, getBearerToken, 
     generateRefreshToken, verifyRefreshToken, getRefreshToken
 };

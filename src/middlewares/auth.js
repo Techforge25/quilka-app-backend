@@ -1,11 +1,11 @@
-const { getAccessToken, verifyAccessToken } = require("../utils/accessToken");
+const { getBearerToken, verifyAccessToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 
 // Authentication
 const authentication = asyncHandler(async (request, response, next) => {
     // Get & verify access token
-    const accessToken = getAccessToken(request);
+    const accessToken = getBearerToken(request);
     const user = verifyAccessToken(accessToken);
 
     // Pass through
