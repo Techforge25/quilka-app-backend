@@ -2,6 +2,7 @@ const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
+const { generateAdminAccessToken, generateAdminRefreshToken } = require("../utils/adminAccessToken");
 
 // Schema
 const adminSchema = new Schema({
@@ -34,6 +35,27 @@ adminSchema.methods.matchPassword = async function(password) {
     catch (error) 
     {
         throw new ApiError("Failed to compare passwords", error.message);
+    }
+}
+
+// Generate auth tokens
+adminSchema.methods.generateAuthTokens = async function() {
+    try 
+    {
+        // Tokens
+        const accessToken = generateAdminAccessToken(this);
+        const refreshToken = generateAdminRefreshToken(this);
+
+        // Save refresh token's hash to db
+        this.refreshToken = await bcrypt.hash(refreshToken, 10);
+        await this.save();
+        
+        return { accessToken, refreshToken };
+    } 
+    catch(error) 
+    {
+        console.log("Failed to generate auth tokens:", error.message);
+        return null;
     }
 }
 
