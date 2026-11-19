@@ -1,6 +1,6 @@
 const { sign, verify, JsonWebTokenError, TokenExpiredError } = require("jsonwebtoken");
 const ApiError = require("./ApiError");
-const { tokenTypes } = require("../constants");
+const { tokenTypes, tokenState } = require("../constants");
 const { ADMIN_ACCESS_TOKEN_SECRET, ADMIN_ACCESS_TOKEN_EXPIRY, ADMIN_REFRESH_TOKEN_SECRET, ADMIN_REFRESH_TOKEN_EXPIRY } = process.env;
 
 // Generate admin access token
@@ -53,9 +53,9 @@ const verifyAdminAuthToken = (token, tokenType) => {
     } 
     catch(error) 
     {
-        if(error instanceof TokenExpiredError) throw new ApiError(401, `Unauthorized! ${tokenType} token has expired`);
-        if(error instanceof JsonWebTokenError) throw new ApiError(401, `Unauthorized! Invalid ${tokenType} token`);
-        throw new ApiError(500, `Failed to verify admin ${tokenType} token. ${error.message}`);
+        if(error instanceof TokenExpiredError) throw new ApiError(401, `Unauthorized! ${tokenType} token has expired`, { state: tokenState.expired });
+        if(error instanceof JsonWebTokenError) throw new ApiError(401, `Unauthorized! Invalid ${tokenType} token`, { state: tokenState.invalid });
+        throw new ApiError(500, `Failed to verify admin ${tokenType} token. ${error.message}`, { state: tokenState.unknown });
     }
 };
 
