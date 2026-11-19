@@ -24,8 +24,7 @@ const getAdminAuthToken = (request, key) => {
     if(!key) throw new ApiError(500, "Please specify key name in admin auth token function");
     try
     {
-        const token = request.signedCookies?.[key] || request.cookies?.[key];
-        return token ? token : null;
+        return request.signedCookies?.[key] || request.cookies?.[key] || null;
     }
     catch(error)
     {
