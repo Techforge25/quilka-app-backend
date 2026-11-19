@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
-const { generateAdminAccessToken, generateAdminRefreshToken } = require("../utils/adminAccessToken");
+const { generateAdminAuthToken } = require("../utils/adminAccessToken");
 
 // Schema
 const adminSchema = new Schema({
@@ -43,8 +43,8 @@ adminSchema.methods.generateAuthTokens = async function() {
     try 
     {
         // Tokens
-        const accessToken = generateAdminAccessToken(this);
-        const refreshToken = generateAdminRefreshToken(this);
+        const accessToken = generateAdminAuthToken(this, "access");
+        const refreshToken = generateAdminAuthToken(this, "refresh");
 
         // Save refresh token's hash to db
         this.refreshToken = await bcrypt.hash(refreshToken, 10);
