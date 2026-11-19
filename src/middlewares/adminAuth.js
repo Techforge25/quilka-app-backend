@@ -1,13 +1,13 @@
 const { adminFrontendURL, superAdminId } = require("../constants");
-const { getAdminAccessToken, verifyAdminAccessToken } = require("../utils/adminAccessToken");
+const { verifyAdminAuthToken, getAdminAuthToken } = require("../utils/adminAccessToken");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 
 // Admin Authentication
 const adminAuthentication = asyncHandler((request, response, next) => {
     // Get & Verify access token
-    const accessToken = getAdminAccessToken(request);
-    const admin = verifyAdminAccessToken(accessToken);
+    const accessToken = getAdminAuthToken(request, "adminAccessToken");
+    const admin = verifyAdminAuthToken(accessToken, "access");
 
     // Pass through
     request.admin = admin;
