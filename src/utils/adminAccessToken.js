@@ -18,6 +18,22 @@ const generateAdminAccessToken = (payload) => {
     }
 };
 
+// Get admin auth token
+const getAdminAuthToken = (request, key) => {
+    if(!request) throw new ApiError(500, "Request object is required");
+    if(!key) throw new ApiError(500, "Please specify key name in admin auth token function");
+    try
+    {
+        const token = request.signedCookies?.[key] || request.cookies?.[key];
+        return token ? token : null;
+    }
+    catch(error)
+    {
+        console.log("Failed to extract admin auth token", error.message);
+        return null;
+    }
+};
+
 // Verify admin access token
 const verifyAdminAccessToken = (accessToken) => {
     if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing");
@@ -94,6 +110,6 @@ const getAdminRefreshToken = (request) => {
 };
 
 module.exports = { 
-    generateAdminAccessToken, verifyAdminAccessToken, getAdminAccessToken,
+    generateAdminAccessToken, getAdminAuthToken, verifyAdminAccessToken, getAdminAccessToken,
     generateAdminRefreshToken, verifyAdminRefreshToken, getAdminRefreshToken
 };
