@@ -9,7 +9,7 @@ const adminSchema = new Schema({
     username: { type: String, trim: true, lowercase: true, required: true, unique: [true, "This username has already been taken by another admin"] },
     email: { type: String, trim: true, lowercase: true, required: true, unique: [true, "This email has already been taken by another admin"] },
     password: { type: String, trim: true, required: true },
-    refreshToken: { type: String, default: null }
+    refreshToken: { type: String, default: undefined }
 }, { timestamps: true });
 
 // Hash password
