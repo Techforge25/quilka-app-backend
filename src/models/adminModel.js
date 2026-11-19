@@ -49,13 +49,26 @@ adminSchema.methods.generateAuthTokens = async function() {
         // Save refresh token's hash to db
         this.refreshToken = await bcrypt.hash(refreshToken, 10);
         await this.save();
-        
+
         return { accessToken, refreshToken };
     } 
     catch(error) 
     {
         console.log("Failed to generate auth tokens:", error.message);
         return null;
+    }
+}
+
+// Match refresh token hash
+adminSchema.methods.matchRefreshToken = async function(refreshToken) {
+    if(!refreshToken) return false;
+    try 
+    {
+       return await bcrypt.compare(refreshToken, this.refreshToken); 
+    } 
+    catch(error) 
+    {
+        throw new ApiError("Failed to compare refresh token", error.message);
     }
 }
 
