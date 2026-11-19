@@ -152,6 +152,9 @@ const tokenState = {
     unknown: "UNKNOWN"
 };
 
+// Token types
+const tokenTypes = ["access", "refresh"];
+
 module.exports = {
     port,
     isProduction,
@@ -170,5 +173,6 @@ module.exports = {
     allowedLanguages,
     allowedTokenConsumptionTypes,
     consumptionType,
-    tokenState
+    tokenState,
+    tokenTypes
 };

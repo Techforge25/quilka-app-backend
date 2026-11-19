@@ -13,7 +13,7 @@ authRouter.route("/login").post(rateLimit(5, 5, "Too many login attempts!"), adm
 authRouter.route("/me").get(adminAuthentication, authMe);
 
 // Refresh token
-authRouter.route("/refreshToken").get(adminRefreshAccessToken);
+authRouter.route("/refreshToken").post(adminRefreshAccessToken);
 
 // Logout
 authRouter.route("/logout").get(adminAuthentication, adminLogout);

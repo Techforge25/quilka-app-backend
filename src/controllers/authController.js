@@ -336,7 +336,6 @@ const appleLogin = asyncHandler(async (request, response) => {
     // Validate apple provided fields
     if(!appleId || !email) throw new ApiError(400, "Apple did not provide the required fields");
 
-    let accessToken;
     let authTokens;
 
     // Find existing Apple account

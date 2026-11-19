@@ -1,7 +1,6 @@
 const { cookieOptions } = require("../../constants");
 const Admin = require("../../models/adminModel");
-const { generateAdminAccessToken, generateAdminRefreshToken, verifyAdminRefreshToken, 
-getAdminRefreshToken } = require("../../utils/adminAccessToken");
+const { getAdminAuthToken, verifyAdminAuthToken } = require("../../utils/adminAccessToken");
 const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
@@ -14,20 +13,15 @@ const adminLogin = asyncHandler(async (request, response) => {
     const { username, password } = validatePayload(adminLoginValidator, request.body);  
 
     // Find admin
-    const admin = await Admin.findOne({ username });
+    const admin = await Admin.findOne({ username }).select("password refreshToken");
     if(!admin) throw new ApiError(400, "Invalid username or password");
     
     // Match password
     const isMatched = await admin.matchPassword(password);
-    if(!isMatched) throw new ApiError(400, "Invalid username or password");      
+    if(!isMatched) throw new ApiError(400, "Invalid username or password");
 
-    // Generate access & refresh tokens
-    const accessToken = generateAdminAccessToken(admin);
-    const refreshToken = generateAdminRefreshToken(admin);
-
-    // Save refresh token in db
-    admin.refreshToken = refreshToken;
-    await admin.save();
+    // Generate auth tokens
+    const { accessToken, refreshToken } = await admin.generateAuthTokens();
 
     // Response
     return response.status(200)
@@ -47,29 +41,26 @@ const authMe = asyncHandler(async (request, response) => {
 // Refresh access token
 const adminRefreshAccessToken = asyncHandler(async (request, response) => {
     // Get & verify refresh token
-    const token = getAdminRefreshToken(request);
-    const payload = verifyAdminRefreshToken(token);
+    const token = getAdminAuthToken(request, "adminRefreshToken");
+    const payload = verifyAdminAuthToken(token, "refresh");
 
     // Find admin
     const admin = await Admin.findById(payload._id).select("refreshToken");
-    if(!admin) throw new ApiError(401, "Admin not found associated with the provided refresh token");
+    if(!admin) throw new ApiError(401, "Unauthorized! Admin not found associated with the provided refresh token");
+    if(!admin.refreshToken) throw new ApiError(401, "Unauthorized! Session expired. Please login again");
 
-    // Compare tokens
-    if(admin.refreshToken !== token) throw new ApiError(401, "Unauthorized! Refresh token mismatch");
+    // Compare refresh token's hash
+    const matchHash = await admin.matchRefreshToken(token);
+    if(!matchHash) throw new ApiError(401, "Unauthorized! Refresh token mismatch");
 
-    // Generate tokens
-    const accessToken = generateAdminAccessToken(admin);
-    const refreshToken = generateAdminRefreshToken(admin);
-
-    // Save to db
-    admin.refreshToken = refreshToken;
-    await admin.save(); 
+    // Generate auth tokens
+    const { accessToken, refreshToken } = await admin.generateAuthTokens();    
 
     // Response
     return response.status(200)
     .cookie("adminAccessToken", accessToken, cookieOptions)
     .cookie("adminRefreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, null, "Refresh token for admin has been issued"));
+    .json(new ApiResponse(200, { adminId: admin._id }, "Admin auth tokens have been regenerated"));
 });
 
 // Admin logout
@@ -77,7 +68,7 @@ const adminLogout = asyncHandler(async (request, response) => {
     const adminId = request.admin._id;
 
     // Clear refresh token in db
-    const admin = await Admin.findByIdAndUpdate(adminId, { $set: { refreshToken: null } });
+    const admin = await Admin.findByIdAndUpdate(adminId, { $unset: { refreshToken: 1 } });
     if(!admin) throw new ApiError(500, "Failed to clear refresh token from db");
 
     // Response
