@@ -14,7 +14,6 @@ const { expressMiddleware } = require("@as-integrations/express5");
 const { authentication } = require("./middlewares/auth");
 const registerUserRoutes = require("./routes");
 const registerAdminRoutes = require("./routes/admin");
-require("./cron/deletePendingBooks");
 
 // Initialize express app
 async function startApp()
