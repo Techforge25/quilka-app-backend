@@ -1,6 +1,6 @@
 const { isValidObjectId } = require("mongoose");
 const User = require("../models/userModel");
-const { getBearerToken, getRefreshToken, verifyRefreshToken } = require("../utils/accessToken");
+const { getBearerToken, getStoredRefreshToken, verifyRefreshToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -162,7 +162,7 @@ const refreshToken = asyncHandler(async (request, response) => {
     if(!sessionId) throw new ApiError(401, "Unauthorized! Session ID is missing");
     
     // Get stored refresh token
-    const storedRefreshToken = await getRefreshToken(sessionId, userId);
+    const storedRefreshToken = await getStoredRefreshToken(sessionId, userId);
     if(!storedRefreshToken) throw new ApiError(401, "Unauthorized! Refresh token not found associated with the session");
     if(storedRefreshToken !== token) throw new ApiError(401, "Unauthorized! Refresh token mismatch");
 

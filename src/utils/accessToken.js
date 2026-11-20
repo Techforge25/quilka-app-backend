@@ -97,7 +97,7 @@ const verifyRefreshToken = (refreshToken) => {
 };
 
 // Get refresh token
-const getRefreshToken = async (sessionId, userId) => {
+const getStoredRefreshToken = async (sessionId, userId) => {
     if(!sessionId) throw new ApiError(500, "Session ID is missing");
     if(!userId) throw new ApiError(500, "User ID is missing in get refresh token utility");
     try
@@ -113,5 +113,5 @@ const getRefreshToken = async (sessionId, userId) => {
 
 module.exports = { 
     generateAccessToken, verifyAccessToken, getBearerToken, 
-    generateRefreshToken, verifyRefreshToken, getRefreshToken
+    generateRefreshToken, verifyRefreshToken, getStoredRefreshToken
 };
