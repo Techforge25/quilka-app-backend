@@ -111,8 +111,12 @@ const login = asyncHandler(async (request, response) => {
     const { email, password } = validatePayload(userLoginValidator, request.body) || {};
 
     // Find user
-    const user = await User.findOne({ email }).select("fullName role status password");
+    const user = await User.findOne({ email }).select("fullName role status googleAccount appleAccount password");
     if(!user) throw new ApiError(400, "Invalid email or password");
+
+    // Prevent social sign-in accounts using normal auth flow
+    if(user.googleAccount) throw new ApiError(400, "Please sign in using your Google account");
+    if(user.appleAccount) throw new ApiError(400, "Please sign in using your Apple account");    
 
     // Match password
     const isMatched = await user.matchPassword(password);
