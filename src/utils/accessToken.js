@@ -16,8 +16,7 @@ const generateAccessToken = (payload, sessionId = crypto.randomUUID()) => {
         const accessToken = sign({
             _id: payload._id,
             fullName: payload.fullName,
-            role: payload.role,
-            tokenType: "access"
+            role: payload.role
         }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY, jwtid: sessionId });
 
         return accessToken;
@@ -71,8 +70,7 @@ const generateRefreshToken = (payload, sessionId = crypto.randomUUID()) => {
     {
         // Sign token
         const refreshToken = sign({
-            _id: payload._id,
-            tokenType: "refresh"
+            _id: payload._id
         }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY, jwtid: sessionId });
 
         return refreshToken;
@@ -99,11 +97,12 @@ const verifyRefreshToken = (refreshToken) => {
 };
 
 // Get refresh token
-const getRefreshToken = async (sessionId) => {
+const getRefreshToken = async (sessionId, userId) => {
     if(!sessionId) throw new ApiError(500, "Session ID is missing");
+    if(!userId) throw new ApiError(500, "User ID is missing in get refresh token utility");
     try
     {
-        const refreshToken = await getCache(getRefreshTokenKey(sessionId));
+        const refreshToken = await getCache(getRefreshTokenKey(sessionId, userId));
         return refreshToken ? refreshToken : null;
     }
     catch(error)
