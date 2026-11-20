@@ -1,6 +1,6 @@
 const { isValidObjectId } = require("mongoose");
 const User = require("../models/userModel");
-const { getBearerToken, getRefreshToken, verifyRefreshToken } = require("../utils/accessToken");
+const { getBearerToken, getStoredRefreshToken, verifyRefreshToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -111,8 +111,12 @@ const login = asyncHandler(async (request, response) => {
     const { email, password } = validatePayload(userLoginValidator, request.body) || {};
 
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("fullName role status googleAccount appleAccount password");
     if(!user) throw new ApiError(400, "Invalid email or password");
+
+    // Prevent social sign-in accounts using normal auth flow
+    if(user.googleAccount) throw new ApiError(400, "Please sign in using your Google account");
+    if(user.appleAccount) throw new ApiError(400, "Please sign in using your Apple account");    
 
     // Match password
     const isMatched = await user.matchPassword(password);
@@ -155,16 +159,14 @@ const authStatus = asyncHandler(async (request, response) => {
 const refreshToken = asyncHandler(async (request, response) => {
     // Get & verify refresh token
     const token = getBearerToken(request);
-    const { _id: userId, jti: sessionId, tokenType } = verifyRefreshToken(token);
+    const { _id: userId, jti: sessionId } = verifyRefreshToken(token);
 
     // Validate
     if(!userId) throw new ApiError(401, "Unauthorized! User ID is missing");
     if(!sessionId) throw new ApiError(401, "Unauthorized! Session ID is missing");
-    if(!tokenType) throw new ApiError(401, "Unauthorized! Bearer token type is missing");
-    if(tokenType !== "refresh") throw new ApiError(401, "Unauthorized! Invalid bearer token type");
     
     // Get stored refresh token
-    const storedRefreshToken = await getRefreshToken(sessionId);
+    const storedRefreshToken = await getStoredRefreshToken(sessionId, userId);
     if(!storedRefreshToken) throw new ApiError(401, "Unauthorized! Refresh token not found associated with the session");
     if(storedRefreshToken !== token) throw new ApiError(401, "Unauthorized! Refresh token mismatch");
 
@@ -183,8 +185,11 @@ const refreshToken = asyncHandler(async (request, response) => {
 
 // Logout
 const logout = asyncHandler(async (request, response) => {
+    // Get token metdata
+    const { jti: sessionId, _id: userId }  = request.user;
+
     // Delete session from redis
-    await deleteCache(getRefreshTokenKey(request.user.jti));
+    await deleteCache(getRefreshTokenKey(sessionId, userId));
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Logout successful"));

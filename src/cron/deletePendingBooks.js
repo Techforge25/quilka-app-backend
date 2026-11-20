@@ -1,7 +1,6 @@
 const cron = require("node-cron");
 const Book = require("../models/bookModel");
 const Spread = require("../models/spreadModel");
-const ApiError = require("../utils/ApiError");
 
 // Runs every 2 hours
 const timer = "0 */2 * * *";
@@ -31,7 +30,6 @@ cron.schedule(timer, async () => {
     }
     catch(error)
     {
-        console.log(`Failed to delete pending books ${error.message}`);
-        throw new ApiError(400, error.message);
+        console.log(`Failed to delete pending books: ${error.message}`);
     }
 });

@@ -27,4 +27,9 @@ const supportEmailValidator = joi.object({
     body: joi.string().trim().required().min(50).max(5000).label("Body")
 });
 
-module.exports = { updateInfoValidator, updatePasswordValidator, supportEmailValidator };
+// Delete account validator
+const deleteAccountValidator = joi.object({
+    reason: joi.string().trim().required().min(3).max(2000).label("Reason")
+});
+
+module.exports = { updateInfoValidator, updatePasswordValidator, supportEmailValidator, deleteAccountValidator };

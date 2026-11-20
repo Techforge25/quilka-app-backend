@@ -21,8 +21,7 @@ const worker = new Worker("emailQueue", async (job) => {
         .replaceAll('{{accountVerificationToken}}', accountVerificationToken);     
 
         // Execute
-        const result = await sendEmail(email, "Account Activation Code", filledHtml);
-        if(!result) throw new Error("Failed to send OTP email");
+        await sendEmail(email, "Account Activation Code", filledHtml);
     }
 
     // Send forgot password email
@@ -40,8 +39,7 @@ const worker = new Worker("emailQueue", async (job) => {
         .replaceAll('{{resetPasswordOTP}}', resetPasswordOTP);
 
         // Execute
-        const result = await sendEmail(email, "Password Reset Request", filledHtml);
-        if(!result) throw new Error("Failed to send password reset email");
+        await sendEmail(email, "Password Reset Request", filledHtml);
     }
 
     // Send Reset password email
@@ -71,8 +69,25 @@ const worker = new Worker("emailQueue", async (job) => {
 
         // Send email to admin
         await sendEmail("fullstackdev556@gmail.com", subject, filledHtml, attachments);
-    }     
-}, { connection: redisConfigOptions, concurrency: 5 });
+    }
+
+    // Send email for OTP verification of account deletion
+    if(job.name === "accountDeletionVerification")
+    {
+        const { fullName, email, otp } = job.data;
+
+        // Get HTML template
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/deleteAccountVerificationOTPEmail.html"), "utf-8");
+
+        // Replace placeholders
+        const filledHtml = html
+        .replaceAll('{{fullName}}', fullName)
+        .replaceAll('{{otp}}', otp);
+
+        // Execute
+        await sendEmail(email, "Account Deletion Verification", filledHtml);
+    }
+}, { connection: redisConfigOptions, concurrency: 20 });
 
 // Attach events
 worker.on("completed", (job) => console.log(`Job completed!`, job.id, job.name, job.data));

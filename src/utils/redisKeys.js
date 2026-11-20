@@ -4,19 +4,10 @@ const ApiError = require("./ApiError");
 const getOTPKey = (email) => `otp:${email}`;
 
 // Get otp key
-const getCancelSubscriptionOTPKey = (userId) => `cancelSubscriptionOTP:${userId}`;
-
-// Get otp key
 const getResetPasswordKey = (email) => `resetPassword:${email}`;
 
-// Get user session key
-const getUserSessionKey = (sessionId) => `userSession:${sessionId}`;
-
 // Get refresh token key
-const getRefreshTokenKey = (sessionId) => `refreshToken:${sessionId}`;
-
-// Get my book key
-const getMyBookKey = (bookId, userId) => `book:${bookId}:user:${userId}`;
+const getRefreshTokenKey = (sessionId, userId) => `refreshToken:${userId}:${sessionId}`;
 
 // Get not found key
 const getNotFoundKey = (request) => {
@@ -28,5 +19,4 @@ const getNotFoundKey = (request) => {
     return `NotFound:${ip.replaceAll(":", "-")}`;
 };
 
-module.exports = { getOTPKey, getResetPasswordKey, getCancelSubscriptionOTPKey, 
-getUserSessionKey, getRefreshTokenKey, getMyBookKey, getNotFoundKey };
+module.exports = { getOTPKey, getResetPasswordKey, getRefreshTokenKey, getNotFoundKey };

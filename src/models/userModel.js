@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
-const { generateAccessToken, generateRefreshToken, getRefreshToken } = require("../utils/accessToken");
+const { generateAccessToken, generateRefreshToken } = require("../utils/accessToken");
 const crypto = require("crypto");
 const { setCache } = require("../redis/redisHelpers");
 const { getRefreshTokenKey } = require("../utils/redisKeys");
@@ -25,7 +25,12 @@ const userSchema = new Schema({
     password: { type: String, trim: true, required: isPasswordRequired },
 
     // Security and access
-    status: { type: String, trim: true, enum: ["pending", "active", "suspended"], default: "pending" },
+    status: { type: String, trim: true, enum: ["pending", "active", "suspended", "deleted"], default: "pending" },
+    statusTimestamps: {
+        activeAt: { type: Date, default: undefined },
+        suspendedAt: { type: Date, default: undefined },
+        deletedAt: { type: Date, default: undefined }
+    },
     role: { type: String, trim: true, enum: ["user"], default: "user" },
 
     // Social account flags
@@ -76,8 +81,8 @@ userSchema.methods.generateAuthTokens = async function(sessionId = crypto.random
         const refreshToken = generateRefreshToken(this, sessionId);
     
         // Store refresh token in redis
-        const isStored = await setCache(getRefreshTokenKey(sessionId), refreshToken, 60 * 24 * 90);
-        if(!isStored) throw new ApiError(500, "Failed to store refresh token");    
+        const isStored = await setCache(getRefreshTokenKey(sessionId, this._id), refreshToken, 60 * 24 * 90);
+        if(!isStored) throw new ApiError(500, "Failed to store refresh token");
         return { accessToken, refreshToken };
     } 
     catch(error) 
