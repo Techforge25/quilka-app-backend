@@ -3,10 +3,11 @@ const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const validatePayload = require("../utils/validatePayload");
-const { updateInfoValidator, updatePasswordValidator, 
-supportEmailValidator } = require("../validators/profileValidator");
+const { updateInfoValidator, updatePasswordValidator, supportEmailValidator, 
+deleteAccountValidator } = require("../validators/profileValidator");
 const emailQueue = require("../queues/emailQueue");
-const { getCache, setCache, deleteCacheByPattern } = require("../redis/redisHelpers");
+const { getCache, setCache, deleteCacheByPattern, getAndDeleteCache } = require("../redis/redisHelpers");
+const generateCode = require("../utils/generateCode");
 
 // View personal info
 const viewPersonalInfo = asyncHandler(async (request, response) => {
@@ -90,4 +91,55 @@ const sendSupportEmail = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Your support request has been submitted successfully"));
 });
 
-module.exports = { viewPersonalInfo, updateInfo, updatePassword, sendSupportEmail };
+// Delete account (Step: 01)
+const deleteAccount = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Sanitize payload
+    const { reason } = validatePayload(deleteAccountValidator, request.body) || {};
+
+    // Find user
+    const user = await User.findById(userId).select("fullName email status").lean();
+    if(!user) throw new ApiError(404, "User not found");
+    if(user.status !== "active") throw new ApiError(403, "Only active users can request account deletion");
+
+    // Generate OTP token
+    const { code: otp } = generateCode(6);
+    if(!otp) throw new ApiError(500, "Failed to generate OTP");
+
+    // Store in redis
+    const store = await setCache(`accounts:deletion:${userId}:otp:${otp}`, { otp, reason }, 5);
+    if(!store) throw new ApiError(500, "Failed to store OTP in redis");
+
+    // Enqueue
+    await emailQueue.add("accountDeletionVerification", { ...user, otp });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { reason }, "An OTP has been generated and sent to your email address"));
+});
+
+// Confirm delete account (Step: 02)
+const confirmDeleteAccount = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { otp } = request.params;
+
+    // Get & delete stored otp
+    const storedOTP = await getAndDeleteCache(`accounts:deletion:${userId}:otp:${otp}`);
+    if(!storedOTP) throw new ApiError(400, "Invalid or expired OTP");
+
+    // Delete all sessions
+    await deleteCacheByPattern(`refreshToken:${userId}*`);
+
+    // Update
+    const result = await User.updateOne(
+        { _id: userId, status: "active" },
+        { $set: { status: "suspended", "statusTimestamps.suspendedAt": new Date() } }
+    );
+    if(result.modifiedCount === 0) throw new ApiError(409, "Unable to process account deletion request");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Your account has been suspended and is scheduled for permanent deletion in 30 days"));
+});
+
+module.exports = { viewPersonalInfo, updateInfo, updatePassword, sendSupportEmail, 
+deleteAccount, confirmDeleteAccount };
