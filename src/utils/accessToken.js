@@ -24,7 +24,7 @@ const generateAccessToken = (payload, sessionId = crypto.randomUUID()) => {
     } 
     catch(error) 
     {
-        throw new ApiError(500, `Failed to generate access token. ${error.message}`);
+        throw error;
     }
 };
 
@@ -39,7 +39,7 @@ const verifyAccessToken = (accessToken) => {
     {
         if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Access token has expired", { state: tokenState.expired });
         if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid access token", { state: tokenState.invalid });
-        throw new ApiError(500, `Failed to verify access token. ${error.message}`, { state: tokenState.unknown });
+        throw error;
     }
 };
 
@@ -59,7 +59,7 @@ const getBearerToken = (request) => {
     }
     catch(error)
     {
-        throw new ApiError(500, `Failed to get bearer token. ${error.message}`);
+        throw error;
     }
 };
 
@@ -79,7 +79,7 @@ const generateRefreshToken = (payload, sessionId = crypto.randomUUID()) => {
     } 
     catch(error) 
     {
-        throw new ApiError(500, `Failed to generate refresh token. ${error.message}`);
+        throw error;
     }
 };
 
@@ -94,7 +94,7 @@ const verifyRefreshToken = (refreshToken) => {
     {
         if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Refresh token has expired", { state: tokenState.expired });
         if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid refresh token", { state: tokenState.invalid });
-        throw new ApiError(500, `Failed to verify refresh token. ${error.message}`, { state: tokenState.unknown });
+        throw error;
     }
 };
 
@@ -108,7 +108,7 @@ const getRefreshToken = async (sessionId) => {
     }
     catch(error)
     {
-        throw new ApiError(500, `Failed to get refresh token. ${error.message}`);
+        throw error;
     }
 };
 
