@@ -55,7 +55,7 @@ const verifyAdminAuthToken = (token, tokenType) => {
     {
         if(error instanceof TokenExpiredError) throw new ApiError(401, `Unauthorized! ${tokenType} token has expired`, { state: tokenState.expired });
         if(error instanceof JsonWebTokenError) throw new ApiError(401, `Unauthorized! Invalid ${tokenType} token`, { state: tokenState.invalid });
-        throw new ApiError(500, `Failed to verify admin ${tokenType} token. ${error.message}`, { state: tokenState.unknown });
+        throw error;
     }
 };
 
