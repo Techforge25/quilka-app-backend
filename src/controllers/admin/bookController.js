@@ -53,7 +53,7 @@ const fetchBookStats = asyncHandler(async (request, response) => {
                     localField: "_id",
                     foreignField: "bookId",
                     as: "tokenconsumptions",
-                    pipeline: [{ $project: { totalTokens: "$usage.totalTokens" } }]
+                    pipeline: [{ $project: { totalTokens: "$usage.totalTokens", totalCost: "$costing.totalCost" } }]
                 }
             },
 
@@ -82,6 +82,7 @@ const fetchBookStats = asyncHandler(async (request, response) => {
                     status: 1,
                     bookPrice: "$bookPrice.revenue",
                     tokensConsumed: { $sum: "$tokenconsumptions.totalTokens" },
+                    estimatedAICost: { $sum: "$tokenconsumptions.totalCost" },
                     regenerationsUsed: "$regeneration.used",
                     remainingCredits: "$regeneration.limit"
                 }
