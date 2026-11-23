@@ -23,9 +23,9 @@ profileRouter.route("/password").patch(expressRateLimit({ maxRequests: 3, minute
 profileRouter.route("/support").post(expressRateLimit({ maxRequests: 2, minutes: 1 }), upload.single('attachment'), sendSupportEmail);
 
 // Delete account (Step: 01)
-profileRouter.route("/delete").post(expressRateLimit({ maxRequests: 2, minutes: 1 }), deleteAccount);
+profileRouter.route("/delete").post(expressRateLimit({ maxRequests: 2, minutes: 5 }), deleteAccount);
 
 // Confirm delete account (Step: 02)
-profileRouter.route("/delete/:otp").delete(expressRateLimit({ maxRequests: 5, minutes: 1 }), confirmDeleteAccount);
+profileRouter.route("/delete/:otp").delete(expressRateLimit({ maxRequests: 3, minutes: 5 }), confirmDeleteAccount);
 
 module.exports = profileRouter;
