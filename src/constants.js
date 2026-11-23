@@ -7,26 +7,14 @@ const isLocal = process.env.NODE_ENV === "local";
 // Super admin unique ID
 const superAdminId = String(process.env.SUPER_ADMIN_ID);
 
-// Dynamic frontend URL based on node environemnt
-let adminFrontendURL = null;
+// Dynamic frontend URLs based on node environment
+const environment = {
+    production: { adminFrontendURL: "https://quilka-admin-staging.vercel.app" },
+    staging: { adminFrontendURL: "https://quilka-admin-staging.vercel.app" },
+    local: { adminFrontendURL: "http://localhost:3000" }
+};
 
-// Production
-if(isProduction)
-{
-    adminFrontendURL = "https://quilka-admin-staging.vercel.app";
-}
-
-// Staging
-if(isStaging)
-{
-    adminFrontendURL = "https://quilka-admin-staging.vercel.app";
-}
-
-// Local
-if(isLocal)
-{
-    adminFrontendURL = "http://localhost:3000";
-}
+const adminFrontendURL = environment[process.env.NODE_ENV].adminFrontendURL;
 
 // Cors options
 const corsOptions = {
@@ -160,6 +148,7 @@ module.exports = {
     isProduction,
     isStaging,
     isLocal,
+    environment,
     adminFrontendURL,
     superAdminId,
     corsOptions,
