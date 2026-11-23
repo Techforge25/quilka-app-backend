@@ -3,7 +3,7 @@ const ApiError = require("./ApiError");
 const { tokenTypes, tokenState } = require("../constants");
 const { ADMIN_ACCESS_TOKEN_SECRET, ADMIN_ACCESS_TOKEN_EXPIRY, ADMIN_REFRESH_TOKEN_SECRET, ADMIN_REFRESH_TOKEN_EXPIRY } = process.env;
 
-// Generate admin access token
+// Generate admin auth token
 const generateAdminAuthToken = (payload, tokenType) => {
     if(!payload) throw new ApiError(500, `Payload is missing`);
     if(!tokenType) throw new ApiError(500, "Auth token type is not configured");
