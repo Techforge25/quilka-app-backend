@@ -4,41 +4,29 @@ const crypto = require("crypto");
 const { getCache } = require("../redis/redisHelpers");
 const { getRefreshTokenKey } = require("./redisKeys")
 const ApiError = require("./ApiError");
-const { tokenState } = require("../constants");
+const { tokenState, tokenTypes } = require("../constants");
 
-// Generate access token
-const generateAccessToken = (payload, sessionId = crypto.randomUUID()) => {
+// Generate auth token
+const generateAuthToken = (payload, tokenType, sessionId = crypto.randomUUID()) => {
     if(!payload) throw new ApiError(500, `Payload is missing`);
-    if(!sessionId) throw new ApiError(500, `Session ID is missing`);
-    try
+    if(!tokenType) throw new ApiError(500, "Auth token type is not configured");
+    if(!tokenTypes.includes(tokenType)) throw new ApiError(500, "Invalid auth token type");
+
+    // Configure token secret & expiry
+    const secret = tokenType === "access" ? ACCESS_TOKEN_SECRET : REFRESH_TOKEN_SECRET;
+    const tokenExpiry = tokenType === "access" ? ACCESS_TOKEN_EXPIRY : REFRESH_TOKEN_EXPIRY;
+    try 
     {
         // Sign token
-        const accessToken = sign({
+        return sign({
             _id: payload._id,
             fullName: payload.fullName,
             role: payload.role
-        }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY, jwtid: sessionId });
-
-        return accessToken;
-    } 
-    catch(error) 
-    {
-        throw error;
-    }
-};
-
-// Verify access token
-const verifyAccessToken = (accessToken) => {
-    if(!accessToken) throw new ApiError(401, "Unauthorized! Access token is missing", { state: tokenState.missing });
-    try
-    {
-        return verify(accessToken, ACCESS_TOKEN_SECRET);
+        }, secret, { expiresIn: tokenExpiry, jwtid: sessionId });
     } 
     catch(error)
     {
-        if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Access token has expired", { state: tokenState.expired });
-        if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid access token", { state: tokenState.invalid });
-        throw error;
+        throw new ApiError(500, `Failed to generate ${tokenType} token. ${error.message}`);
     }
 };
 
@@ -53,7 +41,7 @@ const getBearerToken = (request) => {
 
         // Validate
         const [scheme, token] = authorization.split(" ");
-        if(!scheme || String(scheme).toLowerCase() !== "bearer") throw new ApiError(401, "Invalid token scheme");
+        if(!scheme || String(scheme).toLowerCase() !== "bearer") throw new ApiError(401, "Invalid bearer token");
         return token ? token : null;
     }
     catch(error)
@@ -62,41 +50,27 @@ const getBearerToken = (request) => {
     }
 };
 
-// Generate refresh token
-const generateRefreshToken = (payload, sessionId = crypto.randomUUID()) => {
-    if(!payload) throw new ApiError(500, `Payload is missing`);
-    if(!sessionId) throw new ApiError(500, `Session ID is missing`);
-    try
-    {
-        // Sign token
-        const refreshToken = sign({
-            _id: payload._id
-        }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY, jwtid: sessionId });
+// Verify auth token
+const verifyAuthToken = (token, tokenType) => {
+    if(!tokenType) throw new ApiError(500, "Auth token type is not configured");
+    if(!tokenTypes.includes(tokenType)) throw new ApiError(500, "Invalid auth token type");
+    if(!token) throw new ApiError(401, `Unauthorized! ${tokenType} token is missing`);
 
-        return refreshToken;
+    // Configure token secret
+    const secret = tokenType === "access" ? ACCESS_TOKEN_SECRET : REFRESH_TOKEN_SECRET;
+    try 
+    {
+        return verify(token, secret);
     } 
     catch(error) 
     {
+        if(error instanceof TokenExpiredError) throw new ApiError(401, `Unauthorized! ${tokenType} token has expired`, { state: tokenState.expired });
+        if(error instanceof JsonWebTokenError) throw new ApiError(401, `Unauthorized! Invalid ${tokenType} token`, { state: tokenState.invalid });
         throw error;
     }
 };
 
-// Verify refresh token
-const verifyRefreshToken = (refreshToken) => {
-    if(!refreshToken) throw new ApiError(401, "Unauthorized! Refresh token is missing", { state: tokenState.missing });
-    try
-    {
-        return verify(refreshToken, REFRESH_TOKEN_SECRET);
-    } 
-    catch(error)
-    {
-        if(error instanceof TokenExpiredError) throw new ApiError(401, "Unauthorized! Refresh token has expired", { state: tokenState.expired });
-        if(error instanceof JsonWebTokenError) throw new ApiError(401, "Unauthorized! Invalid refresh token", { state: tokenState.invalid });
-        throw error;
-    }
-};
-
-// Get refresh token
+// Get stored refresh token in redis
 const getStoredRefreshToken = async (sessionId, userId) => {
     if(!sessionId) throw new ApiError(500, "Session ID is missing");
     if(!userId) throw new ApiError(500, "User ID is missing in get refresh token utility");
@@ -111,7 +85,4 @@ const getStoredRefreshToken = async (sessionId, userId) => {
     }
 };
 
-module.exports = { 
-    generateAccessToken, verifyAccessToken, getBearerToken, 
-    generateRefreshToken, verifyRefreshToken, getStoredRefreshToken
-};
+module.exports = { generateAuthToken, getBearerToken, verifyAuthToken, getStoredRefreshToken };

@@ -1,6 +1,6 @@
 const { isValidObjectId } = require("mongoose");
 const User = require("../models/userModel");
-const { getBearerToken, getStoredRefreshToken, verifyRefreshToken } = require("../utils/accessToken");
+const { getBearerToken, getStoredRefreshToken, verifyAuthToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -159,7 +159,7 @@ const authStatus = asyncHandler(async (request, response) => {
 const refreshToken = asyncHandler(async (request, response) => {
     // Get & verify refresh token
     const token = getBearerToken(request);
-    const { _id: userId, jti: sessionId } = verifyRefreshToken(token);
+    const { _id: userId, jti: sessionId } = verifyAuthToken(token, "refresh");
 
     // Validate
     if(!userId) throw new ApiError(401, "Unauthorized! User ID is missing");

@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
-const { generateAccessToken, generateRefreshToken } = require("../utils/accessToken");
+const { generateAuthToken } = require("../utils/accessToken");
 const crypto = require("crypto");
 const { setCache } = require("../redis/redisHelpers");
 const { getRefreshTokenKey } = require("../utils/redisKeys");
@@ -77,8 +77,8 @@ userSchema.methods.generateAuthTokens = async function(sessionId = crypto.random
     try 
     {
         // Tokens
-        const accessToken = generateAccessToken(this, sessionId);
-        const refreshToken = generateRefreshToken(this, sessionId);
+        const accessToken = generateAuthToken(this, "access", sessionId);
+        const refreshToken = generateAuthToken(this, "refresh", sessionId);
     
         // Store refresh token in redis
         const isStored = await setCache(getRefreshTokenKey(sessionId, this._id), refreshToken, 60 * 24 * 90);
