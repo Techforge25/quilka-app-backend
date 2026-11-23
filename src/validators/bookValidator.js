@@ -43,6 +43,20 @@ const createBookValidator = joi.object({
             aspectRatio: joi.string().trim().required().label("Aspect ratio")
         }).valid(...allowedIllustrationSizes).label("Illustration size"),
         textSize: joi.string().trim().required().valid(...allowedTextSizes).default("Small").label("Text size"),
+
+        // Text color
+        textColor: joi.when("mainLayoutName", {
+            is: "Full Spread Adventure",
+            then: joi.string().default("#000000"),
+            otherwise: joi.string().default("#211827")
+        }).label("Text color"),
+
+        // Text bg color
+        textBgColor: joi.when("mainLayoutName", {
+            is: "Full Spread Adventure",
+            then: joi.string().default("#FFFFFF70"),
+            otherwise: joi.string().default("#FFF0F0")
+        }).label("Text bg color")
     })).custom((value, helpers) => {
         const { spreadsCount } = helpers.state.ancestors[0];
         if(value.length !== spreadsCount) return helpers.error("any.invalid");
