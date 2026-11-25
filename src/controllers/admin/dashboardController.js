@@ -6,12 +6,12 @@ const { emptyList } = require("../../constants");
 const RevenueGeneration = require("../../models/revenueGenerationModel");
 const Book = require("../../models/bookModel");
 const getDateFilter = require("../../utils/dateFilter");
+const TokenConsumption = require("../../models/tokenConsumptionModel");
 
  // Fetch business overview stats
 const fetchBusinessOverviewStats = asyncHandler(async (request, response) => {
-    const { dateRange = "all" } = request.query;
-    
     // Get date filter
+    const { dateRange = "all" } = request.query;
     const { dateFilter } = getDateFilter(dateRange);
 
     // Prepare keys
@@ -88,7 +88,6 @@ const fetchBusinessOverviewStats = asyncHandler(async (request, response) => {
         totalBooksCreated = await Book.countDocuments({ ...dateFilter });
         await setCache(bookKey, totalBooksCreated, 5);
     }
-    
 
     // Payload
     const payload = {
@@ -102,5 +101,83 @@ const fetchBusinessOverviewStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Business overview stats have been fetched"));
 });
 
+// Fetch AI stats
+const fetchAIStats = asyncHandler(async (request, response) => {
+    // Get date filter
+    const { dateRange = "all" } = request.query;
+    const { dateFilter } = getDateFilter(dateRange);
 
-module.exports = { fetchBusinessOverviewStats };
+    // Prepare key
+    const key = `dashboard:ai:stats:${dateRange}`;
+    
+    // Get from cache
+    let aiStats = await getCache(key);
+    if(!aiStats)
+    {
+        // Get from DB
+        [aiStats] = await TokenConsumption.aggregate([
+            // Match
+            { $match: { ...dateFilter } },
+
+            // Group
+            {
+                $group: {
+                    _id: null,
+
+                    // Input Tokens
+                    inputTokensConsumed: { $sum: "$usage.promptTokens" },
+                    inputTokensCost: { $sum: "$costing.inputCost" },
+
+                    // Output Tokens
+                    outputTokensConsumed: { $sum: "$usage.candidatesTokens" },
+                    outputTokensCost: { $sum: "$costing.outputCost" },
+
+                    // Image Output Tokens
+                    imageOutputTokensConsumed: { $sum: "$usage.imageTokens" },
+                    imageOutputTokensCost: { $sum: "$costing.imageOutputCost" },
+
+                    // Total Tokens
+                    totalTokensConsumed: { $sum: "$usage.totalTokens" },
+                    totalTokensCost: { $sum: "$costing.totalCost" }
+                }
+            },
+
+            // Projection
+            {
+                $project: {
+                    _id: 0,
+
+                    // Input Tokens
+                    inputTokens: {
+                        consumed: "$inputTokensConsumed",
+                        cost: "$inputTokensCost"
+                    },
+
+                    // Output Tokens
+                    outputTokens: {
+                        consumed: "$outputTokensConsumed",
+                        cost: "$outputTokensCost"
+                    },
+
+                    // Image Output Tokens
+                    imageOutputTokens: {
+                        consumed: "$imageOutputTokensConsumed",
+                        cost: "$imageOutputTokensCost"
+                    },
+
+                    // Total Tokens
+                    totalTokens: {
+                        consumed: "$totalTokensConsumed",
+                        cost: "$totalTokensCost"
+                    }
+                }
+            }
+        ]);
+        await setCache(key, aiStats, 5);
+    }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, aiStats, "AI stats have been fetched"));
+});
+
+module.exports = { fetchBusinessOverviewStats, fetchAIStats };
