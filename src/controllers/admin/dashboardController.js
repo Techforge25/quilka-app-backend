@@ -1,8 +1,6 @@
-const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
-const { getCache, setCache, deleteCacheByPattern } = require("../../redis/redisHelpers");
-const { emptyList } = require("../../constants");
+const { getCache, setCache } = require("../../redis/redisHelpers");
 const RevenueGeneration = require("../../models/revenueGenerationModel");
 const Book = require("../../models/bookModel");
 const getDateFilter = require("../../utils/dateFilter");
@@ -180,4 +178,74 @@ const fetchAIStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, aiStats, "AI stats have been fetched"));
 });
 
-module.exports = { fetchBusinessOverviewStats, fetchAIStats };
+// Fetch recent purchased books
+const fetchRecentPurchasedBooks = asyncHandler(async (request, response) => {
+    // Get from cache
+    const key = `books:dashboard:recent`;
+    let books = await getCache(key);
+    if(!books)
+    {
+        // Get from DB
+        books = await Book.aggregate([
+            // Match purchased books
+            { $match: { status: { $ne: "pending" } } },
+
+            // Lookup user
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "user",
+                    pipeline: [{ $project: { fullName: 1 } }]
+                }
+            },
+
+            // Unwind
+            { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+
+            // Lookup token consumption
+            {
+                $lookup: {
+                    from: "tokenconsumptions",
+                    localField: "_id",
+                    foreignField: "bookId",
+                    as: "tokenconsumptions",
+                    pipeline: [{ $project: { totalTokens: "$usage.totalTokens", totalCost: "$costing.totalCost" } }]
+                }
+            },
+
+            // Add fields
+            {
+                $addFields: {
+                    totalTokens: { $sum: "$totalTokens" },
+                    totalCost: { $sum: "$totalCost" }
+                }
+            },
+
+            // Sort
+            { $sort: { createdAt: -1 } },
+
+            // Limit
+            { $limit: 10 },
+
+            // Projection
+            {
+                $project: {
+                    fullName: "$user.fullName",
+                    title: 1,
+                    createdAt: 1,
+                    totalTokens: 1,
+                    totalCost: 1
+                }
+            }
+        ]);
+        await setCache(key, books, 10);
+    }
+    if(!books.length) return response.status(200).json(new ApiResponse(200, books, "No recently purchased books found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, books, "Recently purchased books have been fetched"));
+});
+
+module.exports = { fetchBusinessOverviewStats, fetchAIStats, fetchRecentPurchasedBooks };
