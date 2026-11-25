@@ -201,8 +201,23 @@ const fetchRecentPurchasedBooks = asyncHandler(async (request, response) => {
                 }
             },
 
+            // Lookup revenue generation for purchased amount
+            {
+                $lookup: {
+                    from: "revenuegenerations",
+                    localField: "_id",
+                    foreignField: "sourceId",
+                    as: "purchasedAmount",
+                    pipeline: [
+                        { $match: { sourceModel: "Book" } },
+                        { $project: { _id: 0, revenue: 1 } }
+                    ]
+                }
+            },            
+
             // Unwind
             { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: "$purchasedAmount", preserveNullAndEmptyArrays: true } },
 
             // Lookup token consumption
             {
@@ -219,7 +234,8 @@ const fetchRecentPurchasedBooks = asyncHandler(async (request, response) => {
             {
                 $addFields: {
                     totalTokens: { $sum: "$totalTokens" },
-                    totalCost: { $sum: "$totalCost" }
+                    totalCost: { $sum: "$totalCost" },
+                    purchasedAmount: "$purchasedAmount.revenue",
                 }
             },
 
@@ -236,7 +252,8 @@ const fetchRecentPurchasedBooks = asyncHandler(async (request, response) => {
                     title: 1,
                     createdAt: 1,
                     totalTokens: 1,
-                    totalCost: 1
+                    totalCost: 1,
+                    purchasedAmount: 1,
                 }
             }
         ]);
