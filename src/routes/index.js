@@ -5,6 +5,7 @@ const packageRouter = require("./packageRoute");
 const paymentRouter = require("./paymentRoute");
 const profileRouter = require("./profileRoute");
 const storyRouter = require("./storyRoute");
+const dashboardRouter = require("./admin/dashboardRoute");
 
 // Prefix
 const prefix = "/api/v1";
@@ -18,6 +19,7 @@ const registerUserRoutes = (app) => {
     app.use(`${prefix}/story`, storyRouter);
     app.use(`${prefix}/illustration`, illustrationRouter);
     app.use(`${prefix}/package`, packageRouter);
+    app.use(`${prefix}/dashboard`, dashboardRouter);
 };
 
 module.exports = registerUserRoutes;
