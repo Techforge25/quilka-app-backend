@@ -21,7 +21,7 @@ adminSchema.pre("save", async function() {
     } 
     catch(error) 
     {
-        throw new ApiError("Failed to hash admin password", error.message);
+        throw new ApiError(500, `Failed to hash admin password: ${error.message}`);
     }
 });
 
@@ -34,9 +34,9 @@ adminSchema.methods.matchPassword = async function(password) {
     } 
     catch (error) 
     {
-        throw new ApiError("Failed to compare passwords", error.message);
+        throw new ApiError(500, `Failed to compare passwords: ${error.message}`);
     }
-}
+};
 
 // Generate auth tokens
 adminSchema.methods.generateAuthTokens = async function() {
@@ -57,7 +57,7 @@ adminSchema.methods.generateAuthTokens = async function() {
         console.log("Failed to generate auth tokens:", error.message);
         return null;
     }
-}
+};
 
 // Match refresh token hash
 adminSchema.methods.matchRefreshToken = async function(refreshToken) {
@@ -68,9 +68,9 @@ adminSchema.methods.matchRefreshToken = async function(refreshToken) {
     } 
     catch(error) 
     {
-        throw new ApiError("Failed to compare refresh token", error.message);
+        throw new ApiError(500, `Failed to compare refresh token: ${error.message}`);
     }
-}
+};
 
 // Add pagination plugin
 adminSchema.plugin(aggregatePaginate);

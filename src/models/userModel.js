@@ -55,7 +55,7 @@ userSchema.pre("save", async function() {
     } 
     catch(error)
     {
-        throw new ApiError("Failed to hash user password", error.message);
+        throw new ApiError(500, `Failed to hash user password: ${error.message}`);
     }
 });
 
@@ -68,9 +68,9 @@ userSchema.methods.matchPassword = async function(password) {
     } 
     catch (error) 
     {
-        throw new ApiError("Failed to compare passwords", error.message);
+        throw new ApiError(500, `Failed to compare passwords: ${error.message}`);
     }
-}
+};
 
 // Generate auth tokens
 userSchema.methods.generateAuthTokens = async function(sessionId = crypto.randomUUID()) {
@@ -90,7 +90,7 @@ userSchema.methods.generateAuthTokens = async function(sessionId = crypto.random
         console.log("Failed to generate auth tokens:", error.message);
         return null;
     }
-}
+};
 
 // Add pagination plugin
 userSchema.plugin(aggregatePaginate);
